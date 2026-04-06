@@ -1,0 +1,163 @@
+/**
+ * UK Companies House API integration
+ * Source: https://developer-specs.company-information.service.gov.uk/
+ * License: Open Government Licence v3.0
+ * Cost: Free (requires API key from https://developer.companieshouse.gov.uk)
+ * Rate limit: 600 requests/5 minutes per key
+ *
+ * Env: COMPANIES_HOUSE_API_KEY
+ */
+
+const CH_BASE = 'https://api.company-information.service.gov.uk'
+
+function getApiKey(): string | null {
+  return process.env.COMPANIES_HOUSE_API_KEY ?? null
+}
+
+function buildHeaders(): HeadersInit {
+  const key = getApiKey()
+  if (!key) return { Accept: 'application/json', 'User-Agent': 'EnergyTradeInspection/1.0' }
+  // Companies House uses HTTP Basic Auth: key as username, empty password
+  const encoded = Buffer.from(`${key}:`).toString('base64')
+  return {
+    Authorization: `Basic ${encoded}`,
+    Accept: 'application/json',
+    'User-Agent': 'EnergyTradeInspection/1.0',
+  }
+}
+
+export interface CHCompany {
+  company_number: string
+  title: string                       // Company name
+  company_type: string                // e.g. "ltd", "plc", "llp"
+  company_status: string              // "active" | "dissolved" | "liquidation"
+  date_of_creation?: string           // ISO date YYYY-MM-DD
+  registered_office_address?: {
+    address_line_1?: string
+    address_line_2?: string
+    locality?: string
+    postal_code?: string
+    country?: string
+  }
+  description?: string                // Only in search results
+}
+
+interface CHSearchResult {
+  items?: CHCompany[]
+  total_results?: number
+  kind: string
+}
+
+/** Regex patterns for UK company registration numbers */
+const UK_NUMBER_REGEX = /^(SC|NI|OC|SO|NC|R|IP|SP|IC|SI|NP|NV|RC|SR|NR|NO)?\d{6,8}$/i
+
+export function mightBeUKNumber(s: string): boolean {
+  return UK_NUMBER_REGEX.test(s.trim().toUpperCase())
+}
+
+/**
+ * Search Companies House for companies matching a query string.
+ * Returns up to 10 active companies.
+ */
+export async function searchCompaniesHouse(query: string, limit = 10): Promise<CHCompany[]> {
+  if (!query || query.trim().length < 2) return []
+  if (!getApiKey()) return []   // Silently skip if not configured
+
+  try {
+    const url = new URL('/search/companies', CH_BASE)
+    url.searchParams.set('q', query.trim())
+    url.searchParams.set('items_per_page', String(Math.min(limit, 20)))
+
+    const response = await fetch(url.toString(), {
+      headers: buildHeaders(),
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 300 },      // Cache 5 min
+    } as RequestInit)
+
+    if (!response.ok) return []
+
+    const data: CHSearchResult = await response.json()
+    return (data.items ?? []).filter((c) => c.company_status === 'active').slice(0, limit)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Fetch a single company by its Companies House number.
+ */
+export async function getCHCompanyByNumber(number: string): Promise<CHCompany | null> {
+  if (!number || !getApiKey()) return null
+
+  try {
+    const url = new URL(`/company/${encodeURIComponent(number.toUpperCase())}`, CH_BASE)
+    const response = await fetch(url.toString(), {
+      headers: buildHeaders(),
+      signal: AbortSignal.timeout(5000),
+    })
+
+    if (!response.ok) return null
+    return response.json() as Promise<CHCompany>
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Build a registered address string from the CH address object.
+ */
+export function formatCHAddress(addr: CHCompany['registered_office_address']): string | undefined {
+  if (!addr) return undefined
+  return [addr.address_line_1, addr.address_line_2, addr.locality, addr.postal_code, addr.country]
+    .filter(Boolean)
+    .join(', ')
+}
+
+/**
+ * Convert a CH company to SearchResult format.
+ */
+export function chToSearchResult(company: CHCompany) {
+  return {
+    id: `ch:${company.company_number}`,
+    name: company.title,
+    type: 'company' as const,
+    country: 'United Kingdom',
+    jurisdictionFlag: '🇬🇧',
+    sanctionStatus: 'unknown' as const,
+    authenticityScore: 0,
+    riskLevel: 'medium' as const,
+    registrationNumber: company.company_number,
+    slug: company.company_number.toLowerCase(),
+  }
+}
+
+/**
+ * Build a Company object from a CH API response (not persisted to DB).
+ */
+export function buildCHCompany(company: CHCompany) {
+  const address = formatCHAddress(company.registered_office_address)
+  return {
+    id: `ch:${company.company_number}`,
+    type: 'company' as const,
+    name: company.title,
+    slug: company.company_number.toLowerCase(),
+    registrationNumber: company.company_number,
+    incorporationDate: company.date_of_creation,
+    registeredAddress: address,
+    country: 'United Kingdom',
+    jurisdictionFlag: '🇬🇧',
+    sanctionStatus: 'unknown' as const,
+    authenticityScore: 0,
+    scoreBreakdown: {
+      entityExistence:     { score: 0, maxScore: 25 },
+      assetReality:        { score: 0, maxScore: 30 },
+      tradingTrackRecord:  { score: 0, maxScore: 25, phase2Pending: true },
+      documentConsistency: { score: 0, maxScore: 10 },
+      communityReputation: { score: 0, maxScore: 10 },
+    },
+    riskLevel: 'medium' as const,
+    riskFlags: [],
+    lastVerified: new Date().toISOString(),
+    dataSource: ['Companies House UK'],
+  }
+}
