@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import SearchBox from '@/components/search/SearchBox'
 import Header from '@/components/layout/Header'
 
@@ -90,7 +91,9 @@ export default function HomePage() {
             registries, and trading records — before you sign.
           </p>
 
-          <SearchBox />
+          <Suspense>
+            <SearchBox />
+          </Suspense>
 
           <p
             style={{

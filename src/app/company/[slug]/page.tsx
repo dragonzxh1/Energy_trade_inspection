@@ -5,10 +5,12 @@ import SanctionBadge from '@/components/entity/SanctionBadge'
 import RiskBadge from '@/components/entity/RiskBadge'
 import ScoreGauge from '@/components/entity/ScoreGauge'
 import TabNav from '@/components/entity/TabNav'
+import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
+import { auth } from '@/auth'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -363,13 +365,17 @@ function SourcesPanel({ sources }: { sources: string[] }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CompanyPage({ params }: PageProps) {
-  const { slug } = await params
+  const [{ slug }, session] = await Promise.all([params, auth()])
   const company = await getCompany(slug)
 
   if (!company) notFound()
 
-  const tier = getScoreTier(company.authenticityScore)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
+  const tier    = getScoreTier(company.authenticityScore)
+  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
+  const plan    = session?.user?.plan ?? 'free'
+  // F3 unlocked for Starter+ (authenticated, paid plan)
+  const f3Unlocked = !!session?.user && plan !== 'free'
+  const lockReason = !session?.user ? 'guest' : 'free'
 
   const jsonLd = buildCompanyJsonLd({
     name: company.name,
@@ -392,10 +398,16 @@ export default async function CompanyPage({ params }: PageProps) {
 
   const panels = [
     <RegistrationPanel key="registration" company={company} />,
-    <DirectorsPanel    key="directors"    company={company} />,
-    <VesselsPanel      key="vessels"      company={company} />,
-    <RiskFlagsPanel    key="flags"        company={company} />,
-    <SourcesPanel      key="sources"      sources={company.dataSource} />,
+    <ContentLock key="directors" unlocked={f3Unlocked} reason={lockReason}>
+      <DirectorsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="vessels" unlocked={f3Unlocked} reason={lockReason}>
+      <VesselsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
+      <RiskFlagsPanel company={company} />
+    </ContentLock>,
+    <SourcesPanel key="sources" sources={company.dataSource} />,
   ]
 
   return (
@@ -438,6 +450,32 @@ export default async function CompanyPage({ params }: PageProps) {
                 })}
               </time>
             </p>
+
+            {f3Unlocked ? (
+              <a
+                href={`/api/report/${company.slug}`}
+                download
+                style={{
+                  display: 'block',
+                  marginTop: 'var(--space-5)',
+                  padding: 'var(--space-2) var(--space-3)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '6px',
+                  color: 'var(--accent-primary)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                }}
+              >
+                ↓ Download PDF Report
+              </a>
+            ) : (
+              <p style={{ marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center' }}>
+                PDF export — Starter+
+              </p>
+            )}
           </aside>
 
           <main className="animate-fade-in-up-delay-1">

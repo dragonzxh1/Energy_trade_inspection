@@ -5,10 +5,12 @@ import SanctionBadge from '@/components/entity/SanctionBadge'
 import RiskBadge from '@/components/entity/RiskBadge'
 import ScoreGauge from '@/components/entity/ScoreGauge'
 import TabNav from '@/components/entity/TabNav'
+import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Vessel } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
+import { auth } from '@/auth'
 
 interface PageProps {
   params: Promise<{ imo: string }>
@@ -295,13 +297,16 @@ function SourcesPanel({ sources }: { sources: string[] }) {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function VesselPage({ params }: PageProps) {
-  const { imo } = await params
+  const [{ imo }, session] = await Promise.all([params, auth()])
   const vessel = await getVessel(imo)
 
   if (!vessel) notFound()
 
-  const tier = getScoreTier(vessel.authenticityScore)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
+  const tier    = getScoreTier(vessel.authenticityScore)
+  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
+  const plan    = session?.user?.plan ?? 'free'
+  const f3Unlocked = !!session?.user && plan !== 'free'
+  const lockReason = !session?.user ? 'guest' : 'free'
 
   const jsonLd = buildVesselJsonLd({
     name: vessel.name,
@@ -322,7 +327,9 @@ export default async function VesselPage({ params }: PageProps) {
 
   const panels = [
     <VesselDetailsPanel key="details" vessel={vessel} />,
-    <RiskFlagsPanel     key="flags"   vessel={vessel} />,
+    <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
+      <RiskFlagsPanel vessel={vessel} />
+    </ContentLock>,
     <PortHistoryPanel   key="history" />,
     <SourcesPanel       key="sources" sources={vessel.dataSource} />,
   ]
@@ -356,6 +363,32 @@ export default async function VesselPage({ params }: PageProps) {
             <div style={{ marginTop: 'var(--space-3)' }}>
               <RiskBadge level={vessel.riskLevel} />
             </div>
+
+            {f3Unlocked ? (
+              <a
+                href={`/api/report/${vessel.imo}`}
+                download
+                style={{
+                  display: 'block',
+                  marginTop: 'var(--space-5)',
+                  padding: 'var(--space-2) var(--space-3)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '6px',
+                  color: 'var(--accent-primary)',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                }}
+              >
+                ↓ Download PDF Report
+              </a>
+            ) : (
+              <p style={{ marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '11px', textAlign: 'center' }}>
+                PDF export — Starter+
+              </p>
+            )}
           </aside>
 
           <main className="animate-fade-in-up-delay-1">

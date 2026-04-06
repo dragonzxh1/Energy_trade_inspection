@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@react-pdf/renderer'],
   // Allow AI crawlers to index entity pages for GEO
   async headers() {
     return [

@@ -1,19 +1,33 @@
 import Link from 'next/link'
+import { auth, signOut } from '@/auth'
 import type { SanctionStatus } from '@/lib/types'
 
 interface HeaderProps {
-  /** Entity name shown in breadcrumb on entity pages */
   entityName?: string
-  /** Used to show a warning banner if entity is sanctioned */
   sanctionStatus?: SanctionStatus
 }
 
-export default function Header({ entityName, sanctionStatus }: HeaderProps) {
+const PLAN_LABEL: Record<string, string> = {
+  free:         'Free',
+  starter:      'Starter',
+  professional: 'Pro',
+  enterprise:   'Enterprise',
+}
+
+export default async function Header({ entityName, sanctionStatus }: HeaderProps) {
+  const session = await auth()
+  const user    = session?.user
+  const plan    = user?.plan ?? 'free'
   const isSanctioned = sanctionStatus === 'listed'
+
+  // Initials avatar fallback
+  const initials = user?.name
+    ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?'
 
   return (
     <>
-      {/* Sanction warning banner — highest visual priority */}
+      {/* Sanction warning banner */}
       {isSanctioned && (
         <div
           role="alert"
@@ -25,8 +39,7 @@ export default function Header({ entityName, sanctionStatus }: HeaderProps) {
           }}
         >
           <span style={{ color: 'var(--status-listed)', fontSize: '13px', fontWeight: 500 }}>
-            ⚠ This entity appears on one or more sanction lists. Exercise due diligence before
-            engaging.
+            ⚠ This entity appears on one or more sanction lists. Exercise due diligence before engaging.
           </span>
         </div>
       )}
@@ -53,7 +66,7 @@ export default function Header({ entityName, sanctionStatus }: HeaderProps) {
             gap: 'var(--space-4)',
           }}
         >
-          {/* Logo + optional breadcrumb */}
+          {/* Logo + breadcrumb */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
             <Link
               href="/"
@@ -68,15 +81,9 @@ export default function Header({ entityName, sanctionStatus }: HeaderProps) {
             >
               ETI
             </Link>
-
             {entityName && (
               <>
-                <span
-                  aria-hidden="true"
-                  style={{ color: 'var(--border-subtle)', fontSize: '16px' }}
-                >
-                  /
-                </span>
+                <span aria-hidden="true" style={{ color: 'var(--border-subtle)', fontSize: '16px' }}>/</span>
                 <span
                   style={{
                     color: 'var(--text-secondary)',
@@ -93,35 +100,110 @@ export default function Header({ entityName, sanctionStatus }: HeaderProps) {
             )}
           </div>
 
-          {/* Nav actions */}
-          <nav aria-label="Site navigation" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+          {/* Nav */}
+          <nav
+            aria-label="Site navigation"
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexShrink: 0 }}
+          >
             <Link
               href="/pricing"
-              style={{
-                color: 'var(--text-muted)',
-                fontSize: '13px',
-                textDecoration: 'none',
-              }}
+              style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
             >
               Pricing
             </Link>
 
-            {/* Language toggle — EN/ZH placeholder */}
-            <button
-              aria-label="Switch language"
-              style={{
-                background: 'none',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '4px',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontFamily: 'inherit',
-                padding: '4px 8px',
-              }}
-            >
-              中文
-            </button>
+            {user ? (
+              /* ── Logged-in state ── */
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                {/* Plan badge */}
+                {plan !== 'free' && (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: 'var(--accent-primary)',
+                      border: '1px solid var(--accent-primary)',
+                      borderRadius: '4px',
+                      padding: '2px 6px',
+                    }}
+                  >
+                    {PLAN_LABEL[plan] ?? plan}
+                  </span>
+                )}
+
+                {/* Avatar */}
+                {user.image ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={user.image}
+                    alt={user.name ?? 'User avatar'}
+                    width={28}
+                    height={28}
+                    style={{ borderRadius: '50%', flexShrink: 0 }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--accent-primary)',
+                      color: '#fff',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {initials}
+                  </span>
+                )}
+
+                {/* Sign out */}
+                <form
+                  action={async () => {
+                    'use server'
+                    await signOut({ redirectTo: '/' })
+                  }}
+                >
+                  <button
+                    type="submit"
+                    style={{
+                      background: 'none',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '4px',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontFamily: 'inherit',
+                      padding: '4px 8px',
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* ── Guest state ── */
+              <Link
+                href="/sign-in"
+                style={{
+                  backgroundColor: 'var(--accent-primary)',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                }}
+              >
+                Sign in
+              </Link>
+            )}
           </nav>
         </div>
       </header>

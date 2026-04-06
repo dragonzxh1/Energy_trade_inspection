@@ -1,26 +1,38 @@
+import Link from 'next/link'
+
 interface ContentLockProps {
   children: React.ReactNode
-  /** If true the content is accessible (user is subscribed). Default: false. */
+  /** True = user has access, render normally */
   unlocked?: boolean
+  /** 'guest' = not signed in | 'free' = signed in but free plan */
+  reason?: 'guest' | 'free'
 }
 
 /**
  * F3 content gate — blurs content and overlays an upgrade CTA.
- * Compliant with GEO: aria-hidden on locked content so crawlers see the gate message.
+ * GEO-safe: locked content is aria-hidden so crawlers see the gate message.
  */
-export default function ContentLock({ children, unlocked = false }: ContentLockProps) {
+export default function ContentLock({
+  children,
+  unlocked = false,
+  reason = 'guest',
+}: ContentLockProps) {
   if (unlocked) return <>{children}</>
 
+  const isGuest = reason === 'guest'
+
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Blurred content — hidden from assistive tech */}
+    <div style={{ position: 'relative', minHeight: '180px' }}>
+      {/* Blurred preview — hidden from assistive tech */}
       <div
         aria-hidden="true"
         style={{
-          filter: 'blur(4px)',
+          filter: 'blur(5px)',
           userSelect: 'none',
           pointerEvents: 'none',
-          opacity: 0.5,
+          opacity: 0.45,
+          maxHeight: '200px',
+          overflow: 'hidden',
         }}
       >
         {children}
@@ -32,8 +44,7 @@ export default function ContentLock({ children, unlocked = false }: ContentLockP
         style={{
           position: 'absolute',
           inset: 0,
-          background:
-            'linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%)',
+          background: 'linear-gradient(to bottom, transparent 0%, var(--bg-surface) 60%)',
         }}
       />
 
@@ -47,39 +58,74 @@ export default function ContentLock({ children, unlocked = false }: ContentLockP
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          padding: 'var(--space-6) var(--space-4)',
+          padding: 'var(--space-5) var(--space-4)',
           textAlign: 'center',
         }}
       >
         <p
           style={{
             color: 'var(--text-secondary)',
-            fontSize: '14px',
+            fontSize: '13px',
             marginBottom: 'var(--space-4)',
-            maxWidth: '320px',
+            maxWidth: '300px',
+            lineHeight: '20px',
           }}
         >
-          Registration details, directors, and vessel associations are available to
-          verified subscribers.
+          {isGuest
+            ? 'Sign in to access directors, vessel associations, and full risk intelligence.'
+            : 'Upgrade to Starter to unlock director records, associated vessels, and detailed risk flags.'}
         </p>
-        <a
-          href="/pricing"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: 'var(--space-3) var(--space-6)',
-            backgroundColor: 'var(--accent-primary)',
-            color: '#fff',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: 500,
-            textDecoration: 'none',
-          }}
-        >
-          Unlock Full Report
-        </a>
-        <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: 'var(--space-3)' }}>
-          Instant access · Cancel anytime
+
+        <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+          {isGuest ? (
+            <>
+              <Link
+                href="/sign-in"
+                style={{
+                  display: 'inline-block',
+                  padding: 'var(--space-2) var(--space-5)',
+                  backgroundColor: 'var(--accent-primary)',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  textDecoration: 'none',
+                }}
+              >
+                Sign in free
+              </Link>
+              <Link
+                href="/pricing"
+                style={{
+                  fontSize: '12px',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'none',
+                }}
+              >
+                View plans →
+              </Link>
+            </>
+          ) : (
+            <Link
+              href="/pricing"
+              style={{
+                display: 'inline-block',
+                padding: 'var(--space-2) var(--space-5)',
+                backgroundColor: 'var(--accent-primary)',
+                color: '#fff',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 500,
+                textDecoration: 'none',
+              }}
+            >
+              Unlock Full Report
+            </Link>
+          )}
+        </div>
+
+        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: 'var(--space-3)' }}>
+          {isGuest ? 'Free — 5 queries/month included' : 'Instant access · Cancel anytime'}
         </p>
       </div>
     </div>
