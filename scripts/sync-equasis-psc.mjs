@@ -182,60 +182,60 @@ class EquasisSession {
 }
 
 // ── HTML parser ────────────────────────────────────────────────────────────────
-// Equasis inspection table columns (typical):
-//   Date | Port | Authority | Nb defic. | Detained | Duration | Nature | Inspection type
+// Actual Equasis column order (verified from live HTML):
+//   Authority | Port of inspection | Date of report | Detention(Y/N) |
+//   PSC Organisation | Type of inspection | Duration (days) | Number of deficiencies | Details
 
 function parseInspectionTable(html, imo, vesselName) {
   const inspections = []
 
-  // Find the inspection table — it's usually under id="list-inspection" or class="table-responsive"
-  // Extract all table rows from the inspection section
-  const tableMatch = html.match(/<table[^>]*id="table-inspection"[^>]*>([\s\S]*?)<\/table>/i)
-    ?? html.match(/<table[^>]*class="[^"]*inspection[^"]*"[^>]*>([\s\S]*?)<\/table>/i)
-    ?? html.match(/<tbody>([\s\S]*?)<\/tbody>/i)
+  // Table class is "tableLSDD table table-striped table-responsive"
+  // Cells use uppercase <TD> tags with rowspan attributes
+  const tbodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/i)
+  if (!tbodyMatch) return inspections
 
-  if (!tableMatch) return inspections
-
-  const tbody = tableMatch[1]
-  const rows = tbody.match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi) ?? []
+  const rows = tbodyMatch[1].match(/<tr[^>]*>([\s\S]*?)<\/tr>/gi) ?? []
 
   for (const row of rows) {
-    if (row.includes('<th')) continue  // skip header rows
+    if (/<th/i.test(row)) continue  // skip header rows
 
-    const cells = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/gi) ?? [])
+    // Match both <td> and <TD> (Equasis uses uppercase)
+    const cells = (row.match(/<[Tt][Dd][^>]*>([\s\S]*?)<\/[Tt][Dd]>/gi) ?? [])
       .map(td => td.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim())
 
     if (cells.length < 4) continue
 
-    // Column order: Date, Port, Authority, Deficiencies, Detained, [Duration], [Nature]
-    const [rawDate, portName, authority, defStr, detainedStr] = cells
+    // Col 0: Authority, 1: Port, 2: Date, 3: Detained(Y/N),
+    // 4: PSC Org, 5: Type, 6: Duration, 7: Deficiencies
+    const authority    = cells[0] || 'Unknown'
+    const portName     = cells[1] || null
+    const rawDate      = cells[2] || ''
+    const detainedStr  = cells[3] || ''
+    const durationStr  = cells[6] || ''
+    const defStr       = cells[7] || '0'
 
-    // Parse date: "30/06/2023" or "2023-06-30"
     const inspection_date = parseDate(rawDate)
     if (!inspection_date) continue
 
+    const detained         = /^Y$/i.test(detainedStr.trim())
     const deficiency_count = parseInt(defStr, 10) || 0
-    const detained = /yes|Y|detained/i.test(detainedStr)
+    const durationDays     = parseInt(durationStr, 10)
+    const detention_days   = detained && !isNaN(durationDays) ? durationDays : null
 
-    // Extract detention days if present (often in parentheses or separate column)
-    const daysMatch = (cells[5] ?? '').match(/(\d+)/)
-    const detention_days = detained && daysMatch ? parseInt(daysMatch[1], 10) : null
-
-    // Result classification
-    const result = detained ? 'detained'
-      : deficiency_count > 0 ? 'deficiency'
+    const result = detained        ? 'detained'
+      : deficiency_count > 0       ? 'deficiency'
       : 'clear'
 
     inspections.push({
       imo,
       vessel_name:      vesselName,
       inspection_date,
-      port_name:        portName || null,
-      authority:        authority || 'Unknown',
+      port_name:        portName,
+      authority,
       result,
       deficiency_count,
       detention_days,
-      source_url:       `https://www.equasis.org/EquasisWeb/restricted/ShipInspection?fs=ShipInspection&P_IMO=${imo}`,
+      source_url: `https://www.equasis.org/EquasisWeb/restricted/ShipInspection?fs=ShipInspection&P_IMO=${imo}`,
     })
   }
 
