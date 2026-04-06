@@ -485,6 +485,63 @@ export async function getIcijMatches(entityId: string): Promise<IcijMatch[]> {
   }))
 }
 
+export interface IcijOfficerLink {
+  officerNodeId: string
+  officerName: string
+  relType: string            // DIRECTOR_OF, SHAREHOLDER_OF, etc.
+  entityNodeId: string
+  entityName: string
+  entityDataset: string
+  entityJurisdiction: string | null
+  entityStatus: string | null
+}
+
+/**
+ * For a given entity in our DB, find its ICIJ-linked officers/directors,
+ * then find what OTHER ICIJ entities those officers are connected to.
+ * Useful for: "Company X's director also controls Panama Papers shell company Y"
+ */
+export async function getIcijOfficerNetwork(entityId: string): Promise<IcijOfficerLink[]> {
+  const { rows } = await db.query(
+    `SELECT
+       r1.from_node_id   AS officer_node_id,
+       off.name          AS officer_name,
+       r2.rel_type,
+       r2.to_node_id     AS entity_node_id,
+       ent.name          AS entity_name,
+       ent.dataset       AS entity_dataset,
+       ent.jurisdiction  AS entity_jurisdiction,
+       ent.status        AS entity_status
+     FROM icij_entities ie
+     JOIN icij_relationships r1
+       ON r1.to_node_id = ie.node_id
+      AND r1.rel_type IN ('DIRECTOR_OF','SHAREHOLDER_OF','OFFICER_OF')
+     JOIN icij_entities off
+       ON off.node_id = r1.from_node_id
+     JOIN icij_relationships r2
+       ON r2.from_node_id = r1.from_node_id
+      AND r2.rel_type IN ('DIRECTOR_OF','SHAREHOLDER_OF','OFFICER_OF')
+      AND r2.to_node_id != ie.node_id
+     JOIN icij_entities ent
+       ON ent.node_id = r2.to_node_id
+      AND ent.entity_type = 'Entity'
+     WHERE ie.linked_entity_id = $1
+     ORDER BY off.name, ent.name
+     LIMIT 50`,
+    [entityId]
+  )
+  return rows.map((r) => ({
+    officerNodeId:     r.officer_node_id,
+    officerName:       r.officer_name,
+    relType:           r.rel_type,
+    entityNodeId:      r.entity_node_id,
+    entityName:        r.entity_name,
+    entityDataset:     r.entity_dataset,
+    entityJurisdiction: r.entity_jurisdiction,
+    entityStatus:      r.entity_status,
+  }))
+}
+
 export async function searchIcijByName(name: string, limit = 10): Promise<IcijMatch[]> {
   const { rows } = await db.query(
     `SELECT node_id, name, dataset, entity_type, countries, jurisdiction,

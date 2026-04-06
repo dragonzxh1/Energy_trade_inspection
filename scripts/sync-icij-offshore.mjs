@@ -2,61 +2,83 @@
 /**
  * sync-icij-offshore.mjs
  *
- * Downloads and imports ICIJ Offshore Leaks entity data into the icij_entities table.
+ * Imports ICIJ Offshore Leaks data into the icij_entities table.
+ *
+ * The ICIJ ZIP contains files organized by node TYPE (not by dataset):
+ *   nodes-entities.csv       ← companies (all datasets combined)
+ *   nodes-officers.csv       ← people / directors
+ *   nodes-intermediaries.csv ← registered agents
+ *   relationships.csv        ← edges between nodes
+ *
+ * The dataset is identified by the `sourceID` column in each CSV row.
  *
  * Usage:
- *   node scripts/sync-icij-offshore.mjs [--dataset panama_papers] [--limit 10000] [--dry-run]
+ *   # Point at the extracted directory
+ *   node scripts/sync-icij-offshore.mjs --dir "C:\Users\You\Downloads\icij-offshoreleaks-csv"
  *
- * Datasets available:
- *   panama_papers | pandora_papers | offshore_leaks | bahamas_leaks | paradise_papers
- *   Use "all" (default) to import everything.
+ *   # Or point at a specific CSV file
+ *   node scripts/sync-icij-offshore.mjs --file "C:\Users\You\Downloads\nodes-entities.csv"
  *
- * ICIJ bulk data: https://offshoreleaks.icij.org/pages/database
- * Direct CSV:     https://offshoreleaks-data.icij.org/offshoreleaks/csv/full-oldb-[dataset].zip
+ *   # Dry run (no DB writes)
+ *   node scripts/sync-icij-offshore.mjs --dir /path/to/csv --dry-run
+ *
+ *   # Limit rows (for testing)
+ *   node scripts/sync-icij-offshore.mjs --dir /path/to/csv --limit 5000
+ *
+ *   # Import only companies (skip officers/intermediaries)
+ *   node scripts/sync-icij-offshore.mjs --dir /path/to/csv --entities-only
  */
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { createReadStream, createWriteStream } from 'node:fs'
-import { pipeline } from 'node:stream/promises'
-import { createGunzip } from 'node:zlib'
-import { Readable } from 'node:stream'
+import { createReadStream } from 'node:fs'
 import pg from 'pg'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir   = path.resolve(__dirname, '..')
 
-// ── Config ────────────────────────────────────────────────────────────────────
+// ── Args ──────────────────────────────────────────────────────────────────────
 
-const args = process.argv.slice(2)
-const getArg = (flag, def) => {
-  const i = args.indexOf(flag)
-  return i !== -1 ? args[i + 1] : def
-}
+const args    = process.argv.slice(2)
+const getArg  = (flag, def) => { const i = args.indexOf(flag); return i !== -1 ? args[i + 1] : def }
 const hasFlag = (flag) => args.includes(flag)
 
-const DATASET_ARG = getArg('--dataset', 'all')
-const LIMIT       = parseInt(getArg('--limit', '0'), 10)   // 0 = no limit
-const DRY_RUN     = hasFlag('--dry-run')
-const BATCH_SIZE  = 500
+const DIR_ARG          = getArg('--dir',  null)
+const FILE_ARG         = getArg('--file', null)
+const LIMIT            = parseInt(getArg('--limit', '0'), 10)
+const DRY_RUN          = hasFlag('--dry-run')
+const ENTITIES_ONLY    = hasFlag('--entities-only')
+const BATCH_SIZE       = 500
 
-// ICIJ dataset slugs → CSV URL base names
-const DATASETS = {
-  panama_papers:   'panama-papers',
-  pandora_papers:  'pandora-papers',
-  offshore_leaks:  'offshore-leaks',
-  bahamas_leaks:   'bahamas-leaks',
-  paradise_papers: 'paradise-papers',
+if (!DIR_ARG && !FILE_ARG) {
+  console.error(`
+Usage:
+  node scripts/sync-icij-offshore.mjs --dir <path-to-extracted-zip-folder>
+  node scripts/sync-icij-offshore.mjs --file <path-to-nodes-entities.csv>
+
+Options:
+  --dry-run        Print stats but don't write to DB
+  --limit N        Only import first N rows (for testing)
+  --entities-only  Skip officers and intermediaries
+`)
+  process.exit(1)
 }
 
-const selectedDatasets = DATASET_ARG === 'all'
-  ? Object.keys(DATASETS)
-  : DATASET_ARG.split(',').map((d) => d.trim()).filter((d) => d in DATASETS)
+// ── sourceID → our dataset key ────────────────────────────────────────────────
 
-if (selectedDatasets.length === 0) {
-  console.error('No valid datasets specified. Use: panama_papers, pandora_papers, offshore_leaks, bahamas_leaks, paradise_papers, or all')
-  process.exit(1)
+const SOURCE_ID_MAP = {
+  'panama papers':   'panama_papers',
+  'pandora papers':  'pandora_papers',
+  'offshore leaks':  'offshore_leaks',
+  'bahamas leaks':   'bahamas_leaks',
+  'paradise papers': 'paradise_papers',
+}
+
+function normalizeSourceId(raw) {
+  if (!raw) return 'unknown'
+  const key = raw.trim().toLowerCase()
+  return SOURCE_ID_MAP[key] ?? key.replace(/\s+/g, '_')
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
@@ -73,7 +95,7 @@ loadEnv()
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
 
-// ── CSV parsing (no external deps — manual split) ─────────────────────────────
+// ── CSV parser ────────────────────────────────────────────────────────────────
 
 function parseCSVLine(line) {
   const fields = []
@@ -85,8 +107,7 @@ function parseCSVLine(line) {
       if (inQuotes && line[i + 1] === '"') { field += '"'; i++ }
       else inQuotes = !inQuotes
     } else if (ch === ',' && !inQuotes) {
-      fields.push(field)
-      field = ''
+      fields.push(field); field = ''
     } else {
       field += ch
     }
@@ -95,86 +116,91 @@ function parseCSVLine(line) {
   return fields
 }
 
-async function parseCSVStream(stream) {
-  const rows = []
-  let headerParsed = false
-  let headers = []
+async function* streamCSV(filePath) {
+  const stream = createReadStream(filePath, { encoding: 'utf8' })
   let leftover = ''
+  let headers = null
+  let rowCount = 0
 
   for await (const chunk of stream) {
-    const text = leftover + chunk.toString('utf8')
+    const text = leftover + chunk
     const lines = text.split('\n')
     leftover = lines.pop() ?? ''
+
     for (const line of lines) {
       if (!line.trim()) continue
-      if (!headerParsed) {
-        headers = parseCSVLine(line)
-        headerParsed = true
+      if (!headers) {
+        headers = parseCSVLine(line).map((h) => h.trim().replace(/^\uFEFF/, ''))
         continue
       }
       const values = parseCSVLine(line)
       const row = {}
-      headers.forEach((h, i) => { row[h.trim()] = (values[i] ?? '').trim() })
-      rows.push(row)
-      if (LIMIT > 0 && rows.length >= LIMIT) return { headers, rows }
+      headers.forEach((h, i) => { row[h] = (values[i] ?? '').trim() })
+      yield row
+      rowCount++
+      if (LIMIT > 0 && rowCount >= LIMIT) return
     }
   }
-  if (leftover.trim() && headerParsed) {
+  // last line
+  if (leftover.trim() && headers) {
     const values = parseCSVLine(leftover)
     const row = {}
-    headers.forEach((h, i) => { row[h.trim()] = (values[i] ?? '').trim() })
-    rows.push(row)
+    headers.forEach((h, i) => { row[h] = (values[i] ?? '').trim() })
+    yield row
   }
-  return { headers, rows }
 }
 
-// ── Download helpers ──────────────────────────────────────────────────────────
+// ── Row mapper ────────────────────────────────────────────────────────────────
+// ICIJ CSV columns (actual format):
+//   node_id, name, labels, jurisdiction, jurisdiction_description,
+//   company_type, address, incorporation_date, inactivation_date,
+//   struck_off_date, closed_date, status, sourceID, valid_until, note,
+//   country_codes, countries
 
-async function downloadFile(url, destPath) {
-  console.log(`  Downloading ${url}`)
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`)
-  const fileStream = createWriteStream(destPath)
-  await pipeline(Readable.fromWeb(res.body), fileStream)
-  console.log(`  Saved to ${destPath}`)
-}
+function mapRow(row, defaultType) {
+  const nodeId = row.node_id || row.nodeId || ''
+  const name   = row.name    || row.NAME   || ''
+  if (!nodeId || !name) return null
 
-// ── Import logic ──────────────────────────────────────────────────────────────
+  const sourceId   = normalizeSourceId(row.sourceID || row.source_id || '')
+  const entityType = row.labels || row.entity_type || defaultType || 'Entity'
+  const countries  = row.countries || row.country_codes || ''
+  const juris      = row.jurisdiction_description || row.jurisdiction || ''
+  const sourceUrl  = nodeId
+    ? `https://offshoreleaks.icij.org/nodes/${nodeId}`
+    : null
 
-function mapIcijRow(row, dataset) {
-  // ICIJ CSV columns vary slightly by dataset; handle both formats
   return {
-    node_id:            row.node_id || row.nodeId || '',
-    name:               row.name || row.NAME || '',
-    dataset,
-    entity_type:        row.labels || row.entity_type || 'Entity',
-    countries:          row.countries || row.country_codes || '',
-    jurisdiction:       row.jurisdiction || row.jurisdiction_description || '',
-    status:             row.status || '',
-    incorporation_date: row.incorporation_date || row.inactivation_date ? (row.incorporation_date || '') : '',
-    inactivation_date:  row.inactivation_date || '',
-    struck_off_date:    row.struck_off_date || '',
-    address:            row.address || row.registered_address || '',
-    source_url: row.sourceID
-      ? `https://offshoreleaks.icij.org/nodes/${row.node_id}`
-      : null,
+    node_id:            nodeId,
+    name,
+    dataset:            sourceId,
+    entity_type:        entityType,
+    countries:          countries || null,
+    jurisdiction:       juris || null,
+    status:             row.status || null,
+    incorporation_date: row.incorporation_date || null,
+    inactivation_date:  row.inactivation_date  || null,
+    struck_off_date:    row.struck_off_date    || null,
+    address:            row.address            || null,
+    source_url:         sourceUrl,
   }
 }
+
+// ── DB batch upsert ───────────────────────────────────────────────────────────
 
 async function upsertBatch(client, batch) {
-  if (batch.length === 0) return 0
-  const values = []
-  const placeholders = batch.map((row, i) => {
-    const base = i * 11
-    values.push(
-      row.node_id, row.name, row.dataset, row.entity_type,
-      row.countries || null, row.jurisdiction || null, row.status || null,
-      row.incorporation_date || null, row.inactivation_date || null,
-      row.struck_off_date || null, row.address || null
+  if (!batch.length) return 0
+  const vals = []
+  const placeholders = batch.map((r, i) => {
+    const b = i * 11
+    vals.push(
+      r.node_id, r.name, r.dataset, r.entity_type,
+      r.countries, r.jurisdiction, r.status,
+      r.incorporation_date, r.inactivation_date,
+      r.struck_off_date, r.address
     )
-    return `($${base+1},$${base+2},$${base+3},$${base+4},$${base+5},$${base+6},$${base+7},$${base+8},$${base+9},$${base+10},$${base+11})`
+    return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7},$${b+8},$${b+9},$${b+10},$${b+11})`
   })
-
   await client.query(`
     INSERT INTO icij_entities
       (node_id, name, dataset, entity_type, countries, jurisdiction, status,
@@ -182,6 +208,7 @@ async function upsertBatch(client, batch) {
     VALUES ${placeholders.join(',')}
     ON CONFLICT (node_id) DO UPDATE SET
       name               = EXCLUDED.name,
+      dataset            = EXCLUDED.dataset,
       entity_type        = EXCLUDED.entity_type,
       countries          = EXCLUDED.countries,
       jurisdiction       = EXCLUDED.jurisdiction,
@@ -191,72 +218,153 @@ async function upsertBatch(client, batch) {
       struck_off_date    = EXCLUDED.struck_off_date,
       address            = EXCLUDED.address,
       synced_at          = NOW()
-  `, values)
-
+  `, vals)
   return batch.length
 }
 
-async function importDataset(datasetKey) {
-  const slug = DATASETS[datasetKey]
-  const tmpDir = path.join(rootDir, 'tmp')
-  fs.mkdirSync(tmpDir, { recursive: true })
+// ── Import a single CSV file ──────────────────────────────────────────────────
 
-  // ICIJ provides entities CSV — the node type we care about most
-  // Full database ZIP: https://offshoreleaks-data.icij.org/offshoreleaks/csv/full-oldb-[slug].zip
-  // Entities-only CSV is inside the ZIP as nodes-[slug].csv
-  // For simplicity, we try a direct CSV URL first (ICIJ also provides per-type CSVs)
-  const csvUrl  = `https://offshoreleaks-data.icij.org/offshoreleaks/csv/nodes-${slug}.csv`
-  const csvPath = path.join(tmpDir, `icij-${datasetKey}.csv`)
-
-  if (!fs.existsSync(csvPath)) {
-    await downloadFile(csvUrl, csvPath)
-  } else {
-    console.log(`  Using cached ${csvPath}`)
+async function importFile(filePath, defaultType) {
+  if (!fs.existsSync(filePath)) {
+    console.log(`  Skipping (not found): ${filePath}`)
+    return 0
   }
 
-  const stream = createReadStream(csvPath)
-  console.log('  Parsing CSV…')
-  const { rows } = await parseCSVStream(stream)
-  console.log(`  Parsed ${rows.length} rows`)
+  const sizeMB = (fs.statSync(filePath).size / 1024 / 1024).toFixed(1)
+  console.log(`  ${path.basename(filePath)} (${sizeMB} MB)`)
+
+  const datasetCounts = {}
+  let imported = 0
+  let skipped  = 0
 
   if (DRY_RUN) {
-    console.log('  [dry-run] First 3 rows:', rows.slice(0, 3))
+    let count = 0
+    for await (const row of streamCSV(filePath)) {
+      count++
+      const dataset = normalizeSourceId(row.sourceID || row.source_id || '')
+      datasetCounts[dataset] = (datasetCounts[dataset] ?? 0) + 1
+    }
+    console.log(`  [dry-run] ${count} rows found`)
+    console.log('  By dataset:', datasetCounts)
     return 0
   }
 
   const client = await pool.connect()
-  let imported = 0
   try {
     let batch = []
-    for (const row of rows) {
-      if (!row.node_id && !row.nodeId) continue
-      if (!row.name && !row.NAME) continue
-      const mapped = mapIcijRow(row, datasetKey)
-      if (!mapped.node_id || !mapped.name) continue
+    for await (const row of streamCSV(filePath)) {
+      const mapped = mapRow(row, defaultType)
+      if (!mapped) { skipped++; continue }
       batch.push(mapped)
+      datasetCounts[mapped.dataset] = (datasetCounts[mapped.dataset] ?? 0) + 1
+
       if (batch.length >= BATCH_SIZE) {
         imported += await upsertBatch(client, batch)
         batch = []
         process.stdout.write(`\r  Imported ${imported}…`)
       }
     }
-    if (batch.length > 0) {
+    if (batch.length) {
       imported += await upsertBatch(client, batch)
     }
-    process.stdout.write(`\r  Imported ${imported} rows\n`)
+    process.stdout.write(`\r  Imported ${imported} rows (skipped ${skipped} empty)\n`)
+    console.log('  By dataset:', datasetCounts)
   } finally {
     client.release()
   }
   return imported
 }
 
-// ── Link matching: auto-link ICIJ entities to our entities table ──────────────
+// ── Import relationships.csv ──────────────────────────────────────────────────
+// relationships.csv columns:
+//   node_id_start, node_id_end, rel_type, link, start_date, end_date, sourceID
+
+async function importRelationships(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.log(`  Skipping (not found): ${filePath}`)
+    return 0
+  }
+
+  const sizeMB = (fs.statSync(filePath).size / 1024 / 1024).toFixed(1)
+  console.log(`  relationships.csv (${sizeMB} MB)`)
+
+  if (DRY_RUN) {
+    let count = 0
+    const typeCounts = {}
+    for await (const row of streamCSV(filePath)) {
+      count++
+      const t = row.rel_type || row.type || 'UNKNOWN'
+      typeCounts[t] = (typeCounts[t] ?? 0) + 1
+    }
+    console.log(`  [dry-run] ${count} relationships`)
+    console.log('  By type:', typeCounts)
+    return 0
+  }
+
+  const client = await pool.connect()
+  let imported = 0
+  try {
+    // Truncate first for clean re-import
+    await client.query('TRUNCATE icij_relationships')
+
+    let batch = []
+    for await (const row of streamCSV(filePath)) {
+      const fromId  = row.node_id_start || row.START_ID || ''
+      const toId    = row.node_id_end   || row.END_ID   || ''
+      const relType = row.rel_type      || row.type     || ''
+      if (!fromId || !toId || !relType) continue
+
+      batch.push({
+        rel_type:     relType,
+        from_node_id: fromId,
+        to_node_id:   toId,
+        dataset:      normalizeSourceId(row.sourceID || ''),
+        start_date:   row.start_date || null,
+        end_date:     row.end_date   || null,
+      })
+
+      if (batch.length >= BATCH_SIZE) {
+        const vals = []
+        const ph = batch.map((r, i) => {
+          const b = i * 6
+          vals.push(r.rel_type, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
+          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6})`
+        })
+        await client.query(
+          `INSERT INTO icij_relationships (rel_type, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
+          vals
+        )
+        imported += batch.length
+        batch = []
+        process.stdout.write(`\r  Imported ${imported} relationships…`)
+      }
+    }
+    if (batch.length) {
+      const vals = []
+      const ph = batch.map((r, i) => {
+        const b = i * 6
+        vals.push(r.rel_type, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
+        return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6})`
+      })
+      await client.query(
+        `INSERT INTO icij_relationships (rel_type, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
+        vals
+      )
+      imported += batch.length
+    }
+    process.stdout.write(`\r  Imported ${imported} relationships\n`)
+  } finally {
+    client.release()
+  }
+  return imported
+}
+
+// ── Link ICIJ → our entities ──────────────────────────────────────────────────
 
 async function linkToEntities() {
-  console.log('\nLinking ICIJ matches to local entity database…')
+  console.log('\nLinking ICIJ entities to local company database…')
   const client = await pool.connect()
   try {
-    // Use pg_trgm similarity to find probable matches (threshold 0.7)
     const { rowCount } = await client.query(`
       UPDATE icij_entities i
       SET
@@ -264,9 +372,9 @@ async function linkToEntities() {
         match_confidence = similarity(lower(i.name), lower(e.name))
       FROM entities e
       WHERE
-        linked_entity_id IS NULL
-        AND similarity(lower(i.name), lower(e.name)) >= 0.7
+        i.linked_entity_id IS NULL
         AND e.entity_type = 'company'
+        AND similarity(lower(i.name), lower(e.name)) >= 0.7
     `)
     console.log(`Linked ${rowCount} ICIJ entries to local entities.`)
   } finally {
@@ -277,19 +385,38 @@ async function linkToEntities() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log(`ICIJ Offshore Leaks sync — datasets: ${selectedDatasets.join(', ')}`)
-  if (DRY_RUN) console.log('[DRY RUN — no writes to DB]')
-  if (LIMIT)   console.log(`[LIMIT: ${LIMIT} rows per dataset]`)
+  console.log('ICIJ Offshore Leaks import')
+  if (DRY_RUN)       console.log('[DRY RUN]')
+  if (LIMIT)         console.log(`[LIMIT: ${LIMIT} rows per file]`)
+  if (ENTITIES_ONLY) console.log('[ENTITIES ONLY — skipping officers, intermediaries, relationships]')
 
   let total = 0
-  for (const dataset of selectedDatasets) {
-    console.log(`\nDataset: ${dataset}`)
-    try {
-      const n = await importDataset(dataset)
-      total += n
-      console.log(`  Done: ${n} rows`)
-    } catch (err) {
-      console.error(`  Error importing ${dataset}:`, err.message)
+
+  if (FILE_ARG) {
+    const filePath = path.resolve(FILE_ARG)
+    console.log(`\nFile: ${filePath}`)
+    total += await importFile(filePath, 'Entity')
+  } else {
+    const dir = path.resolve(DIR_ARG)
+    console.log(`\nDirectory: ${dir}`)
+
+    // 1. Node files
+    const NODE_FILES = [
+      { name: 'nodes-entities.csv',       type: 'Entity' },
+      ...(!ENTITIES_ONLY ? [
+        { name: 'nodes-officers.csv',       type: 'Officer' },
+        { name: 'nodes-intermediaries.csv', type: 'Intermediary' },
+      ] : []),
+    ]
+    for (const { name, type } of NODE_FILES) {
+      console.log(`\n[${type}] ${name}`)
+      total += await importFile(path.join(dir, name), type)
+    }
+
+    // 2. Relationships
+    if (!ENTITIES_ONLY) {
+      console.log('\n[Relationships] relationships.csv')
+      await importRelationships(path.join(dir, 'relationships.csv'))
     }
   }
 
@@ -297,7 +424,7 @@ async function main() {
     await linkToEntities()
   }
 
-  console.log(`\nTotal imported: ${total} rows`)
+  console.log(`\nDone. Total node rows imported: ${total}`)
   await pool.end()
 }
 
