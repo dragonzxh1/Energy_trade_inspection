@@ -515,12 +515,12 @@ export async function getIcijOfficerNetwork(entityId: string): Promise<IcijOffic
      FROM icij_entities ie
      JOIN icij_relationships r1
        ON r1.to_node_id = ie.node_id
-      AND r1.rel_type IN ('DIRECTOR_OF','SHAREHOLDER_OF','OFFICER_OF')
+      AND r1.rel_type = 'officer_of'
      JOIN icij_entities off
        ON off.node_id = r1.from_node_id
      JOIN icij_relationships r2
        ON r2.from_node_id = r1.from_node_id
-      AND r2.rel_type IN ('DIRECTOR_OF','SHAREHOLDER_OF','OFFICER_OF')
+      AND r2.rel_type = 'officer_of'
       AND r2.to_node_id != ie.node_id
      JOIN icij_entities ent
        ON ent.node_id = r2.to_node_id

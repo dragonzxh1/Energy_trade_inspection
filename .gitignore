@@ -36,3 +36,7 @@ yarn-error.log*
 *.csv
 __pycache__/
 *.pyc
+
+# ICIJ / external dataset CSVs (large files, not committed)
+database/
+tmp/

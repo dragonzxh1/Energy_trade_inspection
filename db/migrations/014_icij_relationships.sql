@@ -10,7 +10,8 @@
 
 CREATE TABLE IF NOT EXISTS icij_relationships (
   id            BIGSERIAL PRIMARY KEY,
-  rel_type      TEXT NOT NULL,          -- DIRECTOR_OF, SHAREHOLDER_OF, OFFICER_OF, INTERMEDIARY_OF, REGISTERED_ADDRESS
+  rel_type      TEXT NOT NULL,          -- officer_of, intermediary_of, registered_address, same_name_as, etc.
+  link          TEXT,                   -- specific role: 'director of', 'shareholder of', 'beneficial owner', etc.
   from_node_id  TEXT NOT NULL,          -- node_id from icij_entities
   to_node_id    TEXT NOT NULL,          -- node_id from icij_entities
   dataset       TEXT,                   -- panama_papers, pandora_papers, etc.
@@ -27,4 +28,6 @@ CREATE INDEX IF NOT EXISTS idx_icij_rel_linked ON icij_relationships (from_node_
 -- Composite: find all entities a given officer is connected to
 CREATE INDEX IF NOT EXISTS idx_icij_officer_entities
   ON icij_relationships (from_node_id, rel_type)
-  WHERE rel_type IN ('DIRECTOR_OF', 'SHAREHOLDER_OF', 'OFFICER_OF');
+  WHERE rel_type = 'officer_of';
+
+CREATE INDEX IF NOT EXISTS idx_icij_rel_link ON icij_relationships (link) WHERE link IS NOT NULL;

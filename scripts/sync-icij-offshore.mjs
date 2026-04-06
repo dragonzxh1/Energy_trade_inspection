@@ -190,6 +190,11 @@ function mapRow(row, defaultType) {
 
 async function upsertBatch(client, batch) {
   if (!batch.length) return 0
+  // Deduplicate by node_id within the batch (last write wins)
+  const seen = new Map()
+  for (const r of batch) seen.set(r.node_id, r)
+  batch = [...seen.values()]
+
   const vals = []
   const placeholders = batch.map((r, i) => {
     const b = i * 11
@@ -316,6 +321,7 @@ async function importRelationships(filePath) {
 
       batch.push({
         rel_type:     relType,
+        link:         row.link || null,
         from_node_id: fromId,
         to_node_id:   toId,
         dataset:      normalizeSourceId(row.sourceID || ''),
@@ -326,12 +332,12 @@ async function importRelationships(filePath) {
       if (batch.length >= BATCH_SIZE) {
         const vals = []
         const ph = batch.map((r, i) => {
-          const b = i * 6
-          vals.push(r.rel_type, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
-          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6})`
+          const b = i * 7
+          vals.push(r.rel_type, r.link, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
+          return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7})`
         })
         await client.query(
-          `INSERT INTO icij_relationships (rel_type, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
+          `INSERT INTO icij_relationships (rel_type, link, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
           vals
         )
         imported += batch.length
@@ -342,12 +348,12 @@ async function importRelationships(filePath) {
     if (batch.length) {
       const vals = []
       const ph = batch.map((r, i) => {
-        const b = i * 6
-        vals.push(r.rel_type, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
-        return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6})`
+        const b = i * 7
+        vals.push(r.rel_type, r.link, r.from_node_id, r.to_node_id, r.dataset, r.start_date, r.end_date)
+        return `($${b+1},$${b+2},$${b+3},$${b+4},$${b+5},$${b+6},$${b+7})`
       })
       await client.query(
-        `INSERT INTO icij_relationships (rel_type, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
+        `INSERT INTO icij_relationships (rel_type, link, from_node_id, to_node_id, dataset, start_date, end_date) VALUES ${ph.join(',')}`,
         vals
       )
       imported += batch.length
