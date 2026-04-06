@@ -10,7 +10,8 @@ import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
-import { getEntityByKey } from '@/lib/server/repository'
+import { getEntityByKey, getIcijMatches } from '@/lib/server/repository'
+import type { IcijMatch } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
@@ -317,6 +318,95 @@ function RiskFlagsPanel({ company }: { company: Company }) {
   )
 }
 
+const DATASET_LABEL: Record<string, string> = {
+  panama_papers:   'Panama Papers',
+  pandora_papers:  'Pandora Papers',
+  offshore_leaks:  'Offshore Leaks',
+  bahamas_leaks:   'Bahamas Leaks',
+  paradise_papers: 'Paradise Papers',
+}
+
+const DATASET_COLOR: Record<string, string> = {
+  panama_papers:   '#ef4444',
+  pandora_papers:  '#f97316',
+  offshore_leaks:  '#eab308',
+  bahamas_leaks:   '#8b5cf6',
+  paradise_papers: '#3b82f6',
+}
+
+function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
+  if (matches.length === 0) {
+    return (
+      <div style={card}>
+        <p style={sectionTitle}>Offshore Leaks</p>
+        <p style={emptyState}>No matches found in ICIJ offshore leaks datasets.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center', marginTop: 'var(--space-2)' }}>
+          Covers Panama Papers, Pandora Papers, Offshore Leaks, Bahamas Leaks, and Paradise Papers.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <div style={card}>
+        <p style={sectionTitle}>Offshore Leaks ({matches.length} match{matches.length !== 1 ? 'es' : ''})</p>
+        {matches.map((m) => (
+          <div key={m.nodeId} style={{ padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: '4px' }}>
+                  <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>{m.name}</p>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+                    color: '#fff', backgroundColor: DATASET_COLOR[m.dataset] ?? 'var(--text-muted)',
+                    padding: '1px 6px', borderRadius: '4px',
+                  }}>
+                    {DATASET_LABEL[m.dataset] ?? m.dataset}
+                  </span>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                  {m.entityType ?? 'Entity'}
+                  {m.jurisdiction ? ` · ${m.jurisdiction}` : ''}
+                  {m.countries ? ` · ${m.countries}` : ''}
+                  {m.incorporationDate ? ` · Inc. ${m.incorporationDate}` : ''}
+                </p>
+                {m.address && (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic' }}>
+                    {m.address}
+                  </p>
+                )}
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <p style={{
+                  fontSize: '12px', fontWeight: 600,
+                  color: m.matchConfidence >= 0.8 ? 'var(--status-listed)' : 'var(--text-muted)',
+                }}>
+                  {Math.round(m.matchConfidence * 100)}% match
+                </p>
+                {m.sourceUrl && (
+                  <a
+                    href={m.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--accent-primary)', fontSize: '11px', textDecoration: 'none' }}
+                  >
+                    ICIJ ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: '16px' }}>
+        Data from the ICIJ Offshore Leaks Database. Matches are based on name similarity
+        and may include different entities with similar names. Verify against primary sources.
+      </p>
+    </div>
+  )
+}
+
 function SourcesPanel({ sources }: { sources: string[] }) {
   const SOURCE_LINKS: Record<string, string> = {
     'OpenSanctions':    'https://www.opensanctions.org',
@@ -428,15 +518,16 @@ export default async function CompanyPage({ params }: PageProps) {
   const f3Unlocked = !!session?.user && plan !== 'free'
   const lockReason = !session?.user ? 'guest' : 'free'
 
-  // Watchlist check (intelligence is now fetched client-side)
+  // Watchlist check + ICIJ matches (parallel)
   let isWatching = false
-  if (session?.user && (plan === 'professional' || plan === 'enterprise')) {
-    const { rows } = await db.query(
-      `SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`,
-      [session.user.id, company.id]
-    )
-    isWatching = rows.length > 0
-  }
+  const [watchlistRows, icijMatches] = await Promise.all([
+    session?.user && (plan === 'professional' || plan === 'enterprise')
+      ? db.query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [session.user.id, company.id])
+          .then((r) => r.rows)
+      : Promise.resolve([]),
+    f3Unlocked ? getIcijMatches(company.id) : Promise.resolve([]),
+  ])
+  isWatching = watchlistRows.length > 0
 
   const jsonLd = buildCompanyJsonLd({
     name: company.name,
@@ -454,6 +545,7 @@ export default async function CompanyPage({ params }: PageProps) {
     { id: 'directors',     label: 'Directors' },
     { id: 'vessels',       label: 'Vessels' },
     { id: 'flags',         label: 'Risk Flags' },
+    { id: 'offshore',      label: 'Offshore Leaks' },
     { id: 'intelligence',  label: 'Intelligence' },
     { id: 'sources',       label: 'Sources' },
   ]
@@ -468,6 +560,9 @@ export default async function CompanyPage({ params }: PageProps) {
     </ContentLock>,
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="offshore" unlocked={f3Unlocked} reason={lockReason}>
+      <OffshoreLeaksPanel matches={icijMatches} />
     </ContentLock>,
     <ContentLock key="intelligence" unlocked={f3Unlocked} reason={lockReason}>
       <IntelligencePanel entityType="company" entityKey={company.slug} />

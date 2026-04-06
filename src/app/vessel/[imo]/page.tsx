@@ -10,7 +10,8 @@ import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Vessel } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
-import { getEntityByKey } from '@/lib/server/repository'
+import { getEntityByKey, getPscSummary, getPscInspections } from '@/lib/server/repository'
+import type { PscSummary, PscInspection } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
@@ -233,23 +234,97 @@ function RiskFlagsPanel({ vessel }: { vessel: Vessel }) {
   )
 }
 
-function PortHistoryPanel() {
+function PscSummaryPanel({ summary }: { summary: PscSummary }) {
+  const resultColor = (result: string | null) => {
+    if (result === 'detained')      return 'var(--status-listed)'
+    if (result === 'deficiency')    return '#f97316'
+    if (result === 'no_deficiency') return 'var(--status-clear)'
+    return 'var(--text-muted)'
+  }
+  const resultLabel = (result: string | null) => {
+    if (result === 'detained')      return 'Detained'
+    if (result === 'deficiency')    return 'Deficiency found'
+    if (result === 'no_deficiency') return 'No deficiency'
+    return '—'
+  }
+
   return (
     <div style={card}>
-      <p style={sectionTitle}>Port State Control History</p>
-      <div
-        style={{
-          textAlign: 'center',
-          padding: 'var(--space-8) 0',
-        }}
-      >
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500, marginBottom: 'var(--space-2)' }}>
-          Port History — Phase 2
-        </p>
-        <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px', maxWidth: '320px', margin: '0 auto' }}>
-          Paris MOU and Tokyo MOU port state control inspection records will be available in Phase 2.
-        </p>
+      <p style={sectionTitle}>Port State Control Summary</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+        {[
+          { label: 'Inspections', value: summary.totalInspections },
+          { label: 'Detentions',  value: summary.detentions },
+          { label: 'Deficiency rate', value: summary.totalInspections > 0 ? `${Math.round(summary.deficiencyRate * 100)}%` : '—' },
+        ].map(({ label, value }) => (
+          <div key={label} style={{ textAlign: 'center', padding: 'var(--space-3)', backgroundColor: 'var(--bg-elevated)', borderRadius: '8px' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700 }}>{value}</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>{label}</p>
+          </div>
+        ))}
       </div>
+      {summary.lastInspectionDate && (
+        <div style={{ ...row, borderBottom: 'none' }}>
+          <span style={rowLabel}>Last inspection</span>
+          <span style={rowValue}>
+            {new Date(summary.lastInspectionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+            {' '}
+            <span style={{ color: resultColor(summary.lastResult), fontWeight: 500 }}>
+              ({resultLabel(summary.lastResult)})
+            </span>
+          </span>
+        </div>
+      )}
+      {summary.totalInspections === 0 && (
+        <p style={emptyState}>No port state control inspections on record.</p>
+      )}
+    </div>
+  )
+}
+
+function PscInspectionsPanel({ inspections }: { inspections: PscInspection[] }) {
+  const RESULT_COLOR: Record<string, string> = {
+    detained:      'var(--status-listed)',
+    deficiency:    '#f97316',
+    no_deficiency: 'var(--status-clear)',
+  }
+  const RESULT_LABEL: Record<string, string> = {
+    detained:      'Detained',
+    deficiency:    'Deficiency',
+    no_deficiency: 'Clear',
+  }
+
+  return (
+    <div style={card}>
+      <p style={sectionTitle}>Recent Inspections ({inspections.length})</p>
+      {inspections.map((ins) => (
+        <div key={ins.id} style={{ padding: 'var(--space-3) 0', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>
+                {ins.portName ?? ins.portLocode ?? 'Unknown port'} · {ins.authority}
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
+                {new Date(ins.inspectionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                {ins.deficiencyCount > 0 && ` · ${ins.deficiencyCount} deficienc${ins.deficiencyCount === 1 ? 'y' : 'ies'}`}
+                {ins.detentionDays && ` · Detained ${ins.detentionDays}d`}
+              </p>
+              {ins.deficiencies.length > 0 && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic' }}>
+                  {ins.deficiencies.slice(0, 3).join(', ')}{ins.deficiencies.length > 3 ? '…' : ''}
+                </p>
+              )}
+            </div>
+            <span style={{
+              fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+              color: RESULT_COLOR[ins.result] ?? 'var(--text-muted)',
+              flexShrink: 0, marginLeft: 'var(--space-3)',
+            }}>
+              {RESULT_LABEL[ins.result] ?? ins.result}
+            </span>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -359,15 +434,17 @@ export default async function VesselPage({ params }: PageProps) {
   const f3Unlocked = !!session?.user && plan !== 'free'
   const lockReason = !session?.user ? 'guest' : 'free'
 
-  // Watchlist check (intelligence is now fetched client-side)
+  // Watchlist check + PSC data (fetched in parallel)
   let isWatching = false
-  if (session?.user && (plan === 'professional' || plan === 'enterprise')) {
-    const { rows } = await db.query(
-      `SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`,
-      [session.user.id, vessel.id]
-    )
-    isWatching = rows.length > 0
-  }
+  const [watchlistRows, pscSummary, pscInspections] = await Promise.all([
+    session?.user && (plan === 'professional' || plan === 'enterprise')
+      ? db.query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [session.user.id, vessel.id])
+          .then((r) => r.rows)
+      : Promise.resolve([]),
+    getPscSummary(vessel.imo),
+    f3Unlocked ? getPscInspections(vessel.imo, 10) : Promise.resolve([]),
+  ])
+  isWatching = watchlistRows.length > 0
 
   const jsonLd = buildVesselJsonLd({
     name: vessel.name,
@@ -392,7 +469,12 @@ export default async function VesselPage({ params }: PageProps) {
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel vessel={vessel} />
     </ContentLock>,
-    <PortHistoryPanel key="history" />,
+    <div key="history" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+      <PscSummaryPanel summary={pscSummary} />
+      <ContentLock unlocked={f3Unlocked} reason={lockReason}>
+        <PscInspectionsPanel inspections={pscInspections} />
+      </ContentLock>
+    </div>,
     <ContentLock key="intelligence" unlocked={f3Unlocked} reason={lockReason}>
       <IntelligencePanel entityType="vessel" entityKey={vessel.imo} />
     </ContentLock>,

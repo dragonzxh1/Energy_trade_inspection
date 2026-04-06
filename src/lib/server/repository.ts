@@ -362,3 +362,279 @@ export function getPeriodBounds(baseDate = new Date()) {
     end: end.toISOString().slice(0, 10),
   }
 }
+
+// ── PSC Inspections ───────────────────────────────────────────────────────────
+
+export interface PscInspection {
+  id: string
+  imo: string
+  vesselName: string | null
+  inspectionDate: string
+  portLocode: string | null
+  portName: string | null
+  authority: string
+  result: 'no_deficiency' | 'deficiency' | 'detained'
+  deficiencyCount: number
+  detentionDays: number | null
+  deficiencies: string[]
+  sourceUrl: string | null
+}
+
+export interface PscSummary {
+  totalInspections: number
+  detentions: number
+  deficiencyRate: number   // 0–1
+  lastInspectionDate: string | null
+  lastResult: string | null
+}
+
+export async function getPscSummary(imo: string): Promise<PscSummary> {
+  const { rows } = await db.query<{
+    total: string
+    detentions: string
+    with_deficiency: string
+    last_date: string | null
+    last_result: string | null
+  }>(
+    `SELECT
+       COUNT(*)                                         AS total,
+       COUNT(*) FILTER (WHERE result = 'detained')     AS detentions,
+       COUNT(*) FILTER (WHERE result != 'no_deficiency') AS with_deficiency,
+       MAX(inspection_date)::TEXT                       AS last_date,
+       (ARRAY_AGG(result ORDER BY inspection_date DESC))[1] AS last_result
+     FROM psc_inspections
+     WHERE imo = $1`,
+    [imo]
+  )
+  const r = rows[0]
+  const total = parseInt(r?.total ?? '0', 10)
+  return {
+    totalInspections: total,
+    detentions: parseInt(r?.detentions ?? '0', 10),
+    deficiencyRate: total > 0 ? parseInt(r?.with_deficiency ?? '0', 10) / total : 0,
+    lastInspectionDate: r?.last_date ?? null,
+    lastResult: r?.last_result ?? null,
+  }
+}
+
+export async function getPscInspections(imo: string, limit = 10): Promise<PscInspection[]> {
+  const { rows } = await db.query(
+    `SELECT id, imo, vessel_name, inspection_date::TEXT, port_locode,
+            port_name, authority, result, deficiency_count, detention_days,
+            COALESCE(deficiencies, '[]'::jsonb) AS deficiencies, source_url
+     FROM psc_inspections
+     WHERE imo = $1
+     ORDER BY inspection_date DESC
+     LIMIT $2`,
+    [imo, limit]
+  )
+  return rows.map((r) => ({
+    id: r.id,
+    imo: r.imo,
+    vesselName: r.vessel_name,
+    inspectionDate: r.inspection_date,
+    portLocode: r.port_locode,
+    portName: r.port_name,
+    authority: r.authority,
+    result: r.result,
+    deficiencyCount: r.deficiency_count ?? 0,
+    detentionDays: r.detention_days ?? null,
+    deficiencies: Array.isArray(r.deficiencies) ? r.deficiencies : [],
+    sourceUrl: r.source_url,
+  }))
+}
+
+// ── ICIJ Offshore Leaks ───────────────────────────────────────────────────────
+
+export interface IcijMatch {
+  nodeId: string
+  name: string
+  dataset: string
+  entityType: string | null
+  countries: string | null
+  jurisdiction: string | null
+  status: string | null
+  incorporationDate: string | null
+  address: string | null
+  sourceUrl: string | null
+  matchConfidence: number
+}
+
+export async function getIcijMatches(entityId: string): Promise<IcijMatch[]> {
+  const { rows } = await db.query(
+    `SELECT node_id, name, dataset, entity_type, countries, jurisdiction,
+            status, incorporation_date, address, source_url, match_confidence
+     FROM icij_entities
+     WHERE linked_entity_id = $1
+     ORDER BY match_confidence DESC
+     LIMIT 20`,
+    [entityId]
+  )
+  return rows.map((r) => ({
+    nodeId: r.node_id,
+    name: r.name,
+    dataset: r.dataset,
+    entityType: r.entity_type,
+    countries: r.countries,
+    jurisdiction: r.jurisdiction,
+    status: r.status,
+    incorporationDate: r.incorporation_date,
+    address: r.address,
+    sourceUrl: r.source_url,
+    matchConfidence: parseFloat(r.match_confidence ?? '0'),
+  }))
+}
+
+export async function searchIcijByName(name: string, limit = 10): Promise<IcijMatch[]> {
+  const { rows } = await db.query(
+    `SELECT node_id, name, dataset, entity_type, countries, jurisdiction,
+            status, incorporation_date, address, source_url,
+            similarity(lower(name), lower($1)) AS match_confidence
+     FROM icij_entities
+     WHERE lower(name) % lower($1)
+     ORDER BY match_confidence DESC
+     LIMIT $2`,
+    [name, limit]
+  )
+  return rows.map((r) => ({
+    nodeId: r.node_id,
+    name: r.name,
+    dataset: r.dataset,
+    entityType: r.entity_type,
+    countries: r.countries,
+    jurisdiction: r.jurisdiction,
+    status: r.status,
+    incorporationDate: r.incorporation_date,
+    address: r.address,
+    sourceUrl: r.source_url,
+    matchConfidence: parseFloat(r.match_confidence ?? '0'),
+  }))
+}
+
+// ── Ports ─────────────────────────────────────────────────────────────────────
+
+export interface Port {
+  locode: string
+  name: string
+  country: string
+  region: string | null
+  lat: number | null
+  lng: number | null
+  portType: string | null
+  size: string | null
+  maxVessel: string | null
+  fuelOil: boolean
+  diesel: boolean
+  freshWater: boolean
+  provisions: boolean
+  crane: boolean
+  drydock: string | null
+  isEnergyHub: boolean
+  maxDraftM: number | null       // max allowable vessel draft (metres)
+  channelDepthM: number | null   // approach channel depth (metres)
+  hasStsZone: boolean            // has designated STS anchorage
+  stsZoneName: string | null
+  stsAuthority: string | null
+}
+
+export interface DraftRiskResult {
+  canBerth: boolean             // vessel draft <= port max draft
+  vesselDraftM: number | null   // from vessel metadata
+  portMaxDraftM: number | null
+  marginM: number | null        // positive = safe, negative = over-limit
+  isStsPort: boolean            // port is STS-only anchorage
+  warning: string | null        // human-readable risk message
+}
+
+const PORT_SELECT = `
+  locode, name, country, region, lat, lng, port_type, size, max_vessel,
+  fuel_oil, diesel, fresh_water, provisions, crane, drydock, is_energy_hub,
+  max_draft_m, channel_depth_m, has_sts_zone, sts_zone_name, sts_authority
+`
+
+export async function getEnergyHubPorts(): Promise<Port[]> {
+  const { rows } = await db.query(
+    `SELECT ${PORT_SELECT} FROM ports WHERE is_energy_hub = TRUE ORDER BY name`
+  )
+  return rows.map(mapPort)
+}
+
+export async function getPortByLocode(locode: string): Promise<Port | null> {
+  const { rows } = await db.query(
+    `SELECT ${PORT_SELECT} FROM ports WHERE locode = $1`,
+    [locode.toUpperCase()]
+  )
+  return rows[0] ? mapPort(rows[0]) : null
+}
+
+/**
+ * Check if a vessel with a given draft (metres) can physically berth at a port.
+ * Returns a structured risk result including STS zone flags.
+ */
+export async function checkDraftRisk(
+  locode: string,
+  vesselDraftM: number | null
+): Promise<DraftRiskResult> {
+  const port = await getPortByLocode(locode)
+  if (!port) {
+    return { canBerth: true, vesselDraftM, portMaxDraftM: null, marginM: null, isStsPort: false, warning: null }
+  }
+
+  const isStsPort = port.portType === 'anchorage'
+  const portMaxDraftM = port.maxDraftM
+
+  if (isStsPort) {
+    return {
+      canBerth: false,
+      vesselDraftM,
+      portMaxDraftM,
+      marginM: null,
+      isStsPort: true,
+      warning: `${port.name} is an STS anchorage zone, not a berth. Any contract specifying terminal delivery here is irregular.`,
+    }
+  }
+
+  if (vesselDraftM == null || portMaxDraftM == null) {
+    return { canBerth: true, vesselDraftM, portMaxDraftM, marginM: null, isStsPort: false, warning: null }
+  }
+
+  const marginM = portMaxDraftM - vesselDraftM
+  const canBerth = marginM >= 0
+
+  return {
+    canBerth,
+    vesselDraftM,
+    portMaxDraftM,
+    marginM,
+    isStsPort: false,
+    warning: canBerth
+      ? null
+      : `Vessel draft (${vesselDraftM.toFixed(1)}m) exceeds ${port.name} max draft (${portMaxDraftM.toFixed(1)}m). Vessel cannot berth — reported loading location may be fraudulent.`,
+  }
+}
+
+function mapPort(r: Record<string, unknown>): Port {
+  return {
+    locode:        r.locode as string,
+    name:          r.name as string,
+    country:       r.country as string,
+    region:        (r.region as string) ?? null,
+    lat:           r.lat != null ? parseFloat(r.lat as string) : null,
+    lng:           r.lng != null ? parseFloat(r.lng as string) : null,
+    portType:      (r.port_type as string) ?? null,
+    size:          (r.size as string) ?? null,
+    maxVessel:     (r.max_vessel as string) ?? null,
+    fuelOil:       Boolean(r.fuel_oil),
+    diesel:        Boolean(r.diesel),
+    freshWater:    Boolean(r.fresh_water),
+    provisions:    Boolean(r.provisions),
+    crane:         Boolean(r.crane),
+    drydock:       (r.drydock as string) ?? null,
+    isEnergyHub:   Boolean(r.is_energy_hub),
+    maxDraftM:     r.max_draft_m != null ? parseFloat(r.max_draft_m as string) : null,
+    channelDepthM: r.channel_depth_m != null ? parseFloat(r.channel_depth_m as string) : null,
+    hasStsZone:    Boolean(r.has_sts_zone),
+    stsZoneName:   (r.sts_zone_name as string) ?? null,
+    stsAuthority:  (r.sts_authority as string) ?? null,
+  }
+}
