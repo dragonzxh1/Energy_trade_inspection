@@ -160,7 +160,16 @@ table {
 /* Search result card hover — replaces JS onMouseEnter/onMouseLeave */
 .search-result-card {
   border-color: var(--border-subtle);
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.search-result-card--listed {
+  border-color: rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.03);
+}
+
+.search-result-card--unknown {
+  border-color: rgba(249, 115, 22, 0.25);
 }
 
 .search-result-card:hover {
@@ -307,5 +316,48 @@ table {
   h1 {
     font-size: 24px;
     line-height: 32px;
+  }
+}
+
+/* ─── Homepage responsive grids ──────────────────────────────────── */
+
+.home-trust-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+
+.home-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-5);
+}
+
+.home-snapshot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 560px) {
+  .home-features {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .home-snapshot {
+    grid-template-columns: 1fr;
+  }
+
+  .home-trust-strip {
+    gap: var(--space-3);
+  }
+}
+
+/* ─── Header: hide text nav links on small screens ───────────────── */
+
+@media (max-width: 480px) {
+  .nav-text-link {
+    display: none;
   }
 }

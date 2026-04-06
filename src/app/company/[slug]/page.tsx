@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { getScoreTier, buildCompanyJsonLd, buildCompanyNarrative } from '@/lib/utils'
 import SanctionBadge from '@/components/entity/SanctionBadge'
 import RiskBadge from '@/components/entity/RiskBadge'
@@ -10,7 +11,11 @@ import Header from '@/components/layout/Header'
 import type { Company } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
+import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
+import { db } from '@/lib/server/db'
+import WatchButton from '@/components/entity/WatchButton'
+import IntelligencePanel from '@/components/entity/IntelligencePanel'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -362,10 +367,56 @@ function SourcesPanel({ sources }: { sources: string[] }) {
   )
 }
 
+// ── Quota exceeded ────────────────────────────────────────────────────────────
+
+function QuotaExceededPage({ resetDate }: { resetDate: string }) {
+  const reset = new Date(resetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
+  return (
+    <>
+      <Header />
+      <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-8) var(--space-4)' }}>
+        <div style={{ maxWidth: '400px', textAlign: 'center' }}>
+          <p style={{ fontSize: '32px', marginBottom: 'var(--space-5)' }}>⚠</p>
+          <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600, marginBottom: 'var(--space-3)' }}>
+            Monthly query limit reached
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '22px', marginBottom: 'var(--space-6)' }}>
+            Your free plan includes 5 sanction checks per month.
+            Your quota resets on {reset}. Upgrade for more access.
+          </p>
+          <Link
+            href="/pricing"
+            style={{
+              display: 'inline-block',
+              backgroundColor: 'var(--accent-primary)', color: '#fff',
+              padding: 'var(--space-3) var(--space-6)', borderRadius: '8px',
+              fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+            }}
+          >
+            Upgrade plan
+          </Link>
+          <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-muted)', fontSize: '12px' }}>
+            Already upgraded?{' '}
+            <Link href="/" style={{ color: 'var(--accent-primary)' }}>Return home</Link>
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function CompanyPage({ params }: PageProps) {
   const [{ slug }, session] = await Promise.all([params, auth()])
+
+  // Quota enforcement for authenticated users
+  if (session?.user) {
+    const plan  = session.user.plan ?? 'free'
+    const quota = await consumeQuota(session.user.id, plan, slug, slug)
+    if (quota.blocked) return <QuotaExceededPage resetDate={quota.resetDate} />
+  }
+
   const company = await getCompany(slug)
 
   if (!company) notFound()
@@ -376,6 +427,16 @@ export default async function CompanyPage({ params }: PageProps) {
   // F3 unlocked for Starter+ (authenticated, paid plan)
   const f3Unlocked = !!session?.user && plan !== 'free'
   const lockReason = !session?.user ? 'guest' : 'free'
+
+  // Watchlist check (intelligence is now fetched client-side)
+  let isWatching = false
+  if (session?.user && (plan === 'professional' || plan === 'enterprise')) {
+    const { rows } = await db.query(
+      `SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`,
+      [session.user.id, company.id]
+    )
+    isWatching = rows.length > 0
+  }
 
   const jsonLd = buildCompanyJsonLd({
     name: company.name,
@@ -389,11 +450,12 @@ export default async function CompanyPage({ params }: PageProps) {
   })
 
   const tabs = [
-    { id: 'registration', label: 'Registration' },
-    { id: 'directors',    label: 'Directors' },
-    { id: 'vessels',      label: 'Vessels' },
-    { id: 'flags',        label: 'Risk Flags' },
-    { id: 'sources',      label: 'Sources' },
+    { id: 'registration',  label: 'Registration' },
+    { id: 'directors',     label: 'Directors' },
+    { id: 'vessels',       label: 'Vessels' },
+    { id: 'flags',         label: 'Risk Flags' },
+    { id: 'intelligence',  label: 'Intelligence' },
+    { id: 'sources',       label: 'Sources' },
   ]
 
   const panels = [
@@ -406,6 +468,9 @@ export default async function CompanyPage({ params }: PageProps) {
     </ContentLock>,
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="intelligence" unlocked={f3Unlocked} reason={lockReason}>
+      <IntelligencePanel entityType="company" entityKey={company.slug} />
     </ContentLock>,
     <SourcesPanel key="sources" sources={company.dataSource} />,
   ]
@@ -476,6 +541,16 @@ export default async function CompanyPage({ params }: PageProps) {
                 PDF export — Starter+
               </p>
             )}
+
+            <WatchButton
+              entityId={company.id}
+              entityType="company"
+              entityKey={company.slug}
+              entityName={company.name}
+              sanctionStatus={company.sanctionStatus}
+              initialWatching={isWatching}
+              plan={plan}
+            />
           </aside>
 
           <main className="animate-fade-in-up-delay-1">

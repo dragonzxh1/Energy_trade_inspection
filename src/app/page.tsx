@@ -1,7 +1,11 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
+import Link from 'next/link'
 import SearchBox from '@/components/search/SearchBox'
 import Header from '@/components/layout/Header'
+import { db } from '@/lib/server/db'
+import { applyMigrations } from '@/lib/server/migrations'
+import type { SanctionStatus, RiskLevel } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Energy Trade Inspection — Counterparty Verification',
@@ -32,6 +36,249 @@ const FEATURES = [
     desc: 'Trace ownership from company to vessel and back. Director records, flag state, and operator history in one view.',
   },
 ]
+
+const SANCTION_COLOR: Record<SanctionStatus, string> = {
+  listed:     'var(--status-listed)',
+  not_listed: 'var(--status-clear)',
+  unknown:    'var(--text-muted)',
+}
+
+const SANCTION_LABEL: Record<SanctionStatus, string> = {
+  listed:     'Sanctioned',
+  not_listed: 'Clear',
+  unknown:    'Unknown',
+}
+
+const RISK_COLOR: Record<RiskLevel, string> = {
+  critical: 'var(--status-listed)',
+  high:     '#f97316',
+  medium:   '#eab308',
+  low:      'var(--status-clear)',
+}
+
+interface FeaturedRow {
+  id: string
+  entity_type: 'company' | 'vessel'
+  name: string
+  slug: string | null
+  imo: string | null
+  jurisdiction_flag: string
+  country: string
+  sanction_status: SanctionStatus
+  authenticity_score: number
+  risk_level: RiskLevel
+}
+
+async function getFeaturedEntities() {
+  try {
+    await applyMigrations()
+    // 3 sanctioned/high-risk + 3 clean/low-risk
+    const { rows } = await db.query<FeaturedRow>(`
+      (
+        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
+               country, sanction_status, authenticity_score, risk_level
+        FROM entities
+        WHERE sanction_status = 'listed' OR risk_level = 'critical'
+        ORDER BY authenticity_score ASC
+        LIMIT 3
+      )
+      UNION ALL
+      (
+        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
+               country, sanction_status, authenticity_score, risk_level
+        FROM entities
+        WHERE sanction_status = 'not_listed' AND risk_level = 'low'
+        ORDER BY authenticity_score DESC
+        LIMIT 3
+      )
+    `)
+    return rows
+  } catch {
+    return []
+  }
+}
+
+async function FeaturedEntities() {
+  const entities = await getFeaturedEntities()
+  if (entities.length === 0) return null
+
+  const flagged = entities.filter(
+    (e) => e.sanction_status === 'listed' || e.risk_level === 'critical'
+  )
+  const clean = entities.filter(
+    (e) => e.sanction_status === 'not_listed' && e.risk_level === 'low'
+  )
+
+  return (
+    <div
+      className="animate-fade-in-up-delay-2"
+      style={{
+        maxWidth: '640px',
+        width: '100%',
+        marginTop: 'var(--space-10)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        <p
+          style={{
+            color: 'var(--text-muted)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}
+        >
+          Database Snapshot
+        </p>
+        <Link
+          href="/search"
+          style={{ color: 'var(--accent-primary)', fontSize: '12px', textDecoration: 'none' }}
+        >
+          Browse all →
+        </Link>
+      </div>
+
+      <div className="home-snapshot">
+        {/* Sanctioned column */}
+        <div>
+          <p
+            style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--status-listed)',
+              marginBottom: 'var(--space-2)',
+              paddingLeft: 'var(--space-1)',
+            }}
+          >
+            ⚠ High Risk
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {flagged.map((e) => {
+              const href = e.entity_type === 'vessel' ? `/vessel/${e.imo}` : `/company/${e.slug}`
+              return (
+                <Link
+                  key={e.id}
+                  href={href}
+                  style={{
+                    display: 'block',
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    borderRadius: '8px',
+                    padding: 'var(--space-3) var(--space-3)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+                    <p
+                      style={{
+                        color: 'var(--text-primary)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        lineHeight: '16px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {e.name}
+                    </p>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        color: SANCTION_COLOR[e.sanction_status],
+                        flexShrink: 0,
+                      }}
+                    >
+                      {SANCTION_LABEL[e.sanction_status]}
+                    </span>
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
+                    {e.jurisdiction_flag} {e.country} · Score {e.authenticity_score}
+                  </p>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Clean column */}
+        <div>
+          <p
+            style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--status-clear)',
+              marginBottom: 'var(--space-2)',
+              paddingLeft: 'var(--space-1)',
+            }}
+          >
+            ✓ Verified Clean
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {clean.map((e) => {
+              const href = e.entity_type === 'vessel' ? `/vessel/${e.imo}` : `/company/${e.slug}`
+              return (
+                <Link
+                  key={e.id}
+                  href={href}
+                  style={{
+                    display: 'block',
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid rgba(34,197,94,0.15)',
+                    borderRadius: '8px',
+                    padding: 'var(--space-3) var(--space-3)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+                    <p
+                      style={{
+                        color: 'var(--text-primary)',
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        lineHeight: '16px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {e.name}
+                    </p>
+                    <span
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        color: SANCTION_COLOR[e.sanction_status],
+                        flexShrink: 0,
+                      }}
+                    >
+                      {SANCTION_LABEL[e.sanction_status]}
+                    </span>
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
+                    {e.jurisdiction_flag} {e.country} · Score {e.authenticity_score}
+                  </p>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function HomePage() {
   return (
@@ -108,14 +355,11 @@ export default function HomePage() {
 
         {/* Trust strip */}
         <div
-          className="animate-fade-in-up-delay-1"
+          className="animate-fade-in-up-delay-1 home-trust-strip"
           style={{
             maxWidth: '640px',
             width: '100%',
             marginTop: 'var(--space-12)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 'var(--space-5)',
             borderTop: '1px solid var(--border-subtle)',
             paddingTop: 'var(--space-8)',
           }}
@@ -145,14 +389,11 @@ export default function HomePage() {
 
         {/* Feature highlights */}
         <div
-          className="animate-fade-in-up-delay-2"
+          className="animate-fade-in-up-delay-2 home-features"
           style={{
             maxWidth: '640px',
             width: '100%',
             marginTop: 'var(--space-10)',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 'var(--space-5)',
           }}
         >
           {FEATURES.map((f) => (
@@ -193,7 +434,12 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Demo CTA */}
+        {/* Featured entities */}
+        <Suspense fallback={null}>
+          <FeaturedEntities />
+        </Suspense>
+
+        {/* Pricing CTA */}
         <div
           className="animate-fade-in-up-delay-2"
           style={{
@@ -205,18 +451,9 @@ export default function HomePage() {
             fontSize: '12px',
           }}
         >
-          Try it:{' '}
-          <a href="/company/demo-trading-co" style={{ color: 'var(--accent-primary)' }}>
-            Demo Trading Co.
-          </a>
+          <Link href="/pricing" style={{ color: 'var(--accent-primary)' }}>View pricing</Link>
           {' '}·{' '}
-          <a href="/vessel/9999999" style={{ color: 'var(--accent-primary)' }}>
-            MV Demo Tanker
-          </a>
-          {' '}·{' '}
-          <a href="/pricing" style={{ color: 'var(--accent-primary)' }}>
-            View pricing
-          </a>
+          <Link href="/search" style={{ color: 'var(--accent-primary)' }}>Browse database</Link>
         </div>
       </main>
     </>

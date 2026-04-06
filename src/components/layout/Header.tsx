@@ -107,10 +107,21 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
           >
             <Link
               href="/pricing"
+              className="nav-text-link"
               style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
             >
               Pricing
             </Link>
+
+            {(plan === 'professional' || plan === 'enterprise') && (
+              <Link
+                href="/watchlist"
+                className="nav-text-link"
+                style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
+              >
+                Watchlist
+              </Link>
+            )}
 
             {user ? (
               /* ── Logged-in state ── */
@@ -133,35 +144,36 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                   </span>
                 )}
 
-                {/* Avatar */}
-                {user.image ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={user.image}
-                    alt={user.name ?? 'User avatar'}
-                    width={28}
-                    height={28}
-                    style={{ borderRadius: '50%', flexShrink: 0 }}
-                  />
-                ) : (
-                  <span
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      backgroundColor: 'var(--accent-primary)',
-                      color: '#fff',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {initials}
-                  </span>
-                )}
+                {/* Avatar — links to account */}
+                <Link href="/account" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 0 }}>
+                  {user.image ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={user.image}
+                      alt={user.name ?? 'User avatar'}
+                      width={28}
+                      height={28}
+                      style={{ borderRadius: '50%', display: 'block' }}
+                    />
+                  ) : (
+                    <span
+                      style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--accent-primary)',
+                        color: '#fff',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {initials}
+                    </span>
+                  )}
+                </Link>
 
                 {/* Sign out */}
                 <form
