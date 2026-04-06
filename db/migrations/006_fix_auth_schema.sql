@@ -1,8 +1,13 @@
--- NextAuth v5 (@auth/pg-adapter) required tables
--- Column names match adapter expectations exactly (camelCase quoted where needed)
+-- Fix auth table schema to match @auth/pg-adapter expectations
+-- The adapter uses camelCase quoted column names
 
--- Users table (emailVerified must be camelCase quoted)
-CREATE TABLE IF NOT EXISTS users (
+DROP TABLE IF EXISTS verification_tokens CASCADE;
+DROP TABLE IF EXISTS sessions CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- Users (emailVerified is camelCase as expected by adapter)
+CREATE TABLE users (
   id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   name            TEXT,
   email           TEXT UNIQUE,
@@ -13,8 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- OAuth accounts (userId and providerAccountId must be camelCase quoted)
-CREATE TABLE IF NOT EXISTS accounts (
+-- OAuth accounts
+CREATE TABLE accounts (
   id                   TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   "userId"             TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type                 TEXT NOT NULL,
@@ -30,16 +35,16 @@ CREATE TABLE IF NOT EXISTS accounts (
   UNIQUE (provider, "providerAccountId")
 );
 
--- Sessions (sessionToken and userId must be camelCase quoted)
-CREATE TABLE IF NOT EXISTS sessions (
+-- Sessions (sessionToken and userId are camelCase)
+CREATE TABLE sessions (
   id             TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   "sessionToken" TEXT UNIQUE NOT NULL,
   "userId"       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   expires        TIMESTAMPTZ NOT NULL
 );
 
--- Verification tokens (table name is singular: verification_token)
-CREATE TABLE IF NOT EXISTS verification_token (
+-- Verification tokens (singular table name, as adapter expects)
+CREATE TABLE verification_token (
   identifier TEXT NOT NULL,
   token      TEXT NOT NULL,
   expires    TIMESTAMPTZ NOT NULL,
