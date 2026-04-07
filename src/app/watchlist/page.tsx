@@ -2,22 +2,42 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
+import RefreshButton from '@/components/watchlist/RefreshButton'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
+import { applyMigrations } from '@/lib/server/migrations'
 
 export const metadata: Metadata = {
   title: 'Watchlist — Energy Trade Inspection',
 }
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 interface WatchlistRow {
   id: string
   entity_id: string
-  entity_type: 'company' | 'vessel'
+  entity_type: 'company' | 'vessel' | 'terminal'
   entity_key: string
   entity_name: string
-  sanction_status: string
+  sanction_status: string           // snapshot at add-time
+  current_sanction_status: string   // latest confirmed status
+  last_checked_at: string | null
   added_at: string
 }
+
+interface AlertRow {
+  id: string
+  entity_id: string
+  entity_name: string
+  entity_type: string
+  entity_key: string
+  alert_type: string
+  old_value: string | null
+  new_value: string | null
+  created_at: string
+}
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const STATUS_COLOR: Record<string, string> = {
   listed:     'var(--status-listed)',
@@ -31,21 +51,155 @@ const STATUS_LABEL: Record<string, string> = {
   unknown:    'Unknown',
 }
 
+// ── Server actions ────────────────────────────────────────────────────────────
+
 async function removeFromWatchlist(id: string) {
   'use server'
   const session = await auth()
   if (!session?.user) return
   await db.query(
     `DELETE FROM watchlist WHERE id = $1 AND user_id = $2`,
-    [id, session.user.id]
+    [id, session.user.id],
   )
 }
+
+async function dismissAlert(alertId: string) {
+  'use server'
+  const session = await auth()
+  if (!session?.user) return
+  await db.query(
+    `UPDATE watchlist_alerts SET read_at = NOW() WHERE id = $1 AND user_id = $2`,
+    [alertId, session.user.id],
+  )
+}
+
+// ── Helper: entity URL ────────────────────────────────────────────────────────
+
+function entityHref(type: string, key: string): string {
+  if (type === 'company')  return `/company/${key}`
+  if (type === 'terminal') return `/terminal/${key}`
+  return `/vessel/${key}`
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function AlertsSection({ alerts }: { alerts: AlertRow[] }) {
+  if (alerts.length === 0) return null
+
+  return (
+    <div
+      style={{
+        marginBottom: 'var(--space-6)',
+        backgroundColor: 'rgba(249,115,22,0.06)',
+        border: '1px solid rgba(249,115,22,0.25)',
+        borderRadius: '12px',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+          padding: 'var(--space-4) var(--space-5)',
+          borderBottom: '1px solid rgba(249,115,22,0.2)',
+        }}
+      >
+        <span style={{ fontSize: '16px' }}>⚠</span>
+        <p style={{ color: '#f97316', fontSize: '13px', fontWeight: 600 }}>
+          {alerts.length} unread {alerts.length === 1 ? 'alert' : 'alerts'}
+        </p>
+      </div>
+
+      {/* Alert rows */}
+      {alerts.map((alert, idx) => {
+        const isLast = idx === alerts.length - 1
+        const dismissAction = dismissAlert.bind(null, alert.id)
+        const href = entityHref(alert.entity_type, alert.entity_key)
+
+        return (
+          <div
+            key={alert.id}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: 'var(--space-4)',
+              padding: 'var(--space-4) var(--space-5)',
+              borderBottom: isLast ? 'none' : '1px solid rgba(249,115,22,0.12)',
+            }}
+          >
+            <div>
+              <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500, marginBottom: '3px' }}>
+                <Link
+                  href={href}
+                  style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+                >
+                  {alert.entity_name}
+                </Link>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                  {' '}— sanction status changed
+                </span>
+              </p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                <span style={{ color: STATUS_COLOR[alert.old_value ?? ''] ?? 'var(--text-muted)' }}>
+                  {STATUS_LABEL[alert.old_value ?? ''] ?? alert.old_value ?? '—'}
+                </span>
+                {' → '}
+                <span
+                  style={{
+                    color: STATUS_COLOR[alert.new_value ?? ''] ?? 'var(--text-muted)',
+                    fontWeight: 600,
+                  }}
+                >
+                  {STATUS_LABEL[alert.new_value ?? ''] ?? alert.new_value ?? '—'}
+                </span>
+                {' · '}
+                {new Date(alert.created_at).toLocaleDateString('en-US', {
+                  month: 'short', day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexShrink: 0 }}>
+              <Link
+                href={href}
+                style={{
+                  fontSize: '12px', color: 'var(--accent-primary)',
+                  textDecoration: 'none', fontWeight: 500,
+                }}
+              >
+                View ↗
+              </Link>
+              <form action={dismissAction}>
+                <button
+                  type="submit"
+                  style={{
+                    background: 'none', border: 'none',
+                    color: 'var(--text-muted)', cursor: 'pointer',
+                    fontSize: '12px', fontFamily: 'inherit',
+                    padding: '2px 6px',
+                  }}
+                >
+                  Dismiss
+                </button>
+              </form>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function WatchlistPage() {
   const session = await auth()
   if (!session?.user) redirect('/sign-in')
 
-  const plan = session.user.plan ?? 'free'
+  const plan     = session.user.plan ?? 'free'
   const canWatch = plan === 'professional' || plan === 'enterprise'
 
   if (!canWatch) {
@@ -79,37 +233,78 @@ export default async function WatchlistPage() {
     )
   }
 
-  const { rows } = await db.query<WatchlistRow>(
-    `SELECT id, entity_id, entity_type, entity_key, entity_name, sanction_status, added_at
-     FROM watchlist WHERE user_id = $1 ORDER BY added_at DESC`,
-    [session.user.id]
-  )
+  await applyMigrations()
+
+  // Fetch watchlist items + unread alerts in parallel
+  const [{ rows }, { rows: alertRows }] = await Promise.all([
+    db.query<WatchlistRow>(
+      `SELECT id, entity_id, entity_type, entity_key, entity_name,
+              sanction_status, current_sanction_status, last_checked_at, added_at
+       FROM watchlist
+       WHERE user_id = $1
+       ORDER BY added_at DESC`,
+      [session.user.id],
+    ),
+    db.query<AlertRow>(
+      `SELECT id, entity_id, entity_name, entity_type, entity_key,
+              alert_type, old_value, new_value, created_at
+       FROM watchlist_alerts
+       WHERE user_id = $1 AND read_at IS NULL
+       ORDER BY created_at DESC`,
+      [session.user.id],
+    ),
+  ])
+
+  // Most-recent last_checked_at across all rows
+  const lastCheckedAt = rows.reduce<string | null>((latest, r) => {
+    if (!r.last_checked_at) return latest
+    if (!latest) return r.last_checked_at
+    return r.last_checked_at > latest ? r.last_checked_at : latest
+  }, null)
 
   return (
     <>
       <Header />
 
       <div style={{ maxWidth: 'var(--max-width)', margin: '0 auto', padding: 'var(--space-10) var(--space-4)' }}>
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 'var(--space-8)' }}>
+        {/* Page header */}
+        <div
+          style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 'var(--space-4)',
+            marginBottom: 'var(--space-6)',
+          }}
+        >
           <div>
             <h1 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
               Watchlist
             </h1>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
               {rows.length} {rows.length === 1 ? 'entity' : 'entities'} monitored
+              {alertRows.length > 0 && (
+                <span style={{ color: '#f97316', fontWeight: 600 }}>
+                  {' · '}{alertRows.length} unread {alertRows.length === 1 ? 'alert' : 'alerts'}
+                </span>
+              )}
             </p>
           </div>
-          <Link
-            href="/"
-            style={{
-              fontSize: '13px', color: 'var(--accent-primary)',
-              textDecoration: 'none', fontWeight: 500,
-            }}
-          >
-            + Add entities
-          </Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+            <RefreshButton lastCheckedAt={lastCheckedAt} entityCount={rows.length} />
+            <Link
+              href="/"
+              style={{
+                fontSize: '13px', color: 'var(--accent-primary)',
+                textDecoration: 'none', fontWeight: 500,
+              }}
+            >
+              + Add entities
+            </Link>
+          </div>
         </div>
+
+        {/* Unread alerts */}
+        <AlertsSection alerts={alertRows} />
 
         {rows.length === 0 ? (
           /* Empty state */
@@ -125,7 +320,7 @@ export default async function WatchlistPage() {
               No entities on your watchlist yet
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px', maxWidth: '320px', margin: '0 auto var(--space-6)' }}>
-              Open any company or vessel page and click &ldquo;Add to Watchlist&rdquo; to monitor it for sanction changes.
+              Open any company, vessel, or terminal page and click &ldquo;Add to Watchlist&rdquo; to monitor it for sanction changes.
             </p>
             <Link
               href="/"
@@ -150,12 +345,12 @@ export default async function WatchlistPage() {
             {/* Column headers */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '1fr 100px 120px 80px 80px',
+              gridTemplateColumns: '1fr 80px 130px 80px 70px',
               padding: 'var(--space-3) var(--space-5)',
               borderBottom: '1px solid var(--border-subtle)',
               backgroundColor: 'var(--bg-elevated)',
             }}>
-              {['Entity', 'Type', 'Sanction status', 'Added', ''].map((h) => (
+              {['Entity', 'Type', 'Status', 'Added', ''].map((h) => (
                 <span key={h} style={{
                   color: 'var(--text-muted)', fontSize: '11px',
                   fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
@@ -166,21 +361,23 @@ export default async function WatchlistPage() {
             </div>
 
             {rows.map((item, idx) => {
-              const href = item.entity_type === 'company'
-                ? `/company/${item.entity_key}`
-                : `/vessel/${item.entity_key}`
+              const href = entityHref(item.entity_type, item.entity_key)
               const isLast = idx === rows.length - 1
               const removeAction = removeFromWatchlist.bind(null, item.id)
+              const statusChanged = item.current_sanction_status !== item.sanction_status
 
               return (
                 <div
                   key={item.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '1fr 100px 120px 80px 80px',
+                    gridTemplateColumns: '1fr 80px 130px 80px 70px',
                     padding: 'var(--space-4) var(--space-5)',
                     borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)',
                     alignItems: 'center',
+                    backgroundColor: statusChanged
+                      ? 'rgba(249,115,22,0.04)'
+                      : undefined,
                   }}
                 >
                   {/* Name */}
@@ -203,12 +400,22 @@ export default async function WatchlistPage() {
                     {item.entity_type}
                   </span>
 
-                  {/* Sanction status */}
-                  <span style={{
-                    color: STATUS_COLOR[item.sanction_status] ?? 'var(--text-muted)',
-                    fontSize: '12px', fontWeight: 500,
-                  }}>
-                    {STATUS_LABEL[item.sanction_status] ?? 'Unknown'}
+                  {/* Current sanction status (with change indicator) */}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <span style={{
+                      color: STATUS_COLOR[item.current_sanction_status] ?? 'var(--text-muted)',
+                      fontSize: '12px', fontWeight: 500,
+                    }}>
+                      {STATUS_LABEL[item.current_sanction_status] ?? 'Unknown'}
+                    </span>
+                    {statusChanged && (
+                      <span
+                        title={`Changed from ${STATUS_LABEL[item.sanction_status] ?? item.sanction_status}`}
+                        style={{ fontSize: '10px', color: '#f97316', fontWeight: 700 }}
+                      >
+                        ⚠
+                      </span>
+                    )}
                   </span>
 
                   {/* Added date */}
@@ -221,12 +428,9 @@ export default async function WatchlistPage() {
                     <button
                       type="submit"
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontFamily: 'inherit',
+                        background: 'none', border: 'none',
+                        color: 'var(--text-muted)', cursor: 'pointer',
+                        fontSize: '12px', fontFamily: 'inherit',
                         padding: '2px 6px',
                       }}
                     >
@@ -239,8 +443,8 @@ export default async function WatchlistPage() {
           </div>
         )}
 
-        <p style={{ marginTop: 'var(--space-6)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
-          Sanction status shown at time of adding. Real-time change alerts coming in Phase 2.
+        <p style={{ marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
+          Status is compared against live data in our database. Click &ldquo;Refresh status&rdquo; to check for changes.
         </p>
       </div>
     </>
