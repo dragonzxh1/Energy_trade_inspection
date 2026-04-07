@@ -65,6 +65,16 @@ def cmd_vessel(args: argparse.Namespace) -> dict:
     )
 
 
+def cmd_terminal(args: argparse.Namespace) -> dict:
+    from intelligence.entity_research import research_terminal
+    return research_terminal(
+        args.name,
+        location=args.location or None,
+        operator=args.operator or None,
+        max_results_per_query=args.max_results,
+    )
+
+
 def cmd_signals(args: argparse.Namespace) -> dict:
     from intelligence.entity_research import get_authenticity_signals
     return get_authenticity_signals(args.name, entity_type=args.type)
@@ -97,6 +107,13 @@ def build_parser() -> argparse.ArgumentParser:
     vp.add_argument("--flag",        default="",    help="Flag state")
     vp.add_argument("--max-results", type=int, default=5, dest="max_results")
 
+    # terminal
+    tp = sub.add_parser("terminal", help="Research a storage terminal / tank farm")
+    tp.add_argument("--name",        required=True, help="Terminal name")
+    tp.add_argument("--location",    default="",    help="Location (country or city)")
+    tp.add_argument("--operator",    default="",    help="Known operator name")
+    tp.add_argument("--max-results", type=int, default=5, dest="max_results")
+
     # signals
     sp = sub.add_parser("signals", help="Get authenticity signals for an entity")
     sp.add_argument("--name", required=True, help="Entity name")
@@ -116,10 +133,11 @@ def main() -> None:
     args = parser.parse_args()
 
     dispatch = {
-        "company": cmd_company,
-        "vessel":  cmd_vessel,
-        "signals": cmd_signals,
-        "scrape":  cmd_scrape,
+        "company":  cmd_company,
+        "vessel":   cmd_vessel,
+        "terminal": cmd_terminal,
+        "signals":  cmd_signals,
+        "scrape":   cmd_scrape,
     }
 
     try:
