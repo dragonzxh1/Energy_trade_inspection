@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { Company, RiskFlag, SearchResult, SanctionStatus, Vessel } from '@/lib/types'
+import type { Company, RiskFlag, SearchResult, SanctionStatus, Terminal, Vessel } from '@/lib/types'
 import { db } from './db'
 import { checkSanctions } from './sync/sanctions'
 import { searchACRA, getACRAByUEN, acraToSearchResult } from './sync/acra'
@@ -38,9 +38,51 @@ function normalizeInput(value: string): string {
     .trim()
 }
 
-function parseEntity(row: EntityRow): Company | Vessel {
-  const scoreBreakdown = row.score_breakdown_json as Company['scoreBreakdown']
-  const dataSource = row.data_source_json as string[]
+/** Ensure breakdown uses the 5 expected dimension keys.
+ *  Legacy OpenSanctions rows store {sanctions, financial_crime, regulatory}
+ *  and need to be mapped to the current schema. */
+function normalizeBreakdown(raw: unknown, totalScore: number): Company['scoreBreakdown'] {
+  const b = raw as Record<string, unknown>
+  if (
+    b &&
+    typeof b === 'object' &&
+    'entityExistence' in b &&
+    'assetReality' in b &&
+    'tradingTrackRecord' in b &&
+    'documentConsistency' in b &&
+    'communityReputation' in b
+  ) {
+    return b as unknown as Company['scoreBreakdown']
+  }
+  // Distribute score proportionally across Phase-1 dimensions (max 75)
+  const ratio = Math.min(totalScore, 75) / 75
+  return {
+    entityExistence:     { score: Math.round(25 * ratio), maxScore: 25 },
+    assetReality:        { score: Math.round(30 * ratio), maxScore: 30 },
+    tradingTrackRecord:  { score: 0, maxScore: 25, phase2Pending: true },
+    documentConsistency: { score: Math.round(10 * ratio), maxScore: 10 },
+    communityReputation: { score: Math.round(10 * ratio), maxScore: 10 },
+  }
+}
+
+/** Normalize dataSource — legacy OpenSanctions rows store [{source, dataset}] objects. */
+function normalizeDataSource(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return raw.map((item) => {
+    if (typeof item === 'string') return item
+    if (item && typeof item === 'object' && 'source' in item) {
+      const src = String((item as Record<string, unknown>).source)
+      // Map known source identifiers to display names
+      if (src === 'opensanctions') return 'OpenSanctions'
+      return src.charAt(0).toUpperCase() + src.slice(1)
+    }
+    return String(item)
+  })
+}
+
+function parseEntity(row: EntityRow): Company | Vessel | Terminal {
+  const scoreBreakdown = normalizeBreakdown(row.score_breakdown_json, row.authenticity_score)
+  const dataSource = normalizeDataSource(row.data_source_json)
   const metadata = row.metadata_json as Record<string, unknown>
 
   if (row.entity_type === 'vessel') {
@@ -56,6 +98,34 @@ function parseEntity(row: EntityRow): Company | Vessel {
       yearBuilt: typeof metadata.yearBuilt === 'number' ? metadata.yearBuilt : undefined,
       currentOperator:
         typeof metadata.currentOperator === 'string' ? metadata.currentOperator : undefined,
+      ownerCompanySlug:
+        typeof metadata.ownerCompanySlug === 'string' ? metadata.ownerCompanySlug : undefined,
+      country: row.country,
+      jurisdictionFlag: row.jurisdiction_flag,
+      sanctionStatus: row.sanction_status,
+      authenticityScore: row.authenticity_score,
+      scoreBreakdown,
+      riskLevel: row.risk_level,
+      riskFlags: [],
+      lastVerified: row.last_verified,
+      dataSource,
+    }
+  }
+
+  if (row.entity_type === 'terminal') {
+    return {
+      id: row.id,
+      type: 'terminal',
+      name: row.name,
+      slug: row.slug ?? undefined,
+      location:
+        typeof metadata.location === 'string' ? metadata.location : undefined,
+      operator:
+        typeof metadata.operator === 'string' ? metadata.operator : undefined,
+      terminalType:
+        typeof metadata.terminalType === 'string' ? metadata.terminalType : undefined,
+      capacity:
+        typeof metadata.capacity === 'number' ? metadata.capacity : undefined,
       ownerCompanySlug:
         typeof metadata.ownerCompanySlug === 'string' ? metadata.ownerCompanySlug : undefined,
       country: row.country,
@@ -214,7 +284,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
   return enriched.slice(0, 20)
 }
 
-export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | null> {
+export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | Terminal | null> {
   const { rows } = await db.query<EntityRow>(
     `
       SELECT *
@@ -694,4 +764,22 @@ function mapPort(r: Record<string, unknown>): Port {
     stsZoneName:   (r.sts_zone_name as string) ?? null,
     stsAuthority:  (r.sts_authority as string) ?? null,
   }
+}
+
+// ── AIS helpers ───────────────────────────────────────────────────────────────
+
+/**
+ * Write a discovered MMSI into a vessel entity's metadata_json.
+ * Only updates if the vessel currently has no MMSI stored.
+ * Fire-and-forget safe — does not throw.
+ */
+export async function saveVesselMmsi(imo: string, mmsi: string): Promise<void> {
+  await db.query(
+    `UPDATE entities
+        SET metadata_json = metadata_json || jsonb_build_object('mmsi', $1::text),
+            updated_at    = NOW()
+      WHERE imo = $2
+        AND (metadata_json->>'mmsi') IS NULL`,
+    [mmsi, imo]
+  )
 }

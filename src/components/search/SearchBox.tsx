@@ -43,16 +43,23 @@ export default function SearchBox() {
           spellCheck={false}
           disabled={loading}
           style={{
-            flex: 1,
+            flexGrow: 1,
             backgroundColor: 'var(--bg-elevated)',
-            border: '1px solid var(--border-subtle)',
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: 'var(--border-subtle)',
             borderRadius: '8px',
             color: 'var(--text-primary)',
             fontSize: '15px',
             fontFamily: 'inherit',
-            padding: 'var(--space-3) var(--space-4)',
-            outline: 'none',
-            transition: 'border-color 0.15s ease',
+            paddingTop: 'var(--space-3)',
+            paddingBottom: 'var(--space-3)',
+            paddingLeft: 'var(--space-4)',
+            paddingRight: 'var(--space-4)',
+            outlineStyle: 'none',
+            transitionProperty: 'border-color',
+            transitionDuration: '0.15s',
+            transitionTimingFunction: 'ease',
           }}
           onFocus={(e) => {
             e.currentTarget.style.borderColor = 'var(--accent-primary)'
@@ -67,7 +74,8 @@ export default function SearchBox() {
           aria-label="Search"
           style={{
             backgroundColor: 'var(--accent-primary)',
-            border: 'none',
+            borderWidth: 0,
+            borderStyle: 'none',
             borderRadius: '8px',
             color: '#fff',
             cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
@@ -75,8 +83,13 @@ export default function SearchBox() {
             fontFamily: 'inherit',
             fontWeight: 500,
             opacity: loading || !query.trim() ? 0.6 : 1,
-            padding: 'var(--space-3) var(--space-5)',
-            transition: 'opacity 0.15s ease',
+            paddingTop: 'var(--space-3)',
+            paddingBottom: 'var(--space-3)',
+            paddingLeft: 'var(--space-5)',
+            paddingRight: 'var(--space-5)',
+            transitionProperty: 'opacity',
+            transitionDuration: '0.15s',
+            transitionTimingFunction: 'ease',
             whiteSpace: 'nowrap',
           }}
         >
