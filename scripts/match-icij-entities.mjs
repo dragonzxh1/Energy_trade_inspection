@@ -63,9 +63,10 @@ loadEnv()
 
 // ── DB ────────────────────────────────────────────────────────────────────────
 
+const CONCURRENCY_CFG = parseInt(getArg('--concurrency', '4'), 10)
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 4,
+  max: CONCURRENCY_CFG + 2,   // extra connections for batch fetch + link writes
 })
 
 // ── Normalize (mirrors repository.ts normalizeInput) ─────────────────────────
@@ -167,40 +168,56 @@ async function main() {
 
       if (entities.length === 0) break
 
-      for (const entity of entities) {
-        // Skip already-linked entities without expensive SQL check
-        if (!FORCE && linkedIds.has(entity.id)) {
-          processed++
-          continue
-        }
+      // Process entities concurrently
+      const toProcess = entities.filter((entity) => {
+        if (LIMIT > 0 && processed >= LIMIT) return false
+        if (!FORCE && linkedIds.has(entity.id)) { processed++; return false }
+        const norm = normalize(entity.name)
+        if (!norm || norm.length < 3) { processed++; return false }
+        return true
+      })
 
-        const normalized = normalize(entity.name)
-        if (!normalized || normalized.length < 3) {
-          processed++
-          continue
-        }
-
+      // Chunk into groups of CONCURRENCY and run each group in parallel
+      for (let i = 0; i < toProcess.length; i += CONCURRENCY_CFG) {
         if (LIMIT > 0 && processed >= LIMIT) break
+        const chunk = toProcess.slice(i, i + CONCURRENCY_CFG)
 
-        const matches = await findIcijMatches(batchClient, entity.id, normalized)
+        const results = await Promise.all(
+          chunk.map(async (entity) => {
+            const conn = await pool.connect()
+            try {
+              const normalized = normalize(entity.name)
+              const matches = await findIcijMatches(conn, entity.id, normalized)
+              return { entity, normalized, matches }
+            } finally {
+              conn.release()
+            }
+          })
+        )
 
-        if (matches.length > 0) {
-          totalMatches += matches.length
-          if (DRY_RUN) {
-            console.log(`\n  [DRY] ${entity.name}:`)
-            matches.forEach((m) =>
-              console.log(`    → ${m.name} [${m.dataset}] conf=${parseFloat(m.conf).toFixed(3)}`)
-            )
-          } else {
-            await linkMatches(batchClient, entity.id, matches)
-            totalLinked += matches.length
+        for (const { entity, matches } of results) {
+          if (matches.length > 0) {
+            totalMatches += matches.length
+            if (DRY_RUN) {
+              console.log(`\n  [DRY] ${entity.name}:`)
+              matches.forEach((m) =>
+                console.log(`    → ${m.name} [${m.dataset}] conf=${parseFloat(m.conf).toFixed(3)}`)
+              )
+            } else {
+              const writeConn = await pool.connect()
+              try {
+                await linkMatches(writeConn, entity.id, matches)
+                totalLinked += matches.length
+              } finally {
+                writeConn.release()
+              }
+            }
           }
+          processed++
         }
 
-        processed++
-
-        // Progress every 100 entities
-        if (processed % 100 === 0) {
+        // Progress every 500 entities
+        if (processed % 500 === 0) {
           const pct = ((processed / total) * 100).toFixed(1)
           process.stdout.write(
             `\r  Progress: ${processed}/${total} (${pct}%) — matches found: ${totalMatches}  `
