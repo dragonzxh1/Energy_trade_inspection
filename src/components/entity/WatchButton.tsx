@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 interface WatchButtonProps {
   entityId: string
-  entityType: 'company' | 'vessel'
+  entityType: 'company' | 'vessel' | 'terminal'
   entityKey: string
   entityName: string
   sanctionStatus: string

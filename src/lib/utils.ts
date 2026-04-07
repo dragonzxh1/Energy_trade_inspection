@@ -1,4 +1,4 @@
-import type { Company, RiskLevel, ScoreTier, Vessel } from './types'
+import type { Company, RiskLevel, ScoreTier, Terminal, Vessel } from './types'
 import { GAUGE_CIRCUMFERENCE, RISK_THRESHOLDS, SCORE_TIERS } from './constants'
 
 /**
@@ -198,6 +198,92 @@ export function buildCompanyJsonLd(params: {
     identifier: params.registrationNumber,
     addressCountry: params.country,
     url: `${params.appUrl}/company/${params.slug}`,
+    additionalProperty: [
+      {
+        '@type': 'PropertyValue',
+        name: 'Authenticity Score',
+        value: params.score,
+        description: `${params.scoreTier} — ${params.score}/100 authenticity score`,
+      },
+      {
+        '@type': 'PropertyValue',
+        name: 'Sanction Status',
+        value: params.sanctionStatus,
+      },
+    ],
+  }
+}
+
+/**
+ * Generate a template-based risk narrative for a terminal entity.
+ */
+export function buildTerminalNarrative(terminal: Terminal): string {
+  const parts: string[] = []
+
+  const locationStr = terminal.location
+    ? `${terminal.location}, ${terminal.country}`
+    : `${terminal.jurisdictionFlag} ${terminal.country}`
+
+  const typeLabel = terminal.terminalType ?? 'energy'
+  parts.push(`${terminal.name} is a ${typeLabel} terminal located in ${locationStr}.`)
+
+  if (terminal.operator) {
+    parts.push(`The terminal is operated by ${terminal.operator}.`)
+  }
+
+  if (terminal.sanctionStatus === 'not_listed') {
+    parts.push(`Sanction screening across OFAC, EU FSF, and UN consolidated lists returned no matches.`)
+  } else if (terminal.sanctionStatus === 'listed') {
+    parts.push(`This terminal has been matched against one or more international sanction lists. Exercise enhanced due diligence before engaging.`)
+  } else {
+    parts.push(`Sanction status is currently unresolved; screening is pending.`)
+  }
+
+  const tier = getScoreTier(terminal.authenticityScore)
+  if (terminal.authenticityScore >= 60) {
+    parts.push(`Authenticity score: ${terminal.authenticityScore}/100 ("${tier}"). Core operational details are on record.`)
+  } else if (terminal.authenticityScore >= 30) {
+    parts.push(`Authenticity score: ${terminal.authenticityScore}/100 ("${tier}"). Some verification dimensions are incomplete.`)
+  } else {
+    parts.push(`Authenticity score: ${terminal.authenticityScore}/100 ("${tier}"). Insufficient data is available to fully verify this terminal.`)
+  }
+
+  if (terminal.riskFlags.length === 0) {
+    parts.push(`No community risk flags have been verified for this terminal.`)
+  } else {
+    const criticalOrHigh = terminal.riskFlags.filter((f) => f.severity === 'critical' || f.severity === 'high')
+    if (criticalOrHigh.length > 0) {
+      parts.push(`${terminal.riskFlags.length} risk flag${terminal.riskFlags.length > 1 ? 's have' : ' has'} been verified, including ${criticalOrHigh.length} high-severity ${criticalOrHigh.length > 1 ? 'alerts' : 'alert'}.`)
+    } else {
+      parts.push(`${terminal.riskFlags.length} risk flag${terminal.riskFlags.length > 1 ? 's have' : ' has'} been verified for this terminal.`)
+    }
+  }
+
+  return parts.join(' ')
+}
+
+/**
+ * Generate the Schema.org JSON-LD for a terminal entity page.
+ */
+export function buildTerminalJsonLd(params: {
+  name: string
+  location?: string
+  operator?: string
+  country: string
+  score: number
+  scoreTier: ScoreTier
+  sanctionStatus: string
+  entityId: string
+  appUrl: string
+}): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: params.name,
+    addressCountry: params.country,
+    url: `${params.appUrl}/terminal/${params.entityId}`,
+    ...(params.location && { address: params.location }),
+    ...(params.operator && { department: params.operator }),
     additionalProperty: [
       {
         '@type': 'PropertyValue',

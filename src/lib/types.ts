@@ -89,6 +89,16 @@ export interface Vessel extends BaseEntity {
   ownerCompanySlug?: string
 }
 
+export interface Terminal extends BaseEntity {
+  type: 'terminal'
+  slug?: string
+  location?: string        // specific location within country (city / port area)
+  operator?: string        // operating company name
+  terminalType?: string    // e.g. LNG, crude oil, petroleum products
+  capacity?: number        // storage capacity (m³ or MT)
+  ownerCompanySlug?: string
+}
+
 export interface SearchResult {
   id: string
   name: string

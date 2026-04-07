@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { ApiResponse, Company, Vessel } from '@/lib/types'
+import type { ApiResponse, Company, Terminal, Vessel } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
 
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    return NextResponse.json<ApiResponse<Company | Vessel>>(
+    return NextResponse.json<ApiResponse<Company | Vessel | Terminal>>(
       { data: entity, statusCode: 200 },
       {
         status: 200,
