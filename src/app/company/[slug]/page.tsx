@@ -10,8 +10,8 @@ import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
-import { getEntityByKey, getIcijMatches } from '@/lib/server/repository'
-import type { IcijMatch } from '@/lib/server/repository'
+import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork } from '@/lib/server/repository'
+import type { IcijMatch, IcijOfficerLink } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
@@ -407,6 +407,91 @@ function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
   )
 }
 
+function datasetLabel(raw: string): string {
+  const key = raw.toLowerCase().replace(/^(paradise_papers|pandora_papers).*/, '$1')
+  return DATASET_LABEL[key] ?? raw.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
+  if (links.length === 0) return null
+
+  // Group by officer node — same officer may control multiple offshore entities
+  const byOfficer = new Map<string, { name: string; entities: IcijOfficerLink[] }>()
+  for (const link of links) {
+    if (!byOfficer.has(link.officerNodeId)) {
+      byOfficer.set(link.officerNodeId, { name: link.officerName, entities: [] })
+    }
+    byOfficer.get(link.officerNodeId)!.entities.push(link)
+  }
+
+  return (
+    <div style={{
+      backgroundColor: 'var(--bg-surface)',
+      borderRadius: '10px',
+      padding: 'var(--space-5)',
+      border: '1px solid var(--border-subtle)',
+    }}>
+      <p style={{
+        color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600,
+        letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-4)',
+      }}>
+        Officer Network Connections
+      </p>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: 'var(--space-4)', lineHeight: '18px' }}>
+        Officers linked to this entity also appear as directors or shareholders of the following
+        offshore structures in leaked documents.
+      </p>
+
+      {[...byOfficer.entries()].map(([nodeId, officer]) => (
+        <div key={nodeId} style={{ marginBottom: 'var(--space-5)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+            <span style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              backgroundColor: '#f97316', flexShrink: 0,
+            }} />
+            <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>
+              {officer.name}
+            </span>
+          </div>
+          <div style={{ marginLeft: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {officer.entities.map((e, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: 'var(--space-2) var(--space-3)',
+                backgroundColor: 'var(--bg-elevated)', borderRadius: '6px',
+              }}>
+                <div>
+                  <span style={{ color: 'var(--text-primary)', fontSize: '12px' }}>
+                    {e.entityName}
+                  </span>
+                  {e.entityJurisdiction && (
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px', marginLeft: '6px' }}>
+                      · {e.entityJurisdiction}
+                    </span>
+                  )}
+                </div>
+                <span style={{
+                  fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                  letterSpacing: '0.06em', color: '#f97316',
+                  backgroundColor: 'rgba(249,115,22,0.1)',
+                  padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginLeft: '8px',
+                }}>
+                  {datasetLabel(e.entityDataset)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <p style={{ color: 'var(--text-muted)', fontSize: '11px', lineHeight: '16px', marginTop: 'var(--space-3)' }}>
+        Officer connections sourced from ICIJ Offshore Leaks Database. Same-named officers
+        are identified by unique node IDs within each dataset, not name matching.
+      </p>
+    </div>
+  )
+}
+
 function SourcesPanel({ sources }: { sources: string[] }) {
   const SOURCE_LINKS: Record<string, string> = {
     'OpenSanctions':    'https://www.opensanctions.org',
@@ -518,14 +603,15 @@ export default async function CompanyPage({ params }: PageProps) {
   const f3Unlocked = !!session?.user && plan !== 'free'
   const lockReason = !session?.user ? 'guest' : 'free'
 
-  // Watchlist check + ICIJ matches (parallel)
+  // Watchlist check + ICIJ data (parallel)
   let isWatching = false
-  const [watchlistRows, icijMatches] = await Promise.all([
+  const [watchlistRows, icijMatches, icijOfficerLinks] = await Promise.all([
     session?.user && (plan === 'professional' || plan === 'enterprise')
       ? db.query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [session.user.id, company.id])
           .then((r) => r.rows)
       : Promise.resolve([]),
     f3Unlocked ? getIcijMatches(company.id) : Promise.resolve([]),
+    f3Unlocked ? getIcijOfficerNetwork(company.id) : Promise.resolve([]),
   ])
   isWatching = watchlistRows.length > 0
 
@@ -562,7 +648,10 @@ export default async function CompanyPage({ params }: PageProps) {
       <RiskFlagsPanel company={company} />
     </ContentLock>,
     <ContentLock key="offshore" unlocked={f3Unlocked} reason={lockReason}>
-      <OffshoreLeaksPanel matches={icijMatches} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <OffshoreLeaksPanel matches={icijMatches} />
+        <IcijOfficerNetworkPanel links={icijOfficerLinks} />
+      </div>
     </ContentLock>,
     <ContentLock key="intelligence" unlocked={f3Unlocked} reason={lockReason}>
       <IntelligencePanel entityType="company" entityKey={company.slug} />
