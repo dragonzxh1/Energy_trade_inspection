@@ -469,7 +469,7 @@ export async function getPscSummary(imo: string): Promise<PscSummary> {
     `SELECT
        COUNT(*)                                         AS total,
        COUNT(*) FILTER (WHERE result = 'detained')     AS detentions,
-       COUNT(*) FILTER (WHERE result != 'no_deficiency') AS with_deficiency,
+       COUNT(*) FILTER (WHERE result IN ('deficiency', 'detained')) AS with_deficiency,
        MAX(inspection_date)::TEXT                       AS last_date,
        (ARRAY_AGG(result ORDER BY inspection_date DESC))[1] AS last_result
      FROM psc_inspections

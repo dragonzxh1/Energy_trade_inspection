@@ -224,7 +224,7 @@ function parseInspectionTable(html, imo, vesselName) {
 
     const result = detained        ? 'detained'
       : deficiency_count > 0       ? 'deficiency'
-      : 'clear'
+      : 'no_deficiency'
 
     inspections.push({
       imo,

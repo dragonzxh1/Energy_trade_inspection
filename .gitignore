@@ -40,3 +40,4 @@ __pycache__/
 # ICIJ / external dataset CSVs (large files, not committed)
 database/
 tmp/
+/tmp/
