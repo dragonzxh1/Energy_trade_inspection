@@ -32,6 +32,8 @@ interface EntityRow {
 function normalizeInput(value: string): string {
   return value
     .toLowerCase()
+    .normalize('NFD')                      // decompose accented chars: ö → o + combining ̈
+    .replace(/[\u0300-\u036f]/g, '')       // strip diacritics → torbjörn becomes torbjorn
     .replace(/\b(sa|ltd|limited|inc|corp|bv|gmbh|pte|fze|fzco|llc|plc)\b/g, ' ')
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -180,7 +182,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
   const normalized = normalizeInput(query)
   if (!normalized || normalized.length < 2) return []
 
-  const params: unknown[] = [normalized]
+  const params: unknown[] = [normalized, `${normalized}%`]
   let typeClause = ''
   if (entityType && ['company', 'vessel', 'terminal'].includes(entityType)) {
     params.push(entityType)
@@ -188,6 +190,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
   }
 
   // 查询本地实体库
+  // $1 = trigram normalized query, $2 = prefix pattern for ILIKE fallback
   const sql = `
     SELECT
       e.id,
@@ -211,11 +214,16 @@ export async function searchEntities(query: string, entityType?: string): Promis
     WHERE (
       e.normalized_name % $1
       OR a.normalized_alias % $1
+      OR e.normalized_name LIKE $2
       OR e.registration_number = $1
       OR e.imo = $1
     )
     ${typeClause}
     GROUP BY e.id
+    HAVING GREATEST(
+      similarity(e.normalized_name, $1),
+      COALESCE(MAX(similarity(a.normalized_alias, $1)), 0)
+    ) > 0.32
     ORDER BY score DESC, e.authenticity_score DESC
     LIMIT 20
   `
@@ -242,46 +250,26 @@ export async function searchEntities(query: string, entityType?: string): Promis
   let chResults: SearchResult[] = []
 
   const shouldSearchCompanies = !entityType || entityType === 'company'
-  if (shouldSearchCompanies && localResults.length < 5) {
+  if (shouldSearchCompanies && localResults.length === 0) {
     // 并行查询 ACRA（新加坡）和 Companies House（英国）
     const [acraEntities, chEntities] = await Promise.all([
       searchACRA(query, 10).catch(() => []),
       searchCompaniesHouse(query, 10).catch(() => []),
     ])
 
-    // ACRA 结果去重
-    const newFromACRA = acraEntities
+    // ACRA 结果去重（制裁状态保持 'unknown'，由实体页面按需筛查）
+    acraResults = acraEntities
       .filter((e) => !localIds.has(e.uen))
       .map(acraToSearchResult)
 
     // Companies House 结果去重
-    const newFromCH = chEntities
+    chResults = chEntities
       .filter((c) => !localIds.has(c.company_number))
       .map(chToSearchResult)
-
-    // 并行做制裁筛查
-    const [acraSanctions, chSanctions] = await Promise.all([
-      Promise.all(newFromACRA.map((r) => screenSanctions(r.name).catch(() => 'unknown' as SanctionStatus))),
-      Promise.all(newFromCH.map((r) => screenSanctions(r.name).catch(() => 'unknown' as SanctionStatus))),
-    ])
-
-    acraResults = newFromACRA.map((r, i) => ({ ...r, sanctionStatus: acraSanctions[i] }))
-    chResults   = newFromCH.map((r, i) => ({ ...r, sanctionStatus: chSanctions[i] }))
   }
 
-  // 合并结果，本地库优先
-  const combined = [...localResults, ...acraResults, ...chResults]
-
-  // 对本地库中 sanctionStatus 为 'unknown' 的条目补充制裁检查
-  const enriched = await Promise.all(
-    combined.map(async (result) => {
-      if (result.sanctionStatus !== 'unknown') return result
-      const status = await screenSanctions(result.name).catch(() => 'unknown' as SanctionStatus)
-      return { ...result, sanctionStatus: status }
-    })
-  )
-
-  return enriched.slice(0, 20)
+  // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
+  return [...localResults, ...acraResults, ...chResults].slice(0, 20)
 }
 
 export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | Terminal | null> {
