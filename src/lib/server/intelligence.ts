@@ -51,6 +51,16 @@ export interface VesselIntelligence {
   tracking_info:       TavilyResult[]
 }
 
+export interface TerminalIntelligence {
+  name:            string
+  location:        string | null
+  operator:        string | null
+  sanctions_hits:  TavilyResult[]
+  existence_check: TavilyResult[]
+  ownership_info:  TavilyResult[]
+  risk_signals:    TavilyResult[]
+}
+
 export interface AuthenticitySignals {
   web_presence_score: number
   signals:            string[]
@@ -122,6 +132,25 @@ export async function researchVessel(
   if (options.flag)       args.push('--flag', options.flag)
   if (options.maxResults) args.push('--max-results', String(options.maxResults))
   return runCli<VesselIntelligence>(args, 60_000)
+}
+
+/**
+ * Research a storage terminal / tank farm.
+ * Returns null on error (does not throw).
+ */
+export async function researchTerminal(
+  name: string,
+  options: {
+    location?: string
+    operator?: string
+    maxResults?: number
+  } = {},
+): Promise<TerminalIntelligence | null> {
+  const args = ['terminal', '--name', name]
+  if (options.location)   args.push('--location', options.location)
+  if (options.operator)   args.push('--operator', options.operator)
+  if (options.maxResults) args.push('--max-results', String(options.maxResults))
+  return runCli<TerminalIntelligence>(args, 60_000)
 }
 
 /**
