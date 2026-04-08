@@ -549,7 +549,20 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
       <ResultBanner result={result} />
 
       {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-5)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+        <a
+          href={`/api/trade/${result.id}/report`}
+          download
+          style={{
+            fontSize: '13px', color: 'var(--accent-primary)',
+            backgroundColor: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '6px', padding: '6px 14px',
+            textDecoration: 'none', display: 'inline-block',
+          }}
+        >
+          ↓ Download PDF
+        </a>
         <button
           onClick={onReset}
           style={{
@@ -557,6 +570,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
             backgroundColor: 'var(--bg-elevated)',
             border: '1px solid var(--border-subtle)',
             borderRadius: '6px', padding: '6px 14px', cursor: 'pointer',
+            fontFamily: 'inherit',
           }}
         >
           New check
