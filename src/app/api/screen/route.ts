@@ -50,6 +50,22 @@ export interface ScreeningReport {
   entities: EntityScreeningResult[]
 }
 
+// ── Passport masking ──────────────────────────────────────────────────────────
+
+/**
+ * Partially redact a passport / ID number for storage and display.
+ * Keeps the first 2 and last 4 characters; replaces the middle with asterisks.
+ * Examples: "A12345678" → "A1*****78",  "PASS001" → "PA***01"
+ */
+function maskPassport(raw: string): string {
+  const s = raw.trim()
+  if (s.length <= 6) return '*'.repeat(s.length)
+  const prefix = s.slice(0, 2)
+  const suffix = s.slice(-4)
+  const stars  = '*'.repeat(s.length - 6)
+  return `${prefix}${stars}${suffix}`
+}
+
 // ── Risk helpers ──────────────────────────────────────────────────────────────
 
 function entityRiskLevel(
@@ -147,7 +163,10 @@ async function screenEntity(entity: ExtractedEntity): Promise<EntityScreeningRes
   )
 
   return {
-    extracted: entity,
+    // Mask passport before storage — partial redaction only (first 2 + last 4 chars)
+    extracted: entity.passport
+      ? { ...entity, passport: maskPassport(entity.passport) }
+      : entity,
     sanctionStatus,
     dbEntity,
     icijConnections,
