@@ -37,6 +37,9 @@ export interface EntityScreeningResult {
   icijConnections?: IcijOfficerLink[]
   pscDeficiencyRate?: number
   riskLevel: RiskLevel
+  /** True when ICIJ offshore connections found — entity needs analyst review
+   *  before escalating. ICIJ appearance alone does not confirm current risk. */
+  needsManualReview?: boolean
 }
 
 export interface ScreeningReport {
@@ -56,15 +59,17 @@ function entityRiskLevel(
   pscDeficiencyRate: number | undefined
 ): RiskLevel {
   if (sanctionStatus === 'listed') return 'critical'
-  if ((icijConnections?.length ?? 0) > 0) return 'high'
   if (dbRiskLevel === 'critical' || dbRiskLevel === 'high') return 'high'
+  // ICIJ appearance indicates offshore exposure, not confirmed active risk.
+  // Panama/Pandora Papers cover millions of entities — flag for review, not high.
+  if ((icijConnections?.length ?? 0) > 0) return 'medium'
   if (dbRiskLevel === 'medium' || (pscDeficiencyRate ?? 0) > 0.2) return 'medium'
   return 'low'
 }
 
 function overallRisk(entities: EntityScreeningResult[]): RiskLevel {
   if (entities.some((e) => e.sanctionStatus === 'listed')) return 'critical'
-  if (entities.some((e) => (e.icijConnections?.length ?? 0) > 0)) return 'high'
+  // ICIJ hits now surface as medium per entity — they do not auto-escalate overall
   if (entities.some((e) => e.riskLevel === 'high')) return 'high'
   if (entities.some((e) => e.riskLevel === 'medium')) return 'medium'
   return 'low'
@@ -148,6 +153,7 @@ async function screenEntity(entity: ExtractedEntity): Promise<EntityScreeningRes
     icijConnections,
     pscDeficiencyRate,
     riskLevel,
+    needsManualReview: (icijConnections?.length ?? 0) > 0,
   }
 }
 

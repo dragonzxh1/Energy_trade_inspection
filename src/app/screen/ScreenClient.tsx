@@ -104,7 +104,7 @@ function RiskBadge({ level }: { level: RiskLevel }) {
 // ── Entity result card ────────────────────────────────────────────────────────
 
 function EntityCard({ result }: { result: EntityScreeningResult }) {
-  const { extracted, sanctionStatus, dbEntity, icijConnections, pscDeficiencyRate, riskLevel } =
+  const { extracted, sanctionStatus, dbEntity, icijConnections, pscDeficiencyRate, riskLevel, needsManualReview } =
     result
   const icijCount = icijConnections?.length ?? 0
   const href =
@@ -191,8 +191,26 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
           }}
         >
           {icijCount > 0 && (
-            <span style={{ fontSize: '12px', color: '#f97316' }}>
-              ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12px', color: '#eab308' }}>
+                ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
+              </span>
+              {needsManualReview && (
+                <span
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    letterSpacing: '0.04em',
+                    color: '#eab308',
+                    backgroundColor: 'rgba(234,179,8,0.12)',
+                    border: '1px solid rgba(234,179,8,0.35)',
+                    borderRadius: '4px',
+                    padding: '1px 6px',
+                  }}
+                >
+                  VERIFY MANUALLY
+                </span>
+              )}
             </span>
           )}
           {pscDeficiencyRate != null && (
@@ -233,8 +251,8 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
 
   const BANNER_TEXT: Record<RiskLevel, string> = {
     critical: 'Critical Risk — Sanctioned entity detected',
-    high:     'High Risk — ICIJ offshore connections or elevated risk found',
-    medium:   'Medium Risk — Further due diligence recommended',
+    high:     'High Risk — Elevated risk profile detected',
+    medium:   'Medium Risk — ICIJ offshore connections or other indicators require review',
     low:      'Low Risk — No immediate flags detected',
   }
 
