@@ -2,15 +2,16 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import SearchBox from '@/components/search/SearchBox'
+import HeroTradeForm from '@/components/trade/HeroTradeForm'
 import Header from '@/components/layout/Header'
 import { db } from '@/lib/server/db'
 import { applyMigrations } from '@/lib/server/migrations'
 import type { SanctionStatus, RiskLevel } from '@/lib/types'
 
 export const metadata: Metadata = {
-  title: 'Energy Trade Inspection — Counterparty Verification',
+  title: 'Energy Trade Inspection — Trade Risk Check',
   description:
-    'Verify energy trading counterparties. Sanction status, authenticity scores, and risk flags for companies and vessels.',
+    'Does this trade make sense? Check a seller and vessel against sanctions lists, AIS data, port risk, and trade rules in seconds.',
 }
 
 const TRUST_STATS = [
@@ -314,7 +315,7 @@ export default function HomePage() {
               marginBottom: 'var(--space-3)',
             }}
           >
-            Energy Trade Inspection
+            Trade Verification Engine
           </p>
           <h1
             style={{
@@ -324,33 +325,46 @@ export default function HomePage() {
               lineHeight: '48px',
             }}
           >
-            Know who you&apos;re trading with.
+            Does this trade make sense?
           </h1>
           <p
             style={{
               color: 'var(--text-secondary)',
               fontSize: '16px',
               lineHeight: '26px',
-              marginBottom: 'var(--space-8)',
+              marginBottom: 'var(--space-6)',
             }}
           >
-            Cross-verify companies, vessels, and terminals against sanction lists,
-            registries, and trading records — before you sign.
+            Enter a seller and vessel. Get a trade-level risk judgment — sanctions,
+            AIS dark periods, port risk, and geographic flags in one check.
           </p>
 
+          {/* Primary CTA — trade check */}
           <Suspense>
-            <SearchBox />
+            <HeroTradeForm />
           </Suspense>
 
-          <p
+          {/* Secondary — entity search */}
+          <div
             style={{
-              marginTop: 'var(--space-4)',
-              color: 'var(--text-muted)',
-              fontSize: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-3)',
+              marginTop: 'var(--space-6)',
             }}
           >
-            Search by company name, registration number, or IMO number
-          </p>
+            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', flexShrink: 0 }}>
+              or search for a counterparty
+            </span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
+          </div>
+
+          <div style={{ marginTop: 'var(--space-3)' }}>
+            <Suspense>
+              <SearchBox />
+            </Suspense>
+          </div>
         </div>
 
         {/* Trust strip */}

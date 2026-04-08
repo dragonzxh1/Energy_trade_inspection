@@ -1,6 +1,6 @@
 # Energy Trade Inspection — Task Prioritization
 
-**Last revised:** 2026-04-08
+**Last revised:** 2026-04-08 (rev 2)
 **Direction basis:** ETI is a Trade Verification Engine, not a data platform.
 The system must answer "does this trade make sense?" — not "what data exists about this entity?"
 
@@ -66,8 +66,21 @@ The system must answer "does this trade make sense?" — not "what data exists a
 - **Priority:** P2
 
 ### TASK-07: Company Age Lookup
-- **What:** For seller entities matched in Companies House or ACRA, extract the incorporation date and store it in `metadata_json`. Surface it in trade check output and use it in TASK-03's NEWLY_INCORPORATED_SELLER rule.
+- **What:** For seller entities matched in Companies House or ACRA, extract the incorporation date and store it in `metadata_json`. Surface it in trade check output and use it in TASK-03's NEWLY_INCORPORATED_SELLER rule. For entities outside UK/SG coverage, fall back to GLEIF API (free, name-based fuzzy search) to retrieve incorporation date from LEI record.
 - **Why:** Data dependency for TASK-03. Also useful independently — incorporation date is a key due diligence data point.
+- **Data sources (in priority order):** Companies House (UK) → ACRA (Singapore) → GLEIF API (global fallback, free)
+- **Priority:** P2
+
+### TASK-08: GLEIF Ownership Chain Detection
+- **What:** For seller companies in a trade check, query the GLEIF API to retrieve their Level 1 (direct parent) and Level 2 (ultimate parent) ownership relationships. If the ultimate parent jurisdiction is a known offshore/shell jurisdiction (BVI, Cayman Islands, Marshall Islands, Seychelles, Belize, Panama, Samoa, Vanuatu), fire a new `OFFSHORE_HOLDING_STRUCTURE` flag (HIGH severity).
+- **Why:** The highest-risk evasion pattern is not an offshore company trading directly — it's a seemingly legitimate UK/SG/AE company that is wholly owned by a BVI/Cayman holding entity. This is the multi-hop ownership chain that simple jurisdiction checks miss. GLEIF Level 2 data solves this and is free.
+- **Implementation notes:**
+  - GLEIF REST API: `https://api.gleif.org/api/v1/lei-records?filter[entity.legalName]={name}` (free, no API key)
+  - Level 2 relationship endpoint: `GET /api/v1/lei-records/{lei}/ultimate-parent`
+  - **Do not use OpenCorporates as a data source** — bulk data is paywalled (£2,250–£12,000/yr). GLEIF covers the same ownership graph for free.
+  - OC-to-LEI mapping CSV (GLEIF, bi-weekly): use only if entity already has an OC company ID stored; otherwise go direct via name search.
+- **New flag:** `OFFSHORE_HOLDING_STRUCTURE` (HIGH) — "Ultimate beneficial owner is registered in [jurisdiction], a known shell company jurisdiction."
+- **Acceptance:** `POST /api/trade` for a seller company ultimately owned by a BVI holding entity returns `OFFSHORE_HOLDING_STRUCTURE` flag with the ownership chain as evidence.
 - **Priority:** P2
 
 ---
@@ -118,8 +131,12 @@ TASK-03 (New Rules)  +  TASK-04 (Narrative)  ← run in parallel
     ↓
 TASK-05 (PSC as Rule Signal)
     ↓
-TASK-06 (Watchlist)  +  TASK-07 (Company Age)  ← run in parallel
+TASK-07 (Company Age)  +  TASK-08 (GLEIF Ownership Chain)  ← run in parallel
+    ↓
+TASK-06 (Watchlist)
 ```
+
+> **Data source decision (locked):** GLEIF API is the ownership chain layer. OpenCorporates is not a free bulk data source — do not treat it as one.
 
 ---
 

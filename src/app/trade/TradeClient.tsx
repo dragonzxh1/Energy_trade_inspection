@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TradeCheckResult, TradePartyResult, TradeVesselResult, TradePortResult } from '@/app/api/trade/route'
 import type { TradeFlag } from '@/lib/server/trade-rules'
@@ -130,9 +131,13 @@ function hintStyle(): React.CSSProperties {
   return { fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }
 }
 
-function TradeForm({ onSubmit }: { onSubmit: (v: FormValues) => void }) {
+function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
+  onSubmit: (v: FormValues) => void
+  initialSeller?: string
+  initialVessel?: string
+}) {
   const [values, setValues] = useState<FormValues>({
-    seller: '', vessel: '', imo: '', date: '', loadingPort: '', commodity: '',
+    seller: initialSeller, vessel: initialVessel, imo: '', date: '', loadingPort: '', commodity: '',
   })
   const [touched, setTouched] = useState({ seller: false, vessel: false })
 
@@ -624,6 +629,10 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
 type ViewState = 'form' | 'loading' | 'results' | 'error'
 
 export default function TradeClient() {
+  const searchParams  = useSearchParams()
+  const initSeller    = searchParams.get('seller') ?? ''
+  const initVessel    = searchParams.get('vessel') ?? ''
+
   const [view, setView]       = useState<ViewState>('form')
   const [result, setResult]   = useState<TradeCheckResult | null>(null)
   const [error, setError]     = useState('')
@@ -691,7 +700,7 @@ export default function TradeClient() {
             backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
             borderRadius: '10px', padding: 'var(--space-6)', marginBottom: 'var(--space-4)',
           }}>
-            <TradeForm onSubmit={submit} />
+            <TradeForm onSubmit={submit} initialSeller={initSeller} initialVessel={initVessel} />
           </div>
 
           {view === 'error' && (

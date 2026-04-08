@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/auth'
@@ -19,11 +20,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default async function TradePage() {
+export default async function TradePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}) {
   const session = await auth()
 
   if (!session?.user) {
-    redirect('/sign-in')
+    const params = await searchParams
+    const seller = typeof params.seller === 'string' ? params.seller : ''
+    const vessel = typeof params.vessel === 'string' ? params.vessel : ''
+    const tradeUrl = seller && vessel
+      ? `/trade?seller=${encodeURIComponent(seller)}&vessel=${encodeURIComponent(vessel)}`
+      : '/trade'
+    redirect(`/sign-in?callbackUrl=${encodeURIComponent(tradeUrl)}`)
   }
 
   const plan = session.user.plan ?? 'free'
@@ -41,7 +52,9 @@ export default async function TradePage() {
         {plan === 'free' ? (
           <UpgradePrompt />
         ) : (
-          <TradeClient />
+          <Suspense>
+            <TradeClient />
+          </Suspense>
         )}
       </main>
     </>
