@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { SearchResult, RiskLevel } from '@/lib/types'
-import { getScoreTier } from '@/lib/utils'
+import { getScoreTier, countryCodeToFlag } from '@/lib/utils'
 import SanctionBadge from '@/components/entity/SanctionBadge'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ function EntityCard({ result }: { result: SearchResult }) {
               {result.type === 'vessel' ? 'Vessel' : result.type === 'terminal' ? 'Terminal' : 'Company'}
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              {result.jurisdictionFlag} {result.country}
+              {countryCodeToFlag(result.jurisdictionFlag)} {result.country}
             </span>
             {result.type === 'vessel' && result.vesselType && (
               <>
@@ -177,7 +177,7 @@ export default function SearchFiltersPanel({ results, query, entityType }: Props
     const seen = new Map<string, string>() // country code → "flag country"
     for (const r of results) {
       if (r.country && !seen.has(r.country)) {
-        seen.set(r.country, `${r.jurisdictionFlag} ${r.country}`)
+        seen.set(r.country, `${countryCodeToFlag(r.jurisdictionFlag)} ${r.country}`)
       }
     }
     return [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))

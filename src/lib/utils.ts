@@ -2,6 +2,21 @@ import type { Company, RiskLevel, ScoreTier, Terminal, Vessel } from './types'
 import { GAUGE_CIRCUMFERENCE, RISK_THRESHOLDS, SCORE_TIERS } from './constants'
 
 /**
+ * Convert a 2-letter ISO country code to an emoji flag.
+ * Falls through unchanged for anything that isn't exactly 2 ASCII letters
+ * (e.g. already-emoji strings, 'xx' unknown code → 🇽🇽, etc.).
+ */
+export function countryCodeToFlag(code: string): string {
+  if (!code || code.length !== 2) return code
+  const upper = code.toUpperCase()
+  if (!/^[A-Z]{2}$/.test(upper)) return code
+  return (
+    String.fromCodePoint(0x1f1e6 + upper.charCodeAt(0) - 65) +
+    String.fromCodePoint(0x1f1e6 + upper.charCodeAt(1) - 65)
+  )
+}
+
+/**
  * Map a 0-100 authenticity score to a risk level.
  * Higher score = lower risk.
  */
