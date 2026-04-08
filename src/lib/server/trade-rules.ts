@@ -33,6 +33,7 @@ export type FlagCode =
   | 'NEWLY_INCORPORATED_SELLER'
   | 'VESSEL_FLAG_ROUTE_MISMATCH'
   | 'MULTIPLE_OPERATOR_CHANGES'
+  | 'VESSEL_COMPLIANCE_RISK'
 
 export interface TradeFlag {
   code: FlagCode
@@ -60,6 +61,10 @@ export interface TradeRuleInput {
   vesselAis: VesselAisData | null
   /** Count of operator/registered-owner changes in the past 18 months. Null if unknown. */
   vesselOperatorChanges?: number | null
+  /** PSC detention count across all recorded inspections. Null if no data. */
+  vesselPscDetentions?: number | null
+  /** PSC deficiency rate (0–1) across all recorded inspections. Null if no data. */
+  vesselPscDeficiencyRate?: number | null
 
   // Port
   loadingPortLocode: string | null
@@ -373,6 +378,41 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         `Operator/owner changes in past 18 months: ${input.vesselOperatorChanges}`,
         'Threshold: more than 2 changes',
         'Source: Vessel Registry / AIS History',
+      ],
+    })
+  }
+
+  // ── Rule 10: VESSEL_COMPLIANCE_RISK ───────────────────────────────────────
+  // PSC detention or chronic deficiency — direct evidence of non-compliance.
+  if (input.vesselPscDetentions != null && input.vesselPscDetentions > 0) {
+    const defPct = input.vesselPscDeficiencyRate != null
+      ? `${Math.round(input.vesselPscDeficiencyRate * 100)}%`
+      : 'unknown'
+    flags.push({
+      code: 'VESSEL_COMPLIANCE_RISK',
+      severity: 'high',
+      target: 'vessel',
+      reason: `Vessel "${input.vesselName}" has been detained ${input.vesselPscDetentions} time(s) during Port State Control inspections — indicating serious compliance or seaworthiness deficiencies.`,
+      evidence: [
+        `PSC detentions: ${input.vesselPscDetentions}`,
+        `Deficiency rate: ${defPct}`,
+        'Source: Paris MOU / Tokyo MOU / USCG PSC Records',
+      ],
+    })
+  } else if (
+    input.vesselPscDetentions === 0 &&
+    input.vesselPscDeficiencyRate != null &&
+    input.vesselPscDeficiencyRate > 0.30
+  ) {
+    flags.push({
+      code: 'VESSEL_COMPLIANCE_RISK',
+      severity: 'medium',
+      target: 'vessel',
+      reason: `Vessel "${input.vesselName}" has a PSC deficiency rate of ${Math.round(input.vesselPscDeficiencyRate * 100)}% (threshold: 30%) — indicating recurring maintenance or operational deficiencies across inspections.`,
+      evidence: [
+        `Deficiency rate: ${Math.round(input.vesselPscDeficiencyRate * 100)}%`,
+        'Threshold: > 30%',
+        'Source: PSC Inspection Records',
       ],
     })
   }

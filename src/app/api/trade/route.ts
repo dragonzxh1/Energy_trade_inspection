@@ -258,7 +258,9 @@ export async function POST(req: NextRequest) {
     vesselSanctioned:         vesselSanction.listed,
     vesselSanctionSources:    vesselSanction.sources,
     vesselAis,
-    vesselOperatorChanges:    null,  // populated in TASK-05 (PSC history)
+    vesselOperatorChanges:    null,  // populated when registry change tracking is added
+    vesselPscDetentions:      pscSummary?.detentions ?? null,
+    vesselPscDeficiencyRate:  pscSummary?.deficiencyRate ?? null,
 
     loadingPortLocode:        loadingPort,
     loadingPortCountry:       portData?.country ?? null,
