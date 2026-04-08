@@ -18,7 +18,7 @@
  * Rules are deterministic: same input → same flags, always.
  */
 
-import type { RiskLevel } from '@/lib/types'
+import type { RiskLevel, BeneficialOwner } from '@/lib/types'
 import type { SearchResult } from '@/lib/types'
 import type { VesselAisData } from '@/lib/ais-types'
 import type { DraftRiskResult } from '@/lib/server/repository'
@@ -37,6 +37,9 @@ export type FlagCode =
   | 'MULTIPLE_OPERATOR_CHANGES'
   | 'VESSEL_COMPLIANCE_RISK'
   | 'OFFSHORE_HOLDING_STRUCTURE'
+  | 'PSC_OFFSHORE_CONTROL'
+  | 'SPARSE_REGISTRY_DATA'
+  | 'OFFSHORE_LOW_SUBSTANCE'
 
 export interface TradeFlag {
   code: FlagCode
@@ -84,6 +87,20 @@ export interface TradeRuleInput {
   tradeDate: string | null
   /** Commodity description e.g. "Fuel Oil 380 cst", "Crude Oil", "LNG". */
   commodity?: string | null
+
+  /** UK Companies House PSC list for the seller. Null if not a CH entity. */
+  sellerBeneficialOwners?: BeneficialOwner[] | null
+
+  /**
+   * Registry source derived from the seller entity id prefix.
+   * 'local_db' — found in local entity database (UUID id)
+   * 'acra'     — from Singapore ACRA (id starts with 'acra:')
+   * 'ch'       — from UK Companies House (id starts with 'ch:')
+   * 'zefix'    — from Swiss Zefix registry (id starts with 'zefix:')
+   * 'gleif'    — found only in GLEIF LEI register (id starts with 'gleif:')
+   * null       — not found in any registry
+   */
+  sellerRegistrySource?: 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | null
 
   /**
    * When true, AIS-dependent rules (NO_RECENT_ACTIVITY, AIS destination mismatch,
@@ -459,6 +476,86 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
+  // ── Rule 12: PSC_OFFSHORE_CONTROL ─────────────────────────────────────────
+  // UK Companies House PSC with country of residence/address in known offshore set.
+  if (input.sellerBeneficialOwners && input.sellerBeneficialOwners.length > 0) {
+    for (const psc of input.sellerBeneficialOwners) {
+      const residenceCC  = (psc.countryOfResidence ?? '').slice(0, 2).toUpperCase()
+      const addressCC    = (psc.addressCountry   ?? '').slice(0, 2).toUpperCase()
+      const nationalityCC = (psc.nationality     ?? '').slice(0, 2).toUpperCase()
+
+      const offshoreCC =
+        (residenceCC  && OFFSHORE_CC.has(residenceCC))  ? residenceCC  :
+        (addressCC    && OFFSHORE_CC.has(addressCC))    ? addressCC    :
+        (nationalityCC && OFFSHORE_CC.has(nationalityCC)) ? nationalityCC :
+        null
+
+      if (offshoreCC) {
+        const countryLabel = OFFSHORE_NAMES[offshoreCC] ?? offshoreCC
+        const controlType  = psc.naturesOfControl.join(', ') || 'significant control'
+        flags.push({
+          code: 'PSC_OFFSHORE_CONTROL',
+          severity: 'high',
+          target: 'seller',
+          reason: `PSC "${psc.name}" — ${controlType} — resident/incorporated in ${countryLabel}. Beneficial owner in an offshore jurisdiction is a key AML indicator.`,
+          evidence: [
+            `PSC: ${psc.name} (${psc.kind})`,
+            `Country: ${countryLabel} (${offshoreCC})`,
+            `Control: ${controlType}`,
+            'Source: UK Companies House PSC Register',
+          ],
+        })
+        break  // one flag per seller is sufficient; avoid duplicate stacking
+      }
+    }
+  }
+
+  // ── Rule 13: SPARSE_REGISTRY_DATA ─────────────────────────────────────────
+  // Seller found only in GLEIF LEI register — no direct company registry match.
+  if (input.sellerRegistrySource === 'gleif') {
+    const sellerJurCC = (input.sellerDbMatch?.country ?? '').toUpperCase().slice(0, 2)
+    flags.push({
+      code: 'SPARSE_REGISTRY_DATA',
+      severity: 'medium',
+      target: 'seller',
+      reason: `Seller "${input.sellerName}" was found only in the GLEIF LEI register — no direct company registry data is available${sellerJurCC ? ` for jurisdiction ${sellerJurCC}` : ''}. Data completeness is limited.`,
+      evidence: [
+        'GLEIF LEI Registry (fallback)',
+        'No match in: Local DB, Singapore ACRA, UK Companies House, Swiss Zefix',
+        'LEI registration indicates regulated entity status, but direct registry verification is unavailable',
+      ],
+    })
+  }
+
+  // ── Rule 14: OFFSHORE_LOW_SUBSTANCE ───────────────────────────────────────
+  // Seller registered in a Tier-C offshore jurisdiction with no direct registry record.
+  {
+    const sellerJurCC = (
+      input.sellerDbMatch?.country ??
+      input.sellerDbMatch?.jurisdictionFlag ??
+      ''
+    ).toUpperCase().slice(0, 2)
+
+    const isOffshore = sellerJurCC && OFFSHORE_CC.has(sellerJurCC)
+    const isGleifOnly = input.sellerRegistrySource === 'gleif'
+    const isNoMatch   = !input.sellerDbMatch
+
+    if (isOffshore && (isGleifOnly || isNoMatch)) {
+      const jurName = OFFSHORE_NAMES[sellerJurCC] ?? sellerJurCC
+      flags.push({
+        code: 'OFFSHORE_LOW_SUBSTANCE',
+        severity: 'high',
+        target: 'seller',
+        reason: `Seller "${input.sellerName}" is registered in ${jurName} with no verifiable company registry record — consistent with low-substance offshore entity patterns.`,
+        evidence: [
+          `Jurisdiction: ${jurName} (${sellerJurCC})`,
+          isGleifOnly ? 'Registry source: GLEIF LEI only (no direct registry)' : 'No registry match found',
+          'Offshore set: BVI, Cayman, Marshall Is., Seychelles, Belize, Panama, Samoa, Vanuatu',
+        ],
+      })
+    }
+  }
+
   return flags
 }
 
@@ -490,7 +587,7 @@ function detectPattern(flags: TradeFlag[]): RiskPattern {
   ) return 'SANCTIONS_EVASION'
 
   if (
-    (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER') || codes.has('OFFSHORE_HOLDING_STRUCTURE')) &&
+    (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER') || codes.has('OFFSHORE_HOLDING_STRUCTURE') || codes.has('PSC_OFFSHORE_CONTROL') || codes.has('OFFSHORE_LOW_SUBSTANCE')) &&
     (codes.has('NO_REGISTRY_MATCH') || codes.has('SANCTION_EXPOSURE'))
   ) return 'SHELL_COMPANY'
 
@@ -504,7 +601,9 @@ function detectPattern(flags: TradeFlag[]): RiskPattern {
   if (
     codes.has('LIMITED_BUSINESS_FOOTPRINT') ||
     codes.has('NEWLY_INCORPORATED_SELLER') ||
-    codes.has('OFFSHORE_HOLDING_STRUCTURE')
+    codes.has('OFFSHORE_HOLDING_STRUCTURE') ||
+    codes.has('PSC_OFFSHORE_CONTROL') ||
+    codes.has('OFFSHORE_LOW_SUBSTANCE')
   ) {
     return 'SHELL_COMPANY'
   }

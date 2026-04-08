@@ -36,9 +36,10 @@ import {
   generateSummary,
   type TradeFlag,
 } from '@/lib/server/trade-rules'
-import type { SearchResult, RiskLevel, SanctionStatus } from '@/lib/types'
+import type { SearchResult, RiskLevel, SanctionStatus, Company, BeneficialOwner } from '@/lib/types'
 import type { VesselAisData } from '@/lib/ais-types'
 import type { DraftRiskResult } from '@/lib/server/repository'
+import { getVesselAis } from '@/lib/server/ais'
 
 // ── Output types ──────────────────────────────────────────────────────────────
 
@@ -107,6 +108,39 @@ async function getCachedAis(imo: string): Promise<VesselAisData | null> {
   } catch {
     return null
   }
+}
+
+/**
+ * Return AIS data for a trade check:
+ * - Tries fresh cache first (zero latency for warm vessels).
+ * - On cache miss, attempts a live fetch with a 4-second timeout so cold
+ *   vessels get real position data without blocking the trade check unduly.
+ */
+async function getAisForTrade(imo: string): Promise<VesselAisData | null> {
+  const cached = await getCachedAis(imo)
+  if (cached) return cached
+
+  try {
+    return await Promise.race([
+      getVesselAis(imo),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 4_000)),
+    ])
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Derive the registry source from an entity id prefix.
+ * Convention: id prefix encodes the data source; no additional fields needed.
+ */
+function deriveRegistrySource(id?: string): 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | null {
+  if (!id) return null
+  if (id.startsWith('acra:'))  return 'acra'
+  if (id.startsWith('ch:'))    return 'ch'
+  if (id.startsWith('zefix:')) return 'zefix'
+  if (id.startsWith('gleif:')) return 'gleif'
+  return 'local_db'
 }
 
 /** Derive a vessel IMO from either a pure 7-digit string or a name like "MV STAR / 9346079". */
@@ -187,7 +221,7 @@ export async function POST(req: NextRequest) {
       ? getEntityByKey(vesselImo).catch(() => null)
       : searchEntities(vessel, 'vessel').then(r => r[0] ?? null).catch(() => null),
     loadingPort ? getPortByLocode(loadingPort).catch(() => null) : Promise.resolve(null),
-    vesselImo ? getCachedAis(vesselImo) : Promise.resolve(null),
+    vesselImo ? getAisForTrade(vesselImo) : Promise.resolve(null),
     // TASK-07/08: GLEIF name search — LEI + registration date + jurisdiction
     searchGleifByName(seller).catch(() => null),
   ])
@@ -197,13 +231,14 @@ export async function POST(req: NextRequest) {
   const resolvedImo    = vesselImo ?? vesselDbResult?.imo ?? null
   const vesselDraftM   = vesselAis?.position?.draught ?? null
 
-  // ── Second parallel: ICIJ, DB inc date, GLEIF parent chain, PSC, draft risk
+  // ── Second parallel: ICIJ, DB inc date, GLEIF parent chain, PSC, draft risk, seller entity
   const [
     sellerIcijCount,
     sellerDbIncDate,
     sellerUltimateParentJurisdiction,
     pscSummary,
     draftRisk,
+    sellerFullEntity,
   ] = await Promise.all([
     // ICIJ officer network count
     sellerDbMatch?.id
@@ -232,10 +267,19 @@ export async function POST(req: NextRequest) {
     loadingPort
       ? checkDraftRisk(loadingPort, vesselDraftM).catch(() => null)
       : Promise.resolve(null),
+
+    // Full seller entity — needed to access beneficialOwners from CH PSC register
+    sellerDbMatch?.registrationNumber
+      ? getEntityByKey(sellerDbMatch.registrationNumber).catch(() => null)
+      : Promise.resolve(null),
   ])
 
   // TASK-07: final incorporation date — DB row first, GLEIF LEI registration as fallback
   const sellerIncorporationDate = sellerDbIncDate ?? gleifRecord?.initialRegistrationDate ?? null
+
+  // Extract beneficial owners from full CH entity (null for non-CH entities)
+  const sellerBeneficialOwners: BeneficialOwner[] | null =
+    (sellerFullEntity as Company | null)?.beneficialOwners ?? null
 
   // ── Derive risk levels ────────────────────────────────────────────────────
   const sellerSanctionStatus: SanctionStatus = sellerSanction.listed ? 'listed' : 'not_listed'
@@ -275,6 +319,8 @@ export async function POST(req: NextRequest) {
     sellerSanctionSources:           sellerSanction.sources,
     sellerIncorporationDate,
     sellerUltimateParentJurisdiction,
+    sellerBeneficialOwners,
+    sellerRegistrySource:            deriveRegistrySource(sellerDbMatch?.id),
 
     vesselName:               vessel,
     vesselImo:                resolvedImo,

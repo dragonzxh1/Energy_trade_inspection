@@ -9,7 +9,21 @@ import {
   mightBeUKNumber,
   chToSearchResult,
   buildCHCompany,
+  getCHOfficers,
+  getCHPSC,
 } from './sync/companies-house'
+import {
+  searchZefix,
+  getZefixByUid,
+  mightBeSwissUid,
+  zefixToSearchResult,
+  buildZefixCompany,
+} from './sync/zefix'
+import {
+  searchGleifMultiple,
+  getGleifRecordByLei,
+  buildGleifCompany,
+} from './gleif'
 
 interface EntityRow {
   id: string
@@ -401,13 +415,15 @@ export async function searchEntities(query: string, entityType?: string): Promis
 
   const shouldSearchCompanies = !entityType || entityType === 'company'
   if (shouldSearchCompanies && localResults.length === 0) {
-    // 并行查询 ACRA（新加坡）和 Companies House（英国）
-    const [acraEntities, chEntities] = await Promise.all([
-      searchACRA(query, 10).catch(() => []),
-      searchCompaniesHouse(query, 10).catch(() => []),
+    // 并行查询 ACRA（新加坡）、Companies House（英国）、Zefix（瑞士）、GLEIF（全球后备）
+    const [acraEntities, chEntities, zefixEntities, gleifRecords] = await Promise.all([
+      searchACRA(query, 5).catch(() => []),
+      searchCompaniesHouse(query, 5).catch(() => []),
+      searchZefix(query, 5).catch(() => []),
+      searchGleifMultiple(query, 5).catch(() => []),
     ])
 
-    // ACRA 结果去重（制裁状态保持 'unknown'，由实体页面按需筛查）
+    // ACRA 结果去重
     acraResults = acraEntities
       .filter((e) => !localIds.has(e.uen))
       .map(acraToSearchResult)
@@ -416,6 +432,36 @@ export async function searchEntities(query: string, entityType?: string): Promis
     chResults = chEntities
       .filter((c) => !localIds.has(c.company_number))
       .map(chToSearchResult)
+
+    // Zefix 结果去重
+    const zefixResults = zefixEntities
+      .filter((c) => !localIds.has(c.uid))
+      .map(zefixToSearchResult)
+
+    // GLEIF 结果去重（仅添加未被其他来源覆盖的 LEI）
+    const allRegNums = new Set([
+      ...localIds,
+      ...acraResults.map(r => r.registrationNumber).filter(Boolean),
+      ...chResults.map(r => r.registrationNumber).filter(Boolean),
+      ...zefixResults.map(r => r.registrationNumber).filter(Boolean),
+    ])
+    const gleifResults = gleifRecords
+      .filter((r) => !allRegNums.has(r.lei))
+      .map((r) => ({
+        id: `gleif:${r.lei}`,
+        name: r.legalName,
+        type: 'company' as const,
+        country: r.jurisdiction ?? r.country ?? '',
+        jurisdictionFlag: r.jurisdiction ?? '',
+        sanctionStatus: 'unknown' as const,
+        authenticityScore: 0,
+        riskLevel: 'medium' as const,
+        registrationNumber: r.lei,
+        slug: `lei-${r.lei.toLowerCase()}`,
+      }))
+
+    // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
+    return [...localResults, ...acraResults, ...chResults, ...zefixResults, ...gleifResults].slice(0, 20)
   }
 
   // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
@@ -475,16 +521,62 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     if (mightBeUKNumber(idOrSlugOrImo)) {
       const chCompany = await getCHCompanyByNumber(idOrSlugOrImo).catch(() => null)
       if (chCompany) {
-        const sanctionStatus = await screenSanctions(chCompany.title).catch(
-          () => 'unknown' as SanctionStatus
-        )
+        const [sanctionStatus, officers, psc] = await Promise.all([
+          screenSanctions(chCompany.title).catch(() => 'unknown' as SanctionStatus),
+          getCHOfficers(chCompany.company_number).catch(() => []),
+          getCHPSC(chCompany.company_number).catch(() => []),
+        ])
+
+        const directors: Company['directors'] = officers.map((o, i) => ({
+          id:          `ch-officer-${i}`,
+          name:        o.name,
+          role:        o.role,
+          nationality: o.nationality,
+          appointedDate: o.appointedOn,
+        }))
+
         const company: Company = {
           ...buildCHCompany(chCompany),
           sanctionStatus,
           riskLevel: sanctionStatus === 'listed' ? 'critical' : 'medium',
+          directors:       directors.length > 0 ? directors : undefined,
+          beneficialOwners: psc.length > 0 ? psc : undefined,
         }
         return company
       }
+    }
+
+    // 3. 尝试 Zefix（瑞士 UID 格式）
+    if (mightBeSwissUid(idOrSlugOrImo)) {
+      const zefixCompany = await getZefixByUid(idOrSlugOrImo).catch(() => null)
+      if (zefixCompany) {
+        const sanctionStatus = await screenSanctions(zefixCompany.name).catch(
+          () => 'unknown' as SanctionStatus
+        )
+        return buildZefixCompany(zefixCompany, sanctionStatus) as unknown as Company
+      }
+    }
+
+    // 4. 尝试 GLEIF 精确查询（gleif:${lei} 前缀）
+    if (idOrSlugOrImo.startsWith('gleif:')) {
+      const lei = idOrSlugOrImo.slice(6)
+      const record = await getGleifRecordByLei(lei).catch(() => null)
+      if (record) {
+        const sanctionStatus = await screenSanctions(record.legalName).catch(
+          () => 'unknown' as SanctionStatus
+        )
+        return buildGleifCompany(record, sanctionStatus) as unknown as Company
+      }
+    }
+
+    // 5. GLEIF 名称搜索（最后兜底）
+    const gleifResults = await searchGleifMultiple(idOrSlugOrImo, 1).catch(() => [])
+    if (gleifResults[0]) {
+      const record = gleifResults[0]
+      const sanctionStatus = await screenSanctions(record.legalName).catch(
+        () => 'unknown' as SanctionStatus
+      )
+      return buildGleifCompany(record, sanctionStatus) as unknown as Company
     }
 
     return null
