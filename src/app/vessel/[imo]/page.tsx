@@ -556,6 +556,49 @@ export default async function VesselPage({ params }: PageProps) {
               initialWatching={isWatching}
               plan={plan}
             />
+
+            {/* External trackers */}
+            <div style={{ marginTop: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+              <p style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>
+                Track Vessel
+              </p>
+              <a
+                href={`https://www.marinetraffic.com/en/ais/details/ships/imo:${vessel.imo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  padding: 'var(--space-2) var(--space-3)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '6px',
+                  color: 'var(--text-muted)',
+                  fontSize: '12px',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                }}
+              >
+                MarineTraffic ↗
+              </a>
+              <a
+                href={`https://www.vesselfinder.com/vessels?name=${encodeURIComponent(vessel.name)}&imo=${vessel.imo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  padding: 'var(--space-2) var(--space-3)',
+                  backgroundColor: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '6px',
+                  color: 'var(--text-muted)',
+                  fontSize: '12px',
+                  textDecoration: 'none',
+                  textAlign: 'center',
+                }}
+              >
+                VesselFinder ↗
+              </a>
+            </div>
           </aside>
 
           <main className="animate-fade-in-up-delay-1">

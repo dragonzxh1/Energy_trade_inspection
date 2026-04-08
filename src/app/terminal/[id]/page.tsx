@@ -139,6 +139,23 @@ function TerminalDetailsPanel({ terminal }: { terminal: Terminal }) {
           }
         />
       )}
+      {(terminal.name || terminal.location) && (
+        <InfoRow
+          label="View on map"
+          value={
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                [terminal.name, terminal.location, terminal.country].filter(Boolean).join(' ')
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}
+            >
+              Google Maps ↗
+            </a>
+          }
+        />
+      )}
       <InfoRow
         label="Sanction status"
         value={

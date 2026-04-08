@@ -123,7 +123,24 @@ function RegistrationPanel({ company }: { company: Company }) {
             : undefined
         }
       />
-      <InfoRow label="Registered address" value={company.registeredAddress} />
+      <InfoRow
+        label="Registered address"
+        value={
+          company.registeredAddress
+            ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(company.registeredAddress)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
+              >
+                {company.registeredAddress}{' '}
+                <span style={{ color: 'var(--accent-primary)', fontSize: '11px' }}>↗</span>
+              </a>
+            )
+            : undefined
+        }
+      />
       <InfoRow
         label="Sanction status"
         value={
