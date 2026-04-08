@@ -361,6 +361,7 @@ export async function POST(req: NextRequest) {
         draftRisk:          null,
 
         tradeDate:    params.tradeDate ?? null,
+        commodity:    params.commodity ?? null,
         skipAisRules: true,
       })
 
