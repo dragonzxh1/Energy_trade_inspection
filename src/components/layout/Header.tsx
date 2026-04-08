@@ -123,6 +123,16 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
               </Link>
             )}
 
+            {plan !== 'free' && (
+              <Link
+                href="/trade"
+                className="nav-text-link"
+                style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
+              >
+                Trade
+              </Link>
+            )}
+
             {(plan === 'professional' || plan === 'enterprise') && (
               <Link
                 href="/watchlist"
