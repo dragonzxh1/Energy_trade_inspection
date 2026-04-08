@@ -194,6 +194,14 @@ export async function POST(req: NextRequest) {
         .catch(() => 0)
     : 0
 
+  // ── Seller incorporation date (for NEWLY_INCORPORATED_SELLER rule) ─────────
+  const sellerIncorporationDate: string | null = sellerDbMatch?.id
+    ? await db.query<{ inc_date: string | null }>(
+        `SELECT metadata_json->>'incorporationDate' AS inc_date FROM entities WHERE id = $1`,
+        [sellerDbMatch.id]
+      ).then(r => r.rows[0]?.inc_date ?? null).catch(() => null)
+    : null
+
   // ── PSC check for vessel ───────────────────────────────────────────────────
   const resolvedImo = vesselImo ?? vesselDbResult?.imo ?? null
   const pscSummary  = resolvedImo
@@ -238,24 +246,27 @@ export async function POST(req: NextRequest) {
 
   // ── Run deterministic rule engine ─────────────────────────────────────────
   const flags = runTradeRules({
-    sellerName:          seller,
+    sellerName:               seller,
     sellerDbMatch,
-    sellerSanctioned:    sellerSanction.listed,
-    sellerSanctionSources: sellerSanction.sources,
+    sellerSanctioned:         sellerSanction.listed,
+    sellerSanctionSources:    sellerSanction.sources,
+    sellerIncorporationDate,
 
-    vesselName:          vessel,
-    vesselImo:           resolvedImo,
-    vesselDbMatch:       vesselDbResult,
-    vesselSanctioned:    vesselSanction.listed,
-    vesselSanctionSources: vesselSanction.sources,
+    vesselName:               vessel,
+    vesselImo:                resolvedImo,
+    vesselDbMatch:            vesselDbResult,
+    vesselSanctioned:         vesselSanction.listed,
+    vesselSanctionSources:    vesselSanction.sources,
     vesselAis,
+    vesselOperatorChanges:    null,  // populated in TASK-05 (PSC history)
 
-    loadingPortLocode:   loadingPort,
-    loadingPortCountry:  portData?.country ?? null,
-    loadingPortName:     portData?.name ?? null,
+    loadingPortLocode:        loadingPort,
+    loadingPortCountry:       portData?.country ?? null,
+    loadingPortName:          portData?.name ?? null,
     draftRisk,
 
-    tradeDate:           date,
+    tradeDate:                date,
+    commodity,
   })
 
   const flagRisk    = overallRiskFromFlags(flags)

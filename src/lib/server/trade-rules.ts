@@ -1,13 +1,16 @@
 /**
  * Deterministic trade risk rule engine.
  *
- * Six standard flags (Phase 1):
+ * Nine standard flags (Phase 1 + Phase 2):
  *   NO_REGISTRY_MATCH          — seller not found in any registry
  *   SANCTION_EXPOSURE          — seller or vessel on trade sanctions list
  *   LIMITED_BUSINESS_FOOTPRINT — seller has negligible verifiable presence
  *   GEO_MISMATCH               — high-risk jurisdiction in seller / vessel / port
  *   NO_RECENT_ACTIVITY         — vessel AIS dark or stale > 72 h
  *   INCONSISTENT_TRADE_STORY   — physical impossibility or AIS contradiction
+ *   NEWLY_INCORPORATED_SELLER  — seller < 24 months old trading high-value commodity
+ *   VESSEL_FLAG_ROUTE_MISMATCH — vessel under known evasion flag state
+ *   MULTIPLE_OPERATOR_CHANGES  — vessel changed operator/owner > 2× in 18 months
  *
  * Each flag includes: code, severity, target, reason, evidence[].
  * Rules are deterministic: same input → same flags, always.
@@ -27,6 +30,9 @@ export type FlagCode =
   | 'GEO_MISMATCH'
   | 'NO_RECENT_ACTIVITY'
   | 'INCONSISTENT_TRADE_STORY'
+  | 'NEWLY_INCORPORATED_SELLER'
+  | 'VESSEL_FLAG_ROUTE_MISMATCH'
+  | 'MULTIPLE_OPERATOR_CHANGES'
 
 export interface TradeFlag {
   code: FlagCode
@@ -42,6 +48,8 @@ export interface TradeRuleInput {
   sellerDbMatch: SearchResult | null
   sellerSanctioned: boolean
   sellerSanctionSources: string[]
+  /** ISO date string from entity metadata_json.incorporationDate. Null if unknown. */
+  sellerIncorporationDate?: string | null
 
   // Vessel
   vesselName: string
@@ -50,6 +58,8 @@ export interface TradeRuleInput {
   vesselSanctioned: boolean
   vesselSanctionSources: string[]
   vesselAis: VesselAisData | null
+  /** Count of operator/registered-owner changes in the past 18 months. Null if unknown. */
+  vesselOperatorChanges?: number | null
 
   // Port
   loadingPortLocode: string | null
@@ -59,6 +69,8 @@ export interface TradeRuleInput {
 
   // Trade context
   tradeDate: string | null
+  /** Commodity description e.g. "Fuel Oil 380 cst", "Crude Oil", "LNG". */
+  commodity?: string | null
 
   /**
    * When true, AIS-dependent rules (NO_RECENT_ACTIVITY, AIS destination mismatch,
@@ -73,6 +85,12 @@ export interface TradeRuleInput {
 const HIGH_RISK_CC = new Set([
   'ir', 'ru', 've', 'cu', 'kp', 'sy', 'sd', 'by', 'mm', 'ye',
 ])
+
+/** Flag states associated with sanctions-evasion routing per OFAC/IMO risk lists. */
+const EVASION_FLAGS = new Set(['km', 'pw', 'tg', 'sl', 'md'])
+
+/** High-value bulk energy commodities that amplify counterparty risk. */
+const HIGH_VALUE_COMMODITY_RE = /crude|lng|bunker|fuel\s*oil|petroleum/i
 
 function isHighRisk(cc: string | null | undefined): boolean {
   if (!cc) return false
@@ -292,6 +310,73 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     }
   }
 
+  // ── Rule 7: NEWLY_INCORPORATED_SELLER ─────────────────────────────────────
+  // Young company (< 24 months) handling high-value bulk energy — elevated risk.
+  if (
+    input.sellerIncorporationDate &&
+    input.commodity &&
+    HIGH_VALUE_COMMODITY_RE.test(input.commodity)
+  ) {
+    const ageMonths =
+      (Date.now() - new Date(input.sellerIncorporationDate).getTime()) / (30 * 24 * 3_600_000)
+    if (ageMonths < 24) {
+      flags.push({
+        code: 'NEWLY_INCORPORATED_SELLER',
+        severity: 'high',
+        target: 'seller',
+        reason: `Seller "${input.sellerName}" was incorporated ${Math.round(ageMonths)} months ago and is trading a high-value commodity (${input.commodity}). Very young companies handling bulk energy are a known red flag pattern.`,
+        evidence: [
+          `Incorporation date: ${input.sellerIncorporationDate}`,
+          `Commodity: ${input.commodity}`,
+          'Threshold: < 24 months old',
+        ],
+      })
+    }
+  }
+
+  // ── Rule 8: VESSEL_FLAG_ROUTE_MISMATCH ────────────────────────────────────
+  // Vessel registered under a known sanctions-evasion flag state.
+  if (input.loadingPortLocode) {
+    const flagCC = (
+      input.vesselDbMatch?.jurisdictionFlag ??
+      input.vesselDbMatch?.country ??
+      ''
+    ).toLowerCase().slice(0, 2)
+
+    if (flagCC && EVASION_FLAGS.has(flagCC)) {
+      const FLAG_NAMES: Record<string, string> = {
+        km: 'Comoros', pw: 'Palau', tg: 'Togo', sl: 'Sierra Leone', md: 'Moldova',
+      }
+      flags.push({
+        code: 'VESSEL_FLAG_ROUTE_MISMATCH',
+        severity: 'medium',
+        target: 'vessel',
+        reason: `Vessel "${input.vesselName}" is registered under ${FLAG_NAMES[flagCC] ?? flagCC.toUpperCase()} — a flag state associated with sanctions-evasion routing. Use of such flags for energy cargo warrants enhanced scrutiny.`,
+        evidence: [
+          `Vessel flag: ${flagCC.toUpperCase()} (${FLAG_NAMES[flagCC] ?? 'unknown'})`,
+          'Known evasion flag states: KM, PW, TG, SL, MD',
+          'Source: OFAC/IMO flag state risk assessment',
+        ],
+      })
+    }
+  }
+
+  // ── Rule 9: MULTIPLE_OPERATOR_CHANGES ─────────────────────────────────────
+  // Rapid ownership/operator turnover — common obfuscation tactic.
+  if (input.vesselOperatorChanges != null && input.vesselOperatorChanges > 2) {
+    flags.push({
+      code: 'MULTIPLE_OPERATOR_CHANGES',
+      severity: 'medium',
+      target: 'vessel',
+      reason: `Vessel "${input.vesselName}" has changed operator or registered owner ${input.vesselOperatorChanges} times in the past 18 months. Rapid ownership transfers are a documented technique to obscure sanctions exposure.`,
+      evidence: [
+        `Operator/owner changes in past 18 months: ${input.vesselOperatorChanges}`,
+        'Threshold: more than 2 changes',
+        'Source: Vessel Registry / AIS History',
+      ],
+    })
+  }
+
   return flags
 }
 
@@ -305,6 +390,61 @@ export function overallRiskFromFlags(flags: TradeFlag[]): RiskLevel {
   )
 }
 
+// ── Pattern detection ─────────────────────────────────────────────────────────
+
+type RiskPattern =
+  | 'SANCTIONS_EVASION'   // active sanction + geo or flag evidence
+  | 'SHELL_COMPANY'       // limited footprint / new company with no registry
+  | 'DARK_VESSEL'         // AIS anomalies + operator churn
+  | 'GEO_EXPOSURE'        // jurisdiction risk without other patterns
+  | 'GENERIC'             // catch-all
+
+function detectPattern(flags: TradeFlag[]): RiskPattern {
+  const codes = new Set(flags.map(f => f.code))
+
+  if (
+    codes.has('SANCTION_EXPOSURE') &&
+    (codes.has('GEO_MISMATCH') || codes.has('VESSEL_FLAG_ROUTE_MISMATCH'))
+  ) return 'SANCTIONS_EVASION'
+
+  if (
+    (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER')) &&
+    (codes.has('NO_REGISTRY_MATCH') || codes.has('SANCTION_EXPOSURE'))
+  ) return 'SHELL_COMPANY'
+
+  if (codes.has('SANCTION_EXPOSURE')) return 'SANCTIONS_EVASION'
+
+  if (
+    codes.has('NO_RECENT_ACTIVITY') &&
+    (codes.has('MULTIPLE_OPERATOR_CHANGES') || codes.has('INCONSISTENT_TRADE_STORY'))
+  ) return 'DARK_VESSEL'
+
+  if (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER')) {
+    return 'SHELL_COMPANY'
+  }
+
+  if (codes.has('GEO_MISMATCH') || codes.has('VESSEL_FLAG_ROUTE_MISMATCH')) {
+    return 'GEO_EXPOSURE'
+  }
+
+  return 'GENERIC'
+}
+
+const PATTERN_LEADS: Record<RiskPattern, string> = {
+  SANCTIONS_EVASION: 'Multiple signals suggest potential sanctions evasion.',
+  SHELL_COMPANY:     'This seller shows characteristics consistent with a shell company or front entity.',
+  DARK_VESSEL:       'This vessel shows AIS tracking anomalies consistent with dark-voyage activity.',
+  GEO_EXPOSURE:      'Geographic risk indicators require enhanced due diligence.',
+  GENERIC:           'Risk indicators detected across trade parameters.',
+}
+
+const RECOMMENDATION: Record<RiskLevel, string> = {
+  critical: 'Do not proceed. Escalate to compliance immediately.',
+  high:     'Place on hold. Enhanced due diligence required before proceeding.',
+  medium:   'Request additional documentation and counterparty confirmation before proceeding.',
+  low:      'Standard monitoring applies. No immediate action required.',
+}
+
 export function generateSummary(
   flags: TradeFlag[],
   overallRisk: RiskLevel,
@@ -312,28 +452,34 @@ export function generateSummary(
   vesselName: string,
 ): string {
   if (flags.length === 0) {
-    return `No risk indicators found for seller "${sellerName}" and vessel "${vesselName}". All standard checks passed.`
+    return `No risk indicators found for seller "${sellerName}" and vessel "${vesselName}". All standard checks passed. Standard monitoring applies.`
   }
 
-  const bySeverity = (s: RiskLevel) => flags.filter(f => f.severity === s)
-  const critical = bySeverity('critical')
-  const high     = bySeverity('high')
-  const medium   = bySeverity('medium')
+  const pattern = detectPattern(flags)
 
-  const parts: string[] = [`Overall risk: ${overallRisk.toUpperCase()}.`]
+  // Lead sentence: pattern + overall risk level
+  const lead = `${PATTERN_LEADS[pattern]} Overall risk: ${overallRisk.toUpperCase()}.`
 
-  if (critical.length > 0) {
-    parts.push(`${critical.length} critical flag(s): ${[...new Set(critical.map(f => f.code))].join(', ')}.`)
-  }
-  if (high.length > 0) {
-    parts.push(`${high.length} high-severity flag(s): ${[...new Set(high.map(f => f.code))].join(', ')}.`)
-  }
-  if (medium.length > 0) {
-    parts.push(`${medium.length} medium flag(s): ${[...new Set(medium.map(f => f.code))].join(', ')}.`)
-  }
+  // Most critical finding (worst severity flag, already sorted by RISK_ORDER in calling code,
+  // but flags are not sorted here — pick by severity)
+  const sorted = [...flags].sort(
+    (a, b) => RISK_ORDER[a.severity] - RISK_ORDER[b.severity]
+  )
+  const topFlag = sorted[0]
+  const criticalSentence = `Most critical: ${topFlag.reason}`
 
-  // Lead with the most severe flag's reason
-  parts.push(flags[0].reason)
+  // Supporting signals (up to 2 additional unique codes)
+  const supporting = sorted
+    .slice(1)
+    .filter((f, i, arr) => arr.findIndex(x => x.code === f.code) === i)
+    .slice(0, 2)
+    .map(f => f.reason)
+
+  const parts: string[] = [lead, criticalSentence]
+  if (supporting.length > 0) {
+    parts.push(`Additionally: ${supporting.join(' ')}`)
+  }
+  parts.push(RECOMMENDATION[overallRisk])
 
   return parts.join(' ')
 }
