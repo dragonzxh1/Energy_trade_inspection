@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import RefreshButton from '@/components/watchlist/RefreshButton'
+import WatchedTradesRefreshButton from '@/components/watchlist/WatchedTradesRefreshButton'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
 import { applyMigrations } from '@/lib/server/migrations'
@@ -35,6 +36,19 @@ interface AlertRow {
   old_value: string | null
   new_value: string | null
   created_at: string
+}
+
+interface WatchedTradeRow {
+  id: string
+  seller_name: string
+  vessel_name: string
+  vessel_imo: string | null
+  loading_port: string | null
+  last_overall_risk: string
+  last_flag_count: number
+  last_checked_at: string | null
+  created_at: string
+  unread_alerts: string  // aggregated count as string from postgres
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -235,8 +249,8 @@ export default async function WatchlistPage() {
 
   await applyMigrations()
 
-  // Fetch watchlist items + unread alerts in parallel
-  const [{ rows }, { rows: alertRows }] = await Promise.all([
+  // Fetch watchlist items + entity alerts + watched trades in parallel
+  const [{ rows }, { rows: alertRows }, { rows: tradeRows }] = await Promise.all([
     db.query<WatchlistRow>(
       `SELECT id, entity_id, entity_type, entity_key, entity_name,
               sanction_status, current_sanction_status, last_checked_at, added_at
@@ -253,6 +267,21 @@ export default async function WatchlistPage() {
        ORDER BY created_at DESC`,
       [session.user.id],
     ),
+    db.query<WatchedTradeRow>(
+      `SELECT wt.id, wt.seller_name, wt.vessel_name, wt.vessel_imo, wt.loading_port,
+              wt.last_overall_risk, wt.last_flag_count, wt.last_checked_at, wt.created_at,
+              COALESCE(a.alert_count, '0') AS unread_alerts
+       FROM watched_trades wt
+       LEFT JOIN (
+         SELECT watched_trade_id, COUNT(*)::TEXT AS alert_count
+         FROM watched_trade_alerts
+         WHERE user_id = $1 AND read_at IS NULL
+         GROUP BY watched_trade_id
+       ) a ON a.watched_trade_id = wt.id
+       WHERE wt.user_id = $1
+       ORDER BY wt.created_at DESC`,
+      [session.user.id],
+    ).catch(() => ({ rows: [] as WatchedTradeRow[] })),
   ])
 
   // Most-recent last_checked_at across all rows
@@ -446,6 +475,134 @@ export default async function WatchlistPage() {
         <p style={{ marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
           Status is compared against live data in our database. Click &ldquo;Refresh status&rdquo; to check for changes.
         </p>
+
+        {/* ── Watched Trades ──────────────────────────────────────────────── */}
+        <div style={{ marginTop: 'var(--space-10)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 'var(--space-4)', marginBottom: 'var(--space-4)',
+          }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
+                Watched Trades
+              </h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                {tradeRows.length} trade{tradeRows.length !== 1 ? 's' : ''} monitored
+              </p>
+            </div>
+            {tradeRows.length > 0 && (
+              <WatchedTradesRefreshButton />
+            )}
+          </div>
+
+          {tradeRows.length === 0 ? (
+            <div style={{
+              backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+              borderRadius: '12px', padding: 'var(--space-8)', textAlign: 'center',
+            }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px' }}>
+                No trades watched yet. Run a <Link href="/trade" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>trade check</Link> and click &ldquo;Watch trade&rdquo; to monitor it.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+              borderRadius: '12px', overflow: 'hidden',
+            }}>
+              {/* Column headers */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: '1fr 1fr 90px 100px 80px 70px',
+                padding: 'var(--space-3) var(--space-5)',
+                borderBottom: '1px solid var(--border-subtle)',
+                backgroundColor: 'var(--bg-elevated)',
+              }}>
+                {['Seller', 'Vessel', 'Risk', 'Flags', 'Saved', ''].map(h => (
+                  <span key={h} style={{
+                    color: 'var(--text-muted)', fontSize: '11px',
+                    fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>{h}</span>
+                ))}
+              </div>
+
+              {tradeRows.map((t, idx) => {
+                const isLast = idx === tradeRows.length - 1
+                const alerts = parseInt(t.unread_alerts, 10)
+                const RISK_COLOR: Record<string, string> = {
+                  critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e',
+                }
+                const removeAction = async () => {
+                  'use server'
+                  const s = await auth()
+                  if (!s?.user) return
+                  await db.query(`DELETE FROM watched_trades WHERE id = $1 AND user_id = $2`, [t.id, s.user.id])
+                }
+                return (
+                  <div
+                    key={t.id}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '1fr 1fr 90px 100px 80px 70px',
+                      padding: 'var(--space-4) var(--space-5)',
+                      borderBottom: isLast ? 'none' : '1px solid var(--border-subtle)',
+                      alignItems: 'center',
+                      backgroundColor: alerts > 0 ? 'rgba(249,115,22,0.04)' : undefined,
+                    }}
+                  >
+                    {/* Seller */}
+                    <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.seller_name}
+                      {alerts > 0 && (
+                        <span style={{ marginLeft: '6px', fontSize: '10px', color: '#f97316', fontWeight: 700 }}>
+                          ⚠ {alerts}
+                        </span>
+                      )}
+                    </span>
+                    {/* Vessel */}
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.vessel_name}
+                      {t.vessel_imo && (
+                        <span style={{ marginLeft: '6px', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                          {t.vessel_imo}
+                        </span>
+                      )}
+                    </span>
+                    {/* Risk */}
+                    <span style={{
+                      fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em',
+                      color: RISK_COLOR[t.last_overall_risk] ?? 'var(--text-muted)',
+                    }}>
+                      {t.last_overall_risk.toUpperCase()}
+                    </span>
+                    {/* Flags */}
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {t.last_flag_count} flag{t.last_flag_count !== 1 ? 's' : ''}
+                    </span>
+                    {/* Saved date */}
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      {new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                    {/* Remove */}
+                    <form action={removeAction}>
+                      <button
+                        type="submit"
+                        style={{
+                          background: 'none', border: 'none',
+                          color: 'var(--text-muted)', cursor: 'pointer',
+                          fontSize: '12px', fontFamily: 'inherit', padding: '2px 6px',
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </form>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
+            Refresh checks sanctions and PSC detention status for each saved trade.
+          </p>
+        </div>
       </div>
     </>
   )

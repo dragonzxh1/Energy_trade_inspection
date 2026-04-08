@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TradeCheckResult, TradePartyResult, TradeVesselResult, TradePortResult } from '@/app/api/trade/route'
@@ -550,6 +550,67 @@ function ResultBanner({ result }: { result: TradeCheckResult }) {
   )
 }
 
+// ── Save trade watch button ───────────────────────────────────────────────────
+
+type WatchState = 'idle' | 'saving' | 'watching' | 'error'
+
+function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
+  const [state, setState] = useState<WatchState>('idle')
+
+  const toggle = useCallback(async () => {
+    if (state === 'saving') return
+    setState('saving')
+    try {
+      const res = await fetch('/api/watchlist/trades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sellerName:            result.input.seller,
+          vesselName:            result.input.vessel,
+          vesselImo:             result.vessel.imo,
+          loadingPort:           result.input.loadingPort,
+          tradeDate:             result.input.date,
+          lastOverallRisk:       result.overallRisk,
+          lastFlagCount:         result.flags.length,
+          lastSellerSanctioned:  result.seller.sanctionStatus === 'listed',
+          lastVesselSanctioned:  result.vessel.sanctionStatus === 'listed',
+          lastPscDetentions:     result.vessel.psc?.detentions ?? null,
+        }),
+      })
+      if (!res.ok) {
+        setState('error')
+        return
+      }
+      const json = await res.json() as { watching: boolean }
+      setState(json.watching ? 'watching' : 'idle')
+    } catch {
+      setState('error')
+    }
+  }, [state, result])
+
+  const label =
+    state === 'saving'   ? 'Saving…' :
+    state === 'watching' ? '★ Watching' :
+    state === 'error'    ? 'Error — retry' :
+    '☆ Watch trade'
+
+  return (
+    <button
+      onClick={toggle}
+      style={{
+        fontSize: '13px',
+        color: state === 'watching' ? 'var(--accent-primary)' : 'var(--text-muted)',
+        backgroundColor: 'var(--bg-elevated)',
+        border: `1px solid ${state === 'watching' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
+        borderRadius: '6px', padding: '6px 14px', cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
 // ── Results view ──────────────────────────────────────────────────────────────
 
 function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: () => void }) {
@@ -558,7 +619,8 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
       <ResultBanner result={result} />
 
       {/* Actions */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-2)', marginBottom: 'var(--space-5)', flexWrap: 'wrap' }}>
+        <SaveTradeWatchButton result={result} />
         <a
           href={`/api/trade/${result.id}/report`}
           download
