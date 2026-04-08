@@ -2,17 +2,33 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import SearchBox from '@/components/search/SearchBox'
-import HeroTradeForm from '@/components/trade/HeroTradeForm'
 import Header from '@/components/layout/Header'
 import { db } from '@/lib/server/db'
 import { applyMigrations } from '@/lib/server/migrations'
 import type { SanctionStatus, RiskLevel } from '@/lib/types'
 
 export const metadata: Metadata = {
-  title: 'Energy Trade Inspection — Trade Risk Check',
+  title: 'Energy Trade Inspection — Counterparty & Trade Risk',
   description:
-    'Does this trade make sense? Check a seller and vessel against sanctions lists, AIS data, port risk, and trade rules in seconds.',
+    'Screen companies, vessels, and terminals against sanctions lists, AIS data, and registry records. Check trade-level risk in seconds.',
 }
+
+const TOOL_CARDS = [
+  {
+    icon: '⚡',
+    title: 'Check a Trade',
+    desc: 'Enter seller, vessel, and loading port. Get a trade-level risk judgment — sanctions, AIS dark periods, and port flags in one check.',
+    href: '/trade',
+    cta: 'Run trade check →',
+  },
+  {
+    icon: '📄',
+    title: 'Screen a Document',
+    desc: 'Upload a contract or invoice. We extract parties automatically and screen them against sanctions lists and registry records.',
+    href: '/screen',
+    cta: 'Screen a document →',
+  },
+]
 
 const TRUST_STATS = [
   { value: '3', label: 'Sanction lists screened', note: 'OFAC · EU FSF · UN' },
@@ -315,7 +331,7 @@ export default function HomePage() {
               marginBottom: 'var(--space-3)',
             }}
           >
-            Trade Verification Engine
+            Energy Trade Intelligence
           </p>
           <h1
             style={{
@@ -325,7 +341,7 @@ export default function HomePage() {
               lineHeight: '48px',
             }}
           >
-            Does this trade make sense?
+            Screen your counterparties in seconds
           </h1>
           <p
             style={{
@@ -335,35 +351,70 @@ export default function HomePage() {
               marginBottom: 'var(--space-6)',
             }}
           >
-            Enter a seller and vessel. Get a trade-level risk judgment — sanctions,
-            AIS dark periods, port risk, and geographic flags in one check.
+            Search companies, vessels, and terminals. Get sanctions status,
+            authenticity scores, and risk flags — backed by OFAC, EU FSF, AIS, and registry data.
           </p>
 
-          {/* Primary CTA — trade check */}
+          {/* Primary CTA — entity search */}
           <Suspense>
-            <HeroTradeForm />
+            <SearchBox />
           </Suspense>
 
-          {/* Secondary — entity search */}
+          {/* Feature entry points */}
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
               gap: 'var(--space-3)',
-              marginTop: 'var(--space-6)',
+              marginTop: 'var(--space-5)',
             }}
+            className="home-tool-cards"
           >
-            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-            <span style={{ color: 'var(--text-muted)', fontSize: '11px', flexShrink: 0 }}>
-              or search for a counterparty
-            </span>
-            <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-          </div>
-
-          <div style={{ marginTop: 'var(--space-3)' }}>
-            <Suspense>
-              <SearchBox />
-            </Suspense>
+            {TOOL_CARDS.map((card) => (
+              <Link
+                key={card.href}
+                href={card.href}
+                style={{
+                  display: 'block',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '10px',
+                  padding: 'var(--space-4)',
+                  textDecoration: 'none',
+                  transition: 'border-color 0.15s ease',
+                }}
+              >
+                <span
+                  style={{ fontSize: '18px', display: 'block', marginBottom: 'var(--space-2)' }}
+                  aria-hidden="true"
+                >
+                  {card.icon}
+                </span>
+                <p
+                  style={{
+                    color: 'var(--text-primary)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    marginBottom: 'var(--space-2)',
+                  }}
+                >
+                  {card.title}
+                </p>
+                <p
+                  style={{
+                    color: 'var(--text-muted)',
+                    fontSize: '12px',
+                    lineHeight: '18px',
+                    marginBottom: 'var(--space-3)',
+                  }}
+                >
+                  {card.desc}
+                </p>
+                <span style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 500 }}>
+                  {card.cta}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
 
