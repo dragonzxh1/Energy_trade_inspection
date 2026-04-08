@@ -5,6 +5,15 @@
 
 import OpenAI from 'openai'
 
+/** Thrown when the Qwen API call fails (network error, timeout, auth, etc.).
+ *  Distinct from the LLM returning an empty or unparseable response. */
+export class EntityExtractionError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message)
+    this.name = 'EntityExtractionError'
+  }
+}
+
 export interface ExtractedEntity {
   type: 'company' | 'person' | 'vessel'
   name: string
@@ -64,21 +73,32 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
   const truncated =
     text.length > 8000 ? text.slice(0, 8000) + '\n[... document truncated]' : text
 
+  // ── API call (throws EntityExtractionError on failure/timeout) ────────────
+  let response: Awaited<ReturnType<typeof qwen.chat.completions.create>>
   try {
-    const response = await qwen.chat.completions.create({
-      model: 'qwen3.5-plus',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'user',
-          content: `Extract all entities from this trade contract:\n\n${truncated}`,
-        },
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.1,
-      max_tokens: 2000,
-    })
+    response = await qwen.chat.completions.create(
+      {
+        model: 'qwen3.5-plus',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: `Extract all entities from this trade contract:\n\n${truncated}`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_tokens: 2000,
+      },
+      { signal: AbortSignal.timeout(25_000) },
+    )
+  } catch (err) {
+    console.error('[entity-extractor] API call failed:', err)
+    throw new EntityExtractionError('Qwen API call failed or timed out', err)
+  }
 
+  // ── Parse response (returns [] if LLM output is malformed) ────────────────
+  try {
     const content = response.choices[0]?.message?.content
     if (!content) return []
 
@@ -101,8 +121,8 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
         imo: e.imo ? String(e.imo).replace(/\D/g, '').slice(0, 7) || undefined : undefined,
       }))
       .slice(0, 30)
-  } catch (err) {
-    console.error('[entity-extractor] Failed to extract entities:', err)
+  } catch {
+    console.error('[entity-extractor] Failed to parse LLM response')
     return []
   }
 }

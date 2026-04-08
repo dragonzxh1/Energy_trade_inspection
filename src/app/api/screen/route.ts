@@ -14,7 +14,7 @@ import { auth } from '@/auth'
 import { applyMigrations } from '@/lib/server/migrations'
 import { db } from '@/lib/server/db'
 import { parseDocument } from '@/lib/server/document-parser'
-import { extractEntities } from '@/lib/server/entity-extractor'
+import { extractEntities, EntityExtractionError } from '@/lib/server/entity-extractor'
 import {
   searchEntities,
   getEntityByKey,
@@ -227,7 +227,20 @@ export async function POST(req: NextRequest) {
   }
 
   // Extract entities via LLM
-  const entities = await extractEntities(text)
+  let entities: Awaited<ReturnType<typeof extractEntities>>
+  try {
+    entities = await extractEntities(text)
+  } catch (err) {
+    if (err instanceof EntityExtractionError) {
+      console.error('[screen] Entity extraction failed:', err.cause)
+      return NextResponse.json(
+        { error: 'Entity extraction failed. Please try again.', partial: true },
+        { status: 503 }
+      )
+    }
+    throw err
+  }
+
   if (entities.length === 0) {
     return NextResponse.json(
       {
