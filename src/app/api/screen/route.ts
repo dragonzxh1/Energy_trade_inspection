@@ -287,5 +287,9 @@ export async function POST(req: NextRequest) {
     [sessionId, session.user.id, file.name, JSON.stringify(report)]
   )
 
+  // Piggyback TTL cleanup (fire-and-forget, 90-day retention)
+  db.query(`DELETE FROM screening_sessions WHERE created_at < NOW() - INTERVAL '90 days'`)
+    .catch((err) => console.error('[screen] TTL cleanup error:', err))
+
   return NextResponse.json(report)
 }

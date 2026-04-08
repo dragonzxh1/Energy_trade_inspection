@@ -330,6 +330,10 @@ export async function POST(req: NextRequest) {
     ]
   ).catch((err) => console.error('[trade] Failed to persist session:', err))
 
+  // Piggyback TTL cleanup (fire-and-forget, 90-day retention)
+  db.query(`DELETE FROM trade_sessions WHERE created_at < NOW() - INTERVAL '90 days'`)
+    .catch((err) => console.error('[trade] TTL cleanup error:', err))
+
   // ── Write trade events (powers tradingTrackRecord Phase 2 score) ───────────
   if (sellerDbMatch?.id) {
     db.query(
