@@ -18,6 +18,7 @@ import { db } from '@/lib/server/db'
 import WatchButton from '@/components/entity/WatchButton'
 import IntelligencePanel from '@/components/entity/IntelligencePanel'
 import AisPanel from '@/components/entity/AisPanel'
+import DraftCheckPanel from '@/components/entity/DraftCheckPanel'
 
 interface PageProps {
   params: Promise<{ imo: string }>
@@ -460,6 +461,7 @@ export default async function VesselPage({ params }: PageProps) {
   const tabs = [
     { id: 'details',       label: 'Vessel Details' },
     { id: 'ais',           label: 'AIS Tracking' },
+    { id: 'draft',         label: 'Draft Risk' },
     { id: 'flags',         label: 'Risk Flags' },
     { id: 'history',       label: 'PSC History' },
     { id: 'intelligence',  label: 'Intelligence' },
@@ -470,6 +472,9 @@ export default async function VesselPage({ params }: PageProps) {
     <VesselDetailsPanel key="details" vessel={vessel} />,
     <ContentLock key="ais" unlocked={f3Unlocked} reason={lockReason}>
       <AisPanel imo={vessel.imo} />
+    </ContentLock>,
+    <ContentLock key="draft" unlocked={f3Unlocked} reason={lockReason}>
+      <DraftCheckPanel imo={vessel.imo} />
     </ContentLock>,
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel vessel={vessel} />
