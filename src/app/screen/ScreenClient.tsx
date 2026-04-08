@@ -253,6 +253,11 @@ const FLAG_LABEL: Record<string, string> = {
   GEO_MISMATCH:               'Geographic Mismatch',
   NO_RECENT_ACTIVITY:         'No Recent Activity',
   INCONSISTENT_TRADE_STORY:   'Inconsistent Trade Story',
+  NEWLY_INCORPORATED_SELLER:  'Newly Incorporated Seller',
+  VESSEL_FLAG_ROUTE_MISMATCH: 'Evasion Flag State',
+  MULTIPLE_OPERATOR_CHANGES:  'Multiple Operator Changes',
+  VESSEL_COMPLIANCE_RISK:     'Vessel Compliance Risk',
+  OFFSHORE_HOLDING_STRUCTURE: 'Offshore Holding Structure',
 }
 
 function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult }) {

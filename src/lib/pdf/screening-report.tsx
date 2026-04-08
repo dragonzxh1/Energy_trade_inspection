@@ -7,7 +7,7 @@
 
 import React from 'react'
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
-import type { ScreeningReport, EntityScreeningResult } from '@/app/api/screen/route'
+import type { ScreeningReport, EntityScreeningResult, TradeAssessmentResult } from '@/app/api/screen/route'
 import type { RiskLevel } from '@/lib/types'
 
 // ── Palette (matches report.tsx) ──────────────────────────────────────────────
@@ -127,6 +127,33 @@ const s = StyleSheet.create({
 
   // ICIJ warning
   icijNote: { fontSize: 8, color: C.warn, marginTop: 4 },
+
+  // Trade assessment
+  tradeParamRow: { flexDirection: 'row', marginBottom: 3 },
+  tradeParamLabel: { width: 120, fontSize: 9, color: C.textMuted },
+  tradeParamValue: { flex: 1, fontSize: 9, color: C.textPri },
+  flagRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 5,
+    paddingBottom: 5,
+    borderBottom: `1 solid ${C.border}`,
+  },
+  flagSeverityDot: { width: 6, height: 6, borderRadius: 3, marginTop: 3, flexShrink: 0 },
+  flagBody: { flex: 1 },
+  flagReason: { fontSize: 9, color: C.textPri, marginBottom: 2 },
+  flagEvidence: { fontSize: 8, color: C.textMuted, lineHeight: 1.4 },
+  tradeSummary: {
+    fontSize: 9,
+    color: C.textSec,
+    lineHeight: 1.5,
+    marginTop: 8,
+    padding: 10,
+    backgroundColor: C.surface,
+    borderRadius: 4,
+    border: `1 solid ${C.border}`,
+  },
 
   // Footer
   footer: {
@@ -294,6 +321,110 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
   )
 }
 
+// ── Trade Assessment Section ──────────────────────────────────────────────────
+
+const FLAG_SEVERITY_COLOR: Record<string, string> = {
+  critical: C.listed,
+  high:     C.warn,
+  medium:   C.yellow,
+  low:      C.clear,
+}
+
+const FLAG_LABEL: Record<string, string> = {
+  NO_REGISTRY_MATCH:          'No Registry Match',
+  SANCTION_EXPOSURE:          'Sanction Exposure',
+  LIMITED_BUSINESS_FOOTPRINT: 'Limited Business Footprint',
+  GEO_MISMATCH:               'Geographic Mismatch',
+  NO_RECENT_ACTIVITY:         'No Recent Activity',
+  INCONSISTENT_TRADE_STORY:   'Inconsistent Trade Story',
+  NEWLY_INCORPORATED_SELLER:  'Newly Incorporated Seller',
+  VESSEL_FLAG_ROUTE_MISMATCH: 'Evasion Flag State',
+  MULTIPLE_OPERATOR_CHANGES:  'Multiple Operator Changes',
+  VESSEL_COMPLIANCE_RISK:     'Vessel Compliance Risk',
+  OFFSHORE_HOLDING_STRUCTURE: 'Offshore Holding Structure',
+}
+
+function TradeAssessmentSection({ assessment }: { assessment: TradeAssessmentResult }) {
+  const { params, flags, overallRisk, summary } = assessment
+
+  return (
+    <View>
+      <Text style={s.sectionTitle}>Trade Assessment</Text>
+
+      {/* Extracted trade parameters */}
+      <View style={{ ...s.entityCard, marginBottom: 10 }}>
+        <Text style={{ ...s.entityTypePill, marginBottom: 8 }}>Extracted Trade Parameters</Text>
+        {params.seller && (
+          <View style={s.tradeParamRow}>
+            <Text style={s.tradeParamLabel}>Seller</Text>
+            <Text style={s.tradeParamValue}>{params.seller}</Text>
+          </View>
+        )}
+        {params.vessel && (
+          <View style={s.tradeParamRow}>
+            <Text style={s.tradeParamLabel}>Vessel</Text>
+            <Text style={s.tradeParamValue}>
+              {params.vessel}{params.imo ? ` (IMO ${params.imo})` : ''}
+            </Text>
+          </View>
+        )}
+        {params.loadingPort && (
+          <View style={s.tradeParamRow}>
+            <Text style={s.tradeParamLabel}>Loading Port</Text>
+            <Text style={s.tradeParamValue}>{params.loadingPort}</Text>
+          </View>
+        )}
+        {params.commodity && (
+          <View style={s.tradeParamRow}>
+            <Text style={s.tradeParamLabel}>Commodity</Text>
+            <Text style={s.tradeParamValue}>{params.commodity}</Text>
+          </View>
+        )}
+        {params.tradeDate && (
+          <View style={s.tradeParamRow}>
+            <Text style={s.tradeParamLabel}>Trade Date</Text>
+            <Text style={s.tradeParamValue}>{params.tradeDate}</Text>
+          </View>
+        )}
+        <View style={{ ...s.tradeParamRow, marginTop: 4 }}>
+          <Text style={s.tradeParamLabel}>Trade Risk</Text>
+          {riskBadge(overallRisk)}
+        </View>
+      </View>
+
+      {/* Flags */}
+      {flags.length > 0 && (
+        <View style={{ ...s.entityCard, marginBottom: 10 }}>
+          <Text style={{ ...s.entityTypePill, marginBottom: 8 }}>
+            Risk Flags ({flags.length})
+          </Text>
+          {flags.map((flag, i) => (
+            <View key={i} style={s.flagRow}>
+              <View
+                style={{
+                  ...s.flagSeverityDot,
+                  backgroundColor: FLAG_SEVERITY_COLOR[flag.severity] ?? C.textMuted,
+                }}
+              />
+              <View style={s.flagBody}>
+                <Text style={s.flagReason}>
+                  {FLAG_LABEL[flag.code] ?? flag.code} — {flag.reason}
+                </Text>
+                {flag.evidence.slice(0, 2).map((ev, j) => (
+                  <Text key={j} style={s.flagEvidence}>• {ev}</Text>
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Analyst summary */}
+      <Text style={s.tradeSummary}>{summary}</Text>
+    </View>
+  )
+}
+
 // ── Main document ─────────────────────────────────────────────────────────────
 
 export function ScreeningReportDocument({
@@ -303,7 +434,7 @@ export function ScreeningReportDocument({
   report: ScreeningReport
   generatedAt: string
 }) {
-  const { filename, screenedAt, overallRisk, entities } = report
+  const { filename, screenedAt, overallRisk, entities, tradeAssessment } = report
 
   return (
     <Document
@@ -374,6 +505,11 @@ export function ScreeningReportDocument({
         {entities.map((result, i) => (
           <EntityCard key={i} result={result} />
         ))}
+
+        {/* Trade assessment (when available) */}
+        {tradeAssessment && (
+          <TradeAssessmentSection assessment={tradeAssessment} />
+        )}
 
         <ReportFooter />
       </Page>

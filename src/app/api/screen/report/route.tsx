@@ -13,6 +13,8 @@ import { db } from '@/lib/server/db'
 import { ScreeningReportDocument } from '@/lib/pdf/screening-report'
 import type { ScreeningReport } from '@/app/api/screen/route'
 
+export const runtime = 'nodejs'
+
 export async function GET(req: NextRequest) {
   const session = await auth()
 
@@ -33,16 +35,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'sessionId is required.' }, { status: 400 })
   }
 
-  const { rows } = await db.query<{
-    result_json: unknown
-    filename: string
-    user_id: string
-  }>(
-    `SELECT result_json, filename, user_id
-     FROM screening_sessions
-     WHERE id = $1
-     LIMIT 1`,
-    [sessionId]
+  // user_id in WHERE prevents IDOR — no ownership check needed after fetch
+  const { rows } = await db.query<{ result_json: ScreeningReport }>(
+    `SELECT result_json FROM screening_sessions WHERE id = $1 AND user_id = $2`,
+    [sessionId, session.user.id]
   )
 
   const row = rows[0]
@@ -50,11 +46,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Session not found.' }, { status: 404 })
   }
 
-  if (row.user_id !== session.user.id) {
-    return NextResponse.json({ error: 'Access denied.' }, { status: 403 })
-  }
-
-  const report = row.result_json as ScreeningReport
+  const report = row.result_json
 
   const generatedAt = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
