@@ -4,6 +4,213 @@ import { useEffect, useState } from 'react'
 import type { VesselAisData, PortCall, AisDarkPeriod } from '@/lib/ais-types'
 import { navStatusLabel, navStatusColor } from '@/lib/ais-utils'
 
+// ── Activity Timeline ──────────────────────────────────────────────────────────
+
+interface TimelineSegment {
+  kind: 'dark' | 'port' | 'highRisk'
+  label: string
+  startMs: number
+  endMs: number
+  durationHours: number | null
+}
+
+const HIGH_RISK_CC = new Set(['ir', 'ru', 've', 'cu', 'kp', 'sy', 'sd', 'by', 'mm', 'ye'])
+
+function ActivityTimeline({
+  darkPeriods,
+  portCalls,
+}: {
+  darkPeriods: AisDarkPeriod[]
+  portCalls: PortCall[]
+}) {
+  const [active, setActive] = useState<TimelineSegment | null>(null)
+
+  const now = Date.now()
+  // Window: 6 months back or earliest event, whichever is earlier
+  const sixMonthsAgo = now - 180 * 24 * 3_600_000
+
+  const segments: TimelineSegment[] = []
+
+  for (const dp of darkPeriods) {
+    const startMs = new Date(dp.start).getTime()
+    const endMs   = dp.end ? new Date(dp.end).getTime() : now
+    if (endMs < sixMonthsAgo) continue
+    segments.push({
+      kind:          'dark',
+      label:         `AIS dark — ${dp.location}`,
+      startMs:       Math.max(startMs, sixMonthsAgo),
+      endMs:         Math.min(endMs, now),
+      durationHours: dp.durationHours,
+    })
+  }
+
+  for (const pc of portCalls) {
+    const startMs = new Date(pc.arrival).getTime()
+    const endMs   = pc.departure ? new Date(pc.departure).getTime() : now
+    if (endMs < sixMonthsAgo) continue
+    const isHighRisk = HIGH_RISK_CC.has(pc.countryCode)
+    segments.push({
+      kind:          isHighRisk ? 'highRisk' : 'port',
+      label:         `${pc.portName} (${pc.locode})${isHighRisk ? ' — HIGH RISK' : ''}`,
+      startMs:       Math.max(startMs, sixMonthsAgo),
+      endMs:         Math.min(endMs, now),
+      durationHours: pc.durationHours,
+    })
+  }
+
+  const windowMs = now - sixMonthsAgo
+
+  function pct(ms: number) {
+    return ((ms - sixMonthsAgo) / windowMs) * 100
+  }
+
+  const SEG_COLOR: Record<TimelineSegment['kind'], string> = {
+    dark:     'rgba(239,68,68,0.75)',
+    port:     'rgba(59,130,246,0.55)',
+    highRisk: 'rgba(249,115,22,0.80)',
+  }
+
+  // Month tick marks
+  const ticks: { label: string; pct: number }[] = []
+  const cursor = new Date(sixMonthsAgo)
+  cursor.setDate(1)
+  cursor.setHours(0, 0, 0, 0)
+  while (cursor.getTime() < now) {
+    const p = pct(cursor.getTime())
+    if (p >= 0 && p <= 100) {
+      ticks.push({
+        label: cursor.toLocaleDateString('en-US', { month: 'short' }),
+        pct: p,
+      })
+    }
+    cursor.setMonth(cursor.getMonth() + 1)
+  }
+
+  if (segments.length === 0 && portCalls.length === 0 && darkPeriods.length === 0) {
+    return null
+  }
+
+  return (
+    <div style={{ marginBottom: 'var(--space-5)' }}>
+      <p style={{
+        color: 'var(--text-muted)', fontSize: '11px', fontWeight: 600,
+        letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px',
+      }}>
+        Activity Timeline — Last 6 Months
+      </p>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+        {[
+          { color: SEG_COLOR.dark,     label: 'AIS dark period' },
+          { color: SEG_COLOR.highRisk, label: 'High-risk port' },
+          { color: SEG_COLOR.port,     label: 'Port call' },
+        ].map(({ color, label }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', backgroundColor: color, flexShrink: 0 }} />
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Timeline bar */}
+      <div style={{
+        position: 'relative',
+        height: '28px',
+        backgroundColor: 'var(--bg-elevated)',
+        borderRadius: '4px',
+        overflow: 'hidden',
+        marginBottom: '4px',
+      }}>
+        {segments.map((seg, i) => {
+          const left  = pct(seg.startMs)
+          const width = pct(seg.endMs) - left
+          if (width < 0.1) return null
+          return (
+            <div
+              key={i}
+              onClick={() => setActive(active?.label === seg.label && active?.startMs === seg.startMs ? null : seg)}
+              title={seg.label}
+              style={{
+                position: 'absolute',
+                top: 0, bottom: 0,
+                left: `${left}%`,
+                width: `${Math.max(width, 0.5)}%`,
+                backgroundColor: SEG_COLOR[seg.kind],
+                cursor: 'pointer',
+                transition: 'opacity 0.15s',
+                opacity: active && active.startMs !== seg.startMs ? 0.5 : 1,
+              }}
+            />
+          )
+        })}
+
+        {/* "Now" marker */}
+        <div style={{
+          position: 'absolute',
+          right: 0, top: 0, bottom: 0,
+          width: '2px',
+          backgroundColor: 'var(--text-muted)',
+          opacity: 0.4,
+        }} />
+      </div>
+
+      {/* Month ticks */}
+      <div style={{ position: 'relative', height: '14px' }}>
+        {ticks.map((t) => (
+          <span
+            key={t.label + t.pct}
+            style={{
+              position: 'absolute',
+              left: `${t.pct}%`,
+              transform: 'translateX(-50%)',
+              fontSize: '9px',
+              color: 'var(--text-muted)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {t.label}
+          </span>
+        ))}
+        <span style={{
+          position: 'absolute', right: 0,
+          fontSize: '9px', color: 'var(--text-muted)',
+        }}>
+          Now
+        </span>
+      </div>
+
+      {/* Active segment tooltip */}
+      {active && (
+        <div style={{
+          marginTop: '8px',
+          padding: '8px 10px',
+          backgroundColor: 'var(--bg-elevated)',
+          borderRadius: '6px',
+          border: '1px solid var(--border-subtle)',
+          fontSize: '11px',
+        }}>
+          <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{active.label}</span>
+          <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+            {new Date(active.startMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            {' → '}
+            {active.endMs >= now - 60_000
+              ? 'now'
+              : new Date(active.endMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </span>
+          {active.durationHours != null && (
+            <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>
+              · {active.durationHours >= 24
+                  ? `${Math.round(active.durationHours / 24)}d`
+                  : `${active.durationHours}h`}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Shared styles ─────────────────────────────────────────────────────────────
 
 const card: React.CSSProperties = {
@@ -258,48 +465,96 @@ function PortCallsCard({ portCalls, provider }: { portCalls: PortCall[]; provide
 
 // ── AIS dark periods ───────────────────────────────────────────────────────────
 
-function DarkPeriodRow({ period }: { period: AisDarkPeriod }) {
+function darkSeverity(hours: number | null): { color: string; label: string } {
+  if (hours == null)    return { color: '#f97316', label: 'Ongoing' }
+  if (hours >= 24 * 30) return { color: '#ef4444', label: 'Critical' }
+  if (hours >= 24 * 7)  return { color: '#f97316', label: 'High' }
+  return { color: '#eab308', label: 'Medium' }
+}
+
+function DarkPeriodRow({
+  period,
+  maxHours,
+}: {
+  period: AisDarkPeriod
+  maxHours: number
+}) {
   const start = new Date(period.start)
-  const durationLabel = period.durationHours != null
-    ? period.durationHours >= 24
-      ? `${Math.round(period.durationHours / 24)}d ${period.durationHours % 24}h`
-      : `${period.durationHours}h`
-    : 'Ongoing'
+  const end   = period.end ? new Date(period.end) : null
+  const hours = period.durationHours
+
+  const durationLabel = hours == null
+    ? 'Ongoing'
+    : hours >= 24
+      ? `${Math.round(hours / 24)}d ${hours % 24}h`
+      : `${hours}h`
+
+  const { color, label } = darkSeverity(hours)
+  const barPct = maxHours > 0 && hours != null ? Math.min(100, (hours / maxHours) * 100) : 100
 
   return (
     <div style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       padding: 'var(--space-3) 0',
       borderBottom: '1px solid var(--border-subtle)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-        <span style={{ fontSize: '16px' }}>⚠</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
         <div>
           <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>
-            AIS signal lost — {period.location}
+            {period.location}
           </p>
-          <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
             {start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            {end ? ` → ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ' → now'}
           </p>
         </div>
+        <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 'var(--space-3)' }}>
+          <span style={{
+            display: 'inline-block',
+            fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
+            color, backgroundColor: `${color}18`,
+            padding: '2px 6px', borderRadius: '4px',
+            marginBottom: '4px',
+          }}>
+            {label}
+          </span>
+          <p style={{ color, fontSize: '12px', fontWeight: 600 }}>{durationLabel}</p>
+        </div>
       </div>
-      <span style={{
-        color: 'var(--status-listed)', fontSize: '12px', fontWeight: 600,
-        flexShrink: 0, marginLeft: 'var(--space-3)',
-      }}>
-        {durationLabel}
-      </span>
+
+      {/* Relative duration bar */}
+      <div style={{ height: '3px', backgroundColor: 'var(--bg-elevated)', borderRadius: '2px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${barPct}%`,
+          backgroundColor: color,
+          borderRadius: '2px',
+          opacity: 0.7,
+        }} />
+      </div>
     </div>
   )
 }
 
-function DarkPeriodsCard({ darkPeriods, provider }: { darkPeriods: AisDarkPeriod[]; provider: string }) {
+function DarkPeriodsCard({
+  darkPeriods,
+  portCalls,
+  provider,
+}: {
+  darkPeriods: AisDarkPeriod[]
+  portCalls: PortCall[]
+  provider: string
+}) {
+  const maxHours = Math.max(0, ...darkPeriods.map((d) => d.durationHours ?? 0))
+
+  const hasTimeline = darkPeriods.length > 0 || portCalls.length > 0
+
   if (darkPeriods.length === 0) {
     return (
       <div style={card}>
         <p style={sectionTitle}>AIS Dark Periods</p>
+        {hasTimeline && (
+          <ActivityTimeline darkPeriods={darkPeriods} portCalls={portCalls} />
+        )}
         {provider === 'aisstream' ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontStyle: 'italic' }}>
             Dark period analysis requires historical AIS data — upgrade to a premium provider.
@@ -313,17 +568,44 @@ function DarkPeriodsCard({ darkPeriods, provider }: { darkPeriods: AisDarkPeriod
     )
   }
 
+  const criticalCount = darkPeriods.filter((d) => (d.durationHours ?? 0) >= 24 * 30).length
+  const highCount     = darkPeriods.filter((d) => {
+    const h = d.durationHours ?? 0
+    return h >= 24 * 7 && h < 24 * 30
+  }).length
+
   return (
     <div style={{ ...card, borderColor: 'rgba(239,68,68,0.3)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-4)' }}>
         <p style={{ ...sectionTitle, marginBottom: 0, color: 'var(--status-listed)' }}>
           AIS Dark Periods ({darkPeriods.length})
         </p>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {criticalCount > 0 && (
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+              {criticalCount} critical
+            </span>
+          )}
+          {highCount > 0 && (
+            <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+              {highCount} high
+            </span>
+          )}
+        </div>
       </div>
-      <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: 'var(--space-3)' }}>
-        AIS transponder signal was absent for the durations below. Intentional disabling is a known evasion technique.
+
+      <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: 'var(--space-4)', lineHeight: '18px' }}>
+        AIS transponder signal was absent for the durations below.
+        Intentional disabling near sanctioned ports is a known evasion technique.
       </p>
-      {darkPeriods.map((p, i) => <DarkPeriodRow key={i} period={p} />)}
+
+      {/* Visual timeline */}
+      <ActivityTimeline darkPeriods={darkPeriods} portCalls={portCalls} />
+
+      {/* Dark period list */}
+      {darkPeriods.map((p, i) => (
+        <DarkPeriodRow key={i} period={p} maxHours={maxHours} />
+      ))}
     </div>
   )
 }
@@ -370,7 +652,7 @@ export default function AisPanel({ imo }: { imo: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <PositionCard data={data} />
-      <DarkPeriodsCard darkPeriods={data.darkPeriods} provider={data.provider} />
+      <DarkPeriodsCard darkPeriods={data.darkPeriods} portCalls={data.portCalls} provider={data.provider} />
       <PortCallsCard portCalls={data.portCalls} provider={data.provider} />
     </div>
   )
