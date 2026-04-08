@@ -14,7 +14,12 @@ import { auth } from '@/auth'
 import { applyMigrations } from '@/lib/server/migrations'
 import { db } from '@/lib/server/db'
 import { parseDocument } from '@/lib/server/document-parser'
-import { extractEntities, EntityExtractionError } from '@/lib/server/entity-extractor'
+import {
+  extractEntities,
+  extractTradeParams,
+  EntityExtractionError,
+  type ExtractedTradeParams,
+} from '@/lib/server/entity-extractor'
 import {
   searchEntities,
   getEntityByKey,
@@ -25,6 +30,12 @@ import {
   type IcijOfficerLink,
 } from '@/lib/server/repository'
 import { checkSanctions } from '@/lib/server/sync/sanctions'
+import {
+  runTradeRules,
+  overallRiskFromFlags,
+  generateSummary,
+  type TradeFlag,
+} from '@/lib/server/trade-rules'
 import type { SanctionStatus, RiskLevel, SearchResult } from '@/lib/types'
 import type { ExtractedEntity } from '@/lib/server/entity-extractor'
 
@@ -42,12 +53,26 @@ export interface EntityScreeningResult {
   needsManualReview?: boolean
 }
 
+export interface TradeAssessmentResult {
+  /** Trade parameters extracted from the document by the LLM. */
+  params: ExtractedTradeParams
+  /** Deterministic flags from the trade rules engine. */
+  flags: TradeFlag[]
+  /** Worst severity across all flags, or 'low' if none. */
+  overallRisk: RiskLevel
+  /** Human-readable analyst summary. */
+  summary: string
+}
+
 export interface ScreeningReport {
   id: string
   filename: string
   screenedAt: string
   overallRisk: RiskLevel
   entities: EntityScreeningResult[]
+  /** Present when the document contained identifiable trade parameters
+   *  (at minimum: seller + vessel). Null when parameters could not be extracted. */
+  tradeAssessment: TradeAssessmentResult | null
 }
 
 // ── Passport masking ──────────────────────────────────────────────────────────
@@ -288,6 +313,67 @@ export async function POST(req: NextRequest) {
   // Sort by risk level descending
   results.sort((a, b) => RISK_ORDER[a.riskLevel] - RISK_ORDER[b.riskLevel])
 
+  // ── Trade assessment loop ──────────────────────────────────────────────────
+  // Run in parallel with the sort above — extract trade params from document text
+  // and pipe them through the trade rules engine.
+  let tradeAssessment: TradeAssessmentResult | null = null
+  try {
+    const params = await extractTradeParams(text)
+
+    if (params && params.seller && params.vessel) {
+      // Find the best matching entity results from the screening to reuse their data
+      const sellerMatch = results.find(
+        (r) =>
+          r.extracted.type === 'company' &&
+          r.extracted.name.toLowerCase().includes(params.seller!.toLowerCase().slice(0, 8))
+      )
+      const vesselMatch = results.find(
+        (r) =>
+          r.extracted.type === 'vessel' &&
+          (
+            r.extracted.name.toLowerCase().includes(params.vessel!.toLowerCase().slice(0, 6)) ||
+            (params.imo && r.extracted.imo === params.imo)
+          )
+      )
+
+      // Derive loading port country from LOCODE prefix (first 2 chars = ISO country code)
+      const loadingPortCC =
+        params.loadingPort && /^[A-Z]{2}[A-Z0-9]{3}$/i.test(params.loadingPort)
+          ? params.loadingPort.slice(0, 2).toLowerCase()
+          : null
+
+      const flags = runTradeRules({
+        sellerName:            params.seller,
+        sellerDbMatch:         sellerMatch?.dbEntity ?? null,
+        sellerSanctioned:      sellerMatch?.sanctionStatus === 'listed',
+        sellerSanctionSources: [],
+
+        vesselName:            params.vessel,
+        vesselImo:             params.imo ?? vesselMatch?.extracted.imo ?? null,
+        vesselDbMatch:         vesselMatch?.dbEntity ?? null,
+        vesselSanctioned:      vesselMatch?.sanctionStatus === 'listed',
+        vesselSanctionSources: [],
+        vesselAis:             null,
+
+        loadingPortLocode:  params.loadingPort ?? null,
+        loadingPortCountry: loadingPortCC,
+        loadingPortName:    params.loadingPort ?? null,
+        draftRisk:          null,
+
+        tradeDate:    params.tradeDate ?? null,
+        skipAisRules: true,
+      })
+
+      const risk = overallRiskFromFlags(flags)
+      const summary = generateSummary(flags, risk, params.seller, params.vessel)
+
+      tradeAssessment = { params, flags, overallRisk: risk, summary }
+    }
+  } catch (err) {
+    // Best-effort — a trade assessment failure must not break the screening response
+    console.error('[screen] Trade assessment failed (non-fatal):', err)
+  }
+
   const sessionId = randomUUID()
   const screenedAt = new Date().toISOString()
 
@@ -297,6 +383,7 @@ export async function POST(req: NextRequest) {
     screenedAt,
     overallRisk: overallRisk(results),
     entities: results,
+    tradeAssessment,
   }
 
   // Persist for PDF download

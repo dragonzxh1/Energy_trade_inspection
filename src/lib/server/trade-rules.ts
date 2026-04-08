@@ -59,6 +59,13 @@ export interface TradeRuleInput {
 
   // Trade context
   tradeDate: string | null
+
+  /**
+   * When true, AIS-dependent rules (NO_RECENT_ACTIVITY, AIS destination mismatch,
+   * dark period detection) are skipped. Used when calling from the screen flow
+   * where AIS data is not fetched to keep latency acceptable.
+   */
+  skipAisRules?: boolean
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -171,7 +178,9 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
   }
 
   // ── Rule 5: NO_RECENT_ACTIVITY ────────────────────────────────────────────
-  if (!input.vesselAis || !input.vesselAis.position) {
+  if (input.skipAisRules) {
+    // AIS rules suppressed — caller did not fetch AIS (e.g. document screening flow)
+  } else if (!input.vesselAis || !input.vesselAis.position) {
     flags.push({
       code: 'NO_RECENT_ACTIVITY',
       severity: 'medium',
@@ -194,7 +203,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
 
   // ── Rule 6: INCONSISTENT_TRADE_STORY ──────────────────────────────────────
 
-  // 6a: Loading point is STS anchorage, not a terminal
+  // 6a: Loading point is STS anchorage, not a terminal (no AIS needed)
   if (input.draftRisk?.isStsPort) {
     flags.push({
       code: 'INCONSISTENT_TRADE_STORY',
@@ -224,6 +233,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
 
   // 6c: AIS destination doesn't match stated loading port
   if (
+    !input.skipAisRules &&
     input.vesselAis?.position?.destination &&
     input.loadingPortLocode &&
     input.loadingPortName
@@ -254,7 +264,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
   }
 
   // 6d: AIS dark periods near the stated trade date
-  if (input.vesselAis && input.vesselAis.darkPeriods.length > 0) {
+  if (!input.skipAisRules && input.vesselAis && input.vesselAis.darkPeriods.length > 0) {
     const tradeTime = input.tradeDate ? new Date(input.tradeDate).getTime() : null
 
     const nearDark = tradeTime

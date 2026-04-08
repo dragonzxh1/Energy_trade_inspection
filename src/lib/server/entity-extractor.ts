@@ -22,6 +22,20 @@ export interface ExtractedEntity {
   context?: string   // brief excerpt from the contract
 }
 
+/**
+ * Trade parameters extracted from a contract document.
+ * Used to feed the trade rules engine as part of the Screen → Trade loop.
+ */
+export interface ExtractedTradeParams {
+  seller?: string       // Seller / exporter / supplier company name
+  vessel?: string       // Vessel name as it appears in the contract
+  imo?: string          // 7-digit IMO number if mentioned
+  loadingPort?: string  // UN/LOCODE (e.g. SGSIN) or port name (e.g. Fujairah)
+  commodity?: string    // e.g. "Fuel Oil 380 cst", "Crude Oil", "LNG"
+  tradeDate?: string    // ISO date (YYYY-MM-DD) or as extracted from contract
+  confidence: 'high' | 'medium' | 'low'
+}
+
 const qwen = new OpenAI({
   apiKey: process.env.QWEN_API_KEY!,
   baseURL: process.env.QWEN_BASE_URL!,
@@ -63,6 +77,86 @@ Rules:
 - Only include entities explicitly named in the text — do not infer or guess
 - For IMO numbers, extract only the 7-digit number
 - Keep context excerpts under 100 characters`
+
+const TRADE_PARAMS_PROMPT = `You are a trade contract parameter extractor for energy trade compliance.
+Extract the key trade parameters from the provided contract text.
+
+Return ONLY a JSON object with this exact structure:
+{
+  "seller": "full legal name of the seller/exporter/supplier (company, not person)",
+  "vessel": "vessel name as it appears in the contract",
+  "imo": "7-digit IMO number if explicitly mentioned, otherwise omit",
+  "loadingPort": "UN/LOCODE (5-char, e.g. SGSIN) or port name if LOCODE not available",
+  "commodity": "commodity description e.g. Fuel Oil 380 cst, Crude Oil, LNG",
+  "tradeDate": "trade/shipment date in YYYY-MM-DD format if mentioned, otherwise omit",
+  "confidence": "high if all main fields found, medium if partial, low if very little found"
+}
+
+Rules:
+- seller must be a company name, not a person name
+- Only include fields explicitly stated in the contract — do not infer or guess
+- If a field is not found, omit it from the response
+- confidence: high = seller + vessel + port all found; medium = at least seller + vessel; low = only one or none`
+
+/**
+ * Extract trade parameters (seller, vessel, port, commodity, date) from contract text.
+ * Returns null if the LLM cannot extract meaningful trade parameters.
+ * Best-effort: partial results are returned even if not all fields are present.
+ */
+export async function extractTradeParams(text: string): Promise<ExtractedTradeParams | null> {
+  const truncated =
+    text.length > 8000 ? text.slice(0, 8000) + '\n[... document truncated]' : text
+
+  let response: Awaited<ReturnType<typeof qwen.chat.completions.create>>
+  try {
+    response = await qwen.chat.completions.create(
+      {
+        model: 'qwen3.5-plus',
+        messages: [
+          { role: 'system', content: TRADE_PARAMS_PROMPT },
+          {
+            role: 'user',
+            content: `Extract trade parameters from this contract:\n\n${truncated}`,
+          },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.1,
+        max_tokens: 500,
+      },
+      { signal: AbortSignal.timeout(20_000) },
+    )
+  } catch (err) {
+    console.error('[entity-extractor] Trade params API call failed:', err)
+    return null  // best-effort: don't fail the whole screening
+  }
+
+  try {
+    const content = response.choices[0]?.message?.content
+    if (!content) return null
+
+    const parsed = JSON.parse(content) as Partial<ExtractedTradeParams>
+
+    // Need at least one meaningful field
+    if (!parsed.seller && !parsed.vessel) return null
+
+    return {
+      seller:      typeof parsed.seller      === 'string' ? parsed.seller.trim()      : undefined,
+      vessel:      typeof parsed.vessel      === 'string' ? parsed.vessel.trim()      : undefined,
+      imo:         typeof parsed.imo         === 'string'
+        ? parsed.imo.replace(/\D/g, '').slice(0, 7) || undefined
+        : undefined,
+      loadingPort: typeof parsed.loadingPort === 'string' ? parsed.loadingPort.trim() : undefined,
+      commodity:   typeof parsed.commodity   === 'string' ? parsed.commodity.trim()   : undefined,
+      tradeDate:   typeof parsed.tradeDate   === 'string' ? parsed.tradeDate.trim()   : undefined,
+      confidence:  ['high', 'medium', 'low'].includes(parsed.confidence as string)
+        ? (parsed.confidence as ExtractedTradeParams['confidence'])
+        : 'low',
+    }
+  } catch {
+    console.error('[entity-extractor] Failed to parse trade params response')
+    return null
+  }
+}
 
 /**
  * Extract structured entities from contract text using Qwen LLM.

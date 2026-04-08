@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
-import type { ScreeningReport, EntityScreeningResult } from '@/app/api/screen/route'
+import type { ScreeningReport, EntityScreeningResult, TradeAssessmentResult } from '@/app/api/screen/route'
 import type { RiskLevel } from '@/lib/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -244,6 +244,179 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
   )
 }
 
+// ── Trade assessment card ─────────────────────────────────────────────────────
+
+const FLAG_LABEL: Record<string, string> = {
+  NO_REGISTRY_MATCH:          'No Registry Match',
+  SANCTION_EXPOSURE:          'Sanction Exposure',
+  LIMITED_BUSINESS_FOOTPRINT: 'Limited Business Footprint',
+  GEO_MISMATCH:               'Geographic Mismatch',
+  NO_RECENT_ACTIVITY:         'No Recent Activity',
+  INCONSISTENT_TRADE_STORY:   'Inconsistent Trade Story',
+}
+
+function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult }) {
+  const { params, flags, overallRisk: risk, summary } = assessment
+
+  return (
+    <div
+      style={{
+        backgroundColor: RISK_BG[risk],
+        border: `1px solid ${RISK_BORDER[risk]}`,
+        borderRadius: '10px',
+        padding: 'var(--space-5)',
+        marginBottom: 'var(--space-6)',
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        <p
+          style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            margin: 0,
+            flex: 1,
+          }}
+        >
+          Trade Assessment
+        </p>
+        <span
+          style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            color: RISK_COLOR[risk],
+            backgroundColor: `${RISK_COLOR[risk]}18`,
+            border: `1px solid ${RISK_COLOR[risk]}44`,
+            borderRadius: '4px',
+            padding: '2px 8px',
+          }}
+        >
+          {RISK_LABEL[risk]}
+        </span>
+      </div>
+
+      {/* Extracted trade parameters */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+          gap: 'var(--space-3)',
+          marginBottom: 'var(--space-4)',
+        }}
+      >
+        {[
+          { label: 'Seller',    value: params.seller },
+          { label: 'Vessel',    value: params.vessel },
+          { label: 'Port',      value: params.loadingPort },
+          { label: 'Commodity', value: params.commodity },
+          { label: 'Date',      value: params.tradeDate },
+        ]
+          .filter((f) => f.value)
+          .map(({ label, value }) => (
+            <div
+              key={label}
+              style={{
+                backgroundColor: 'var(--bg-elevated)',
+                borderRadius: '6px',
+                padding: 'var(--space-3)',
+              }}
+            >
+              <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                {label}
+              </p>
+              <p style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {value}
+              </p>
+            </div>
+          ))}
+      </div>
+
+      {/* Summary */}
+      <p
+        style={{
+          fontSize: '13px',
+          color: 'var(--text-secondary)',
+          lineHeight: '20px',
+          marginBottom: flags.length > 0 ? 'var(--space-4)' : 0,
+        }}
+      >
+        {summary}
+      </p>
+
+      {/* Flags */}
+      {flags.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          {flags.map((flag, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                gap: 'var(--space-3)',
+                padding: 'var(--space-3)',
+                backgroundColor: 'var(--bg-elevated)',
+                borderRadius: '6px',
+                borderLeft: `3px solid ${RISK_COLOR[flag.severity]}`,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: '4px' }}>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: RISK_COLOR[flag.severity],
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {flag.severity.toUpperCase()}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      color: 'var(--text-muted)',
+                      fontFamily: 'var(--font-mono, monospace)',
+                      letterSpacing: '0.03em',
+                    }}
+                  >
+                    {FLAG_LABEL[flag.code] ?? flag.code}
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '18px' }}>
+                  {flag.reason}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* AIS disclaimer */}
+      <p
+        style={{
+          fontSize: '11px',
+          color: 'var(--text-muted)',
+          marginTop: 'var(--space-3)',
+          opacity: 0.7,
+        }}
+      >
+        AIS tracking and draft risk not checked in screening mode. Run a full trade check for complete verification.
+      </p>
+    </div>
+  )
+}
+
 // ── Overall risk banner ───────────────────────────────────────────────────────
 
 function OverallRiskBanner({ report }: { report: ScreeningReport }) {
@@ -301,9 +474,10 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
 const LOADING_STEPS = [
   'Parsing document…',
   'Extracting entities with AI…',
+  'Extracting trade parameters…',
   'Screening against sanctions lists…',
   'Checking ICIJ offshore leaks database…',
-  'Calculating risk levels…',
+  'Running trade rules engine…',
 ]
 
 function LoadingView({ filename }: { filename: string }) {
@@ -578,7 +752,24 @@ export default function ScreenClient() {
             </div>
           </div>
 
+          {/* Trade assessment — shown above entity list when trade params extracted */}
+          {report.tradeAssessment && (
+            <TradeAssessmentCard assessment={report.tradeAssessment} />
+          )}
+
           {/* Entity list */}
+          <p
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              marginBottom: 'var(--space-3)',
+            }}
+          >
+            Entities Screened ({report.entities.length})
+          </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {report.entities.map((result, i) => (
               <EntityCard key={i} result={result} />
