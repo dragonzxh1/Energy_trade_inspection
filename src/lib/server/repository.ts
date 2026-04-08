@@ -162,6 +162,60 @@ function attachEvidence(
   }
 }
 
+/**
+ * Compute the tradingTrackRecord dimension score (Phase 2) from trade_events table.
+ * Returns score 0–15, evidence strings, and phase2Pending: false.
+ */
+export async function computeTradingTrackRecord(entityId: string): Promise<{
+  score: number
+  evidence: string[]
+  phase2Pending: false
+}> {
+  try {
+    const { rows } = await db.query<{
+      total_events: string
+      recent_events: string
+      unique_counterparties: string
+    }>(
+      `SELECT
+         COUNT(*)::text                                                               AS total_events,
+         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '6 months')::text     AS recent_events,
+         COUNT(DISTINCT counterparty_name)::text                                      AS unique_counterparties
+       FROM trade_events
+       WHERE entity_id = $1`,
+      [entityId]
+    )
+    const total  = parseInt(rows[0]?.total_events         ?? '0', 10)
+    const recent = parseInt(rows[0]?.recent_events        ?? '0', 10)
+    const unique = parseInt(rows[0]?.unique_counterparties ?? '0', 10)
+
+    let score = 0
+    const evidence: string[] = []
+
+    if (total > 0) {
+      score += 5
+      evidence.push(`${total} verified trade event(s) on record`)
+    } else {
+      evidence.push('No verified trade events on record yet')
+    }
+
+    if (total > unique) {
+      // more events than unique counterparties → at least one repeat
+      score += 5
+      evidence.push('Established relationship: repeat counterparty detected')
+    }
+
+    if (recent > 0) {
+      score += 5
+      evidence.push(`Active: ${recent} event(s) in the last 6 months`)
+    }
+
+    return { score, evidence, phase2Pending: false }
+  } catch {
+    return { score: 0, evidence: ['Trading history analysis unavailable'], phase2Pending: false }
+  }
+}
+
 /** Normalize dataSource — legacy OpenSanctions rows store [{source, dataset}] objects. */
 function normalizeDataSource(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
@@ -456,6 +510,16 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     status: 'verified',
     submittedAt: f.submitted_at,
   }))
+
+  // ── Phase 2: trading track record ────────────────────────────────────────
+  const trackRecord = await computeTradingTrackRecord(entity.id)
+  entity.scoreBreakdown.tradingTrackRecord = {
+    score:         trackRecord.score,
+    maxScore:      25,
+    phase2Pending: false,
+    evidence:      trackRecord.evidence,
+  }
+  entity.authenticityScore = Math.min(100, entity.authenticityScore + trackRecord.score)
 
   // 若制裁状态为 unknown，实时做一次筛查并更新
   if (entity.sanctionStatus === 'unknown') {

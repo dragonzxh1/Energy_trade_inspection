@@ -316,7 +316,7 @@ export async function POST(req: NextRequest) {
     summary,
   }
 
-  // ── Persist ────────────────────────────────────────────────────────────────
+  // ── Persist session ────────────────────────────────────────────────────────
   await db.query(
     `INSERT INTO trade_sessions (id, user_id, input_json, result_json, overall_risk, flag_count)
      VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -329,6 +329,40 @@ export async function POST(req: NextRequest) {
       flags.length,
     ]
   ).catch((err) => console.error('[trade] Failed to persist session:', err))
+
+  // ── Write trade events (powers tradingTrackRecord Phase 2 score) ───────────
+  if (sellerDbMatch?.id) {
+    db.query(
+      `INSERT INTO trade_events
+         (entity_id, counterparty_name, counterparty_id, vessel_imo, event_date, commodity, port_locode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        sellerDbMatch.id,
+        vessel,
+        vesselDbResult?.id ?? null,
+        resolvedImo,
+        date,
+        commodity,
+        loadingPort,
+      ]
+    ).catch((err) => console.error('[trade] Failed to write seller trade event:', err))
+  }
+  if (vesselDbResult?.id) {
+    db.query(
+      `INSERT INTO trade_events
+         (entity_id, counterparty_name, counterparty_id, vessel_imo, event_date, commodity, port_locode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        vesselDbResult.id,
+        seller,
+        sellerDbMatch?.id ?? null,
+        resolvedImo,
+        date,
+        commodity,
+        loadingPort,
+      ]
+    ).catch((err) => console.error('[trade] Failed to write vessel trade event:', err))
+  }
 
   return NextResponse.json(result)
 }
