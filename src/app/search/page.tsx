@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getScoreTier } from '@/lib/utils'
 import Header from '@/components/layout/Header'
-import SanctionBadge from '@/components/entity/SanctionBadge'
 import SearchBox from '@/components/search/SearchBox'
-import type { SearchResult, RiskLevel } from '@/lib/types'
+import SearchFiltersPanel from '@/components/search/SearchFiltersPanel'
+import type { SearchResult } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { searchEntities } from '@/lib/server/repository'
 import { db } from '@/lib/server/db'
@@ -77,13 +76,6 @@ async function getBrowseEntities(type?: string): Promise<BrowseRow[]> {
   }
 }
 
-const RISK_COLOR: Record<RiskLevel, string> = {
-  critical: 'var(--status-listed)',
-  high:     '#f97316',
-  medium:   '#eab308',
-  low:      'var(--status-clear)',
-}
-
 const TYPE_LABELS: Record<string, string> = {
   all:     'All',
   company: 'Companies',
@@ -132,152 +124,21 @@ function TypeFilterTabs({ current, query }: { current: string; query: string }) 
   )
 }
 
-function EntityCard({ result }: { result: SearchResult | BrowseRow }) {
-  const isBrowseRow = 'entity_type' in result
-  const type       = isBrowseRow ? result.entity_type : result.type
-  const sanctionStatus = isBrowseRow ? (result as BrowseRow).sanction_status as SearchResult['sanctionStatus'] : result.sanctionStatus
-  const score      = isBrowseRow ? (result as BrowseRow).authenticity_score : result.authenticityScore
-  const riskLevel  = isBrowseRow ? (result as BrowseRow).risk_level as RiskLevel : result.riskLevel
-  const flag       = isBrowseRow ? (result as BrowseRow).jurisdiction_flag : result.jurisdictionFlag
-  const vesselType = isBrowseRow ? (result as BrowseRow).vessel_type : result.vesselType
-  const regNum     = isBrowseRow ? (result as BrowseRow).registration_number : result.registrationNumber
-  const imo        = result.imo
-  const slug       = result.slug
-
-  const href = type === 'vessel' ? `/vessel/${imo}` : `/company/${slug}`
-  const tier = getScoreTier(score)
-
-  return (
-    <li>
-      <Link
-        href={href}
-        className={`search-result-card search-result-card--${sanctionStatus}`}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: 'var(--space-4) var(--space-5)',
-          backgroundColor: 'var(--bg-surface)',
-          borderRadius: '8px',
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          textDecoration: 'none',
-          gap: 'var(--space-4)',
-        }}
-      >
-        {/* Left: name + meta */}
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-2)',
-              marginBottom: '4px',
-            }}
-          >
-            {/* Risk dot */}
-            <span
-              style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                backgroundColor: RISK_COLOR[riskLevel] ?? 'var(--text-muted)',
-                flexShrink: 0,
-              }}
-              title={`Risk: ${riskLevel}`}
-            />
-            <span
-              style={{
-                color: 'var(--text-primary)',
-                fontSize: '14px',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {result.name}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-            {/* Type pill */}
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: 600,
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-                backgroundColor: 'var(--bg-elevated)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '4px',
-                padding: '1px 6px',
-              }}
-            >
-              {type === 'vessel' ? 'Vessel' : 'Company'}
-            </span>
-            <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-              {flag} {result.country}
-            </span>
-            {type === 'vessel' && vesselType && (
-              <>
-                <span style={{ color: 'var(--border-subtle)', fontSize: '12px' }}>·</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{vesselType}</span>
-              </>
-            )}
-            {type === 'vessel' && imo && (
-              <>
-                <span style={{ color: 'var(--border-subtle)', fontSize: '12px' }}>·</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '12px' }} className="mono">
-                  IMO {imo}
-                </span>
-              </>
-            )}
-            {type === 'company' && regNum && (
-              <>
-                <span style={{ color: 'var(--border-subtle)', fontSize: '12px' }}>·</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '12px' }} className="mono">
-                  {regNum}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Right: score + badge */}
-        <div
-          style={{
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: '6px',
-          }}
-        >
-          <SanctionBadge status={sanctionStatus} size="sm" />
-          <span
-            style={{
-              fontSize: '11px',
-              color: 'var(--text-muted)',
-            }}
-          >
-            Score{' '}
-            <strong
-              style={{
-                color: score >= 70 ? 'var(--status-clear)' : score >= 40 ? '#eab308' : 'var(--status-listed)',
-                fontWeight: 600,
-              }}
-            >
-              {score}
-            </strong>
-            {' '}
-            <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>{tier}</span>
-          </span>
-        </div>
-      </Link>
-    </li>
-  )
+function normalizeToSearchResult(row: BrowseRow): SearchResult {
+  return {
+    id:               row.id,
+    type:             row.entity_type,
+    name:             row.name,
+    country:          row.country,
+    jurisdictionFlag: row.jurisdiction_flag,
+    sanctionStatus:   row.sanction_status as SearchResult['sanctionStatus'],
+    authenticityScore: row.authenticity_score,
+    riskLevel:        row.risk_level as SearchResult['riskLevel'],
+    slug:             row.slug ?? undefined,
+    imo:              row.imo ?? undefined,
+    vesselType:       row.vessel_type ?? undefined,
+    registrationNumber: row.registration_number ?? undefined,
+  }
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
@@ -314,80 +175,43 @@ export default async function SearchPage({ searchParams }: PageProps) {
 
         {hasQuery ? (
           /* ── Search results ── */
-          <>
-            <p
+          items.length === 0 ? (
+            <div
               style={{
-                color: 'var(--text-muted)',
-                fontSize: '13px',
-                marginBottom: 'var(--space-5)',
+                padding: 'var(--space-10)',
+                textAlign: 'center',
+                backgroundColor: 'var(--bg-surface)',
+                borderRadius: '10px',
+                border: '1px solid var(--border-subtle)',
               }}
             >
-              {items.length} result{items.length !== 1 ? 's' : ''} for{' '}
-              <strong style={{ color: 'var(--text-secondary)' }}>&ldquo;{query}&rdquo;</strong>
+              <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>
+                No entities found
+              </p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '20px' }}>
+                Try a company name, registration number (e.g. 202012345A), or IMO number (e.g. 9412847).
+              </p>
               {type && type !== 'all' && (
-                <span> · {TYPE_LABELS[type]}</span>
+                <Link
+                  href={`/search?q=${encodeURIComponent(query)}`}
+                  style={{ display: 'inline-block', marginTop: 'var(--space-4)', color: 'var(--accent-primary)', fontSize: '13px' }}
+                >
+                  Search all entity types →
+                </Link>
               )}
-            </p>
-
-            {items.length === 0 ? (
-              <div
-                style={{
-                  padding: 'var(--space-10)',
-                  textAlign: 'center',
-                  backgroundColor: 'var(--bg-surface)',
-                  borderRadius: '10px',
-                  border: '1px solid var(--border-subtle)',
-                }}
-              >
-                <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>
-                  No entities found
-                </p>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '20px' }}>
-                  Try a company name, registration number (e.g. 202012345A), or IMO number (e.g. 9412847).
-                </p>
-                {type && type !== 'all' && (
-                  <Link
-                    href={`/search?q=${encodeURIComponent(query)}`}
-                    style={{ display: 'inline-block', marginTop: 'var(--space-4)', color: 'var(--accent-primary)', fontSize: '13px' }}
-                  >
-                    Search all entity types →
-                  </Link>
-                )}
-              </div>
-            ) : (
-              <ul
-                role="list"
-                style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
-              >
-                {items.map((result) => (
-                  <EntityCard key={result.id} result={result} />
-                ))}
-              </ul>
-            )}
-          </>
+            </div>
+          ) : (
+            <SearchFiltersPanel results={items} query={query} entityType={filter} />
+          )
         ) : (
           /* ── Browse mode (no query) ── */
           <>
-            <p
-              style={{
-                color: 'var(--text-muted)',
-                fontSize: '13px',
-                marginBottom: 'var(--space-5)',
-              }}
-            >
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: 'var(--space-5)' }}>
               {browseList.length} entities in database
               {type && type !== 'all' && ` · ${TYPE_LABELS[type]}`}
               {' '}— sorted by risk level
             </p>
-
-            <ul
-              role="list"
-              style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}
-            >
-              {browseList.map((row) => (
-                <EntityCard key={row.id} result={row as unknown as SearchResult} />
-              ))}
-            </ul>
+            <SearchFiltersPanel results={browseList.map(normalizeToSearchResult)} query="" entityType={filter} />
           </>
         )}
       </main>
