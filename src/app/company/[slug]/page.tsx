@@ -598,11 +598,15 @@ function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
 
 function SourcesPanel({ sources }: { sources: string[] }) {
   const SOURCE_LINKS: Record<string, string> = {
-    'OpenSanctions':    'https://www.opensanctions.org',
-    'ACRA Singapore':   'https://www.acra.gov.sg',
-    'IMO GISIS':        'https://gisis.imo.org',
-    'Paris MOU':        'https://www.parismou.org',
-    'OFAC':             'https://sanctionslist.ofac.treas.gov',
+    'OpenSanctions':                   'https://www.opensanctions.org',
+    'ACRA Singapore':                  'https://www.acra.gov.sg',
+    'IMO GISIS':                       'https://gisis.imo.org',
+    'Paris MOU':                       'https://www.parismou.org',
+    'OFAC':                            'https://sanctionslist.ofac.treas.gov',
+    'Companies House UK':              'https://find-and-update.company-information.service.gov.uk',
+    'Zefix Swiss Commercial Register': 'https://www.zefix.admin.ch',
+    'GLEIF':                           'https://search.gleif.org',
+    'OpenCorporates':                  'https://opencorporates.com',
   }
 
   return (
@@ -703,6 +707,10 @@ export default async function CompanyPage({ params }: PageProps) {
   const tier    = getScoreTier(company.authenticityScore)
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
   const plan    = session?.user?.plan ?? 'free'
+  const isExternalEntity = /^(gleif:|oc:|zefix:|acra:|ch:)/.test(company.id)
+  const scoreNote = isExternalEntity
+    ? `Score based on ${company.dataSource.join(' + ')} data`
+    : 'Score based on Phase 1 available data (max 75)'
   // F3 unlocked for Starter+ (authenticated, paid plan)
   const f3Unlocked = !!session?.user && plan !== 'free'
   const lockReason = !session?.user ? 'guest' : 'free'
@@ -797,8 +805,21 @@ export default async function CompanyPage({ params }: PageProps) {
               <RiskBadge level={company.riskLevel} />
             </div>
             <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-muted)', fontSize: '12px' }}>
-              Score based on Phase 1 available data (max 75)
+              {scoreNote}
             </p>
+            {isExternalEntity && (
+              <div style={{
+                marginTop: 'var(--space-3)',
+                padding: 'var(--space-2) var(--space-3)',
+                backgroundColor: 'rgba(59,130,246,0.08)',
+                border: '1px solid rgba(59,130,246,0.2)',
+                borderRadius: '6px',
+              }}>
+                <span style={{ color: '#3b82f6', fontSize: '11px', lineHeight: '16px', display: 'block' }}>
+                  External registry — some fields may be incomplete.
+                </span>
+              </div>
+            )}
             <p style={{ marginTop: 'var(--space-2)', color: 'var(--text-muted)', fontSize: '12px' }}>
               Last verified:{' '}
               <time dateTime={company.lastVerified}>
@@ -872,6 +893,26 @@ export default async function CompanyPage({ params }: PageProps) {
             >
               {buildCompanyNarrative(company)}
             </p>
+
+            {isExternalEntity && (
+              <div style={{
+                marginBottom: 'var(--space-4)',
+                padding: 'var(--space-3) var(--space-4)',
+                backgroundColor: 'rgba(59,130,246,0.06)',
+                border: '1px solid rgba(59,130,246,0.18)',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: 'var(--text-secondary)',
+                lineHeight: '18px',
+              }}>
+                This entity was retrieved from{' '}
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  {company.dataSource.join(' + ')}
+                </strong>{' '}
+                and is not yet in our local database. Data completeness may be limited
+                compared to locally verified entities.
+              </div>
+            )}
 
             <TabNav tabs={tabs} defaultTab="registration" panels={panels} />
           </main>
