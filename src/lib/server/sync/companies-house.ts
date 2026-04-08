@@ -131,6 +131,125 @@ export function chToSearchResult(company: CHCompany) {
   }
 }
 
+export interface CHOfficer {
+  name: string
+  role: string
+  appointedOn?: string
+  nationality?: string
+  countryOfResidence?: string
+}
+
+export interface CHPSC {
+  name: string
+  kind: 'individual' | 'corporate-entity' | 'legal-person'
+  naturesOfControl: string[]
+  nationality?: string
+  countryOfResidence?: string
+  addressCountry?: string
+  notifiedOn?: string
+}
+
+/**
+ * Fetch active officers for a Companies House company number.
+ */
+export async function getCHOfficers(companyNumber: string): Promise<CHOfficer[]> {
+  if (!companyNumber || !getApiKey()) return []
+
+  try {
+    const url = new URL(
+      `/company/${encodeURIComponent(companyNumber.toUpperCase())}/officers`,
+      CH_BASE,
+    )
+    url.searchParams.set('items_per_page', '100')
+
+    const response = await fetch(url.toString(), {
+      headers: buildHeaders(),
+      signal: AbortSignal.timeout(4000),
+    })
+
+    if (!response.ok) return []
+
+    const data = await response.json() as {
+      items?: Array<{
+        name?: string
+        officer_role?: string
+        appointed_on?: string
+        nationality?: string
+        country_of_residence?: string
+        resigned_on?: string
+      }>
+    }
+
+    return (data.items ?? [])
+      .filter((o) => !o.resigned_on)
+      .map((o) => ({
+        name:               o.name ?? '',
+        role:               o.officer_role ?? '',
+        appointedOn:        o.appointed_on,
+        nationality:        o.nationality,
+        countryOfResidence: o.country_of_residence,
+      }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Fetch active persons with significant control for a Companies House company number.
+ */
+export async function getCHPSC(companyNumber: string): Promise<CHPSC[]> {
+  if (!companyNumber || !getApiKey()) return []
+
+  try {
+    const url = new URL(
+      `/company/${encodeURIComponent(companyNumber.toUpperCase())}/persons-with-significant-control`,
+      CH_BASE,
+    )
+    url.searchParams.set('items_per_page', '100')
+
+    const response = await fetch(url.toString(), {
+      headers: buildHeaders(),
+      signal: AbortSignal.timeout(4000),
+    })
+
+    if (!response.ok) return []
+
+    const data = await response.json() as {
+      items?: Array<{
+        name?: string
+        kind?: string
+        natures_of_control?: string[]
+        nationality?: string
+        country_of_residence?: string
+        address?: { country?: string }
+        notified_on?: string
+        ceased?: boolean
+      }>
+    }
+
+    return (data.items ?? [])
+      .filter((p) => !p.ceased)
+      .map((p) => {
+        const rawKind = p.kind ?? ''
+        const kind: CHPSC['kind'] =
+          rawKind.includes('corporate') ? 'corporate-entity'
+          : rawKind.includes('legal')   ? 'legal-person'
+          : 'individual'
+        return {
+          name:               p.name ?? '',
+          kind,
+          naturesOfControl:   p.natures_of_control ?? [],
+          nationality:        p.nationality,
+          countryOfResidence: p.country_of_residence,
+          addressCountry:     p.address?.country,
+          notifiedOn:         p.notified_on,
+        }
+      })
+  } catch {
+    return []
+  }
+}
+
 /**
  * Build a Company object from a CH API response (not persisted to DB).
  */

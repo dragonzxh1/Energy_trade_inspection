@@ -8,7 +8,7 @@ import ScoreGauge from '@/components/entity/ScoreGauge'
 import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
-import type { Company } from '@/lib/types'
+import type { Company, BeneficialOwner } from '@/lib/types'
 import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork } from '@/lib/server/repository'
 import type { IcijMatch, IcijOfficerLink } from '@/lib/server/repository'
@@ -194,6 +194,110 @@ function DirectorsPanel({ company }: { company: Company }) {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+const OFFSHORE_CC_SET = new Set(['VG', 'KY', 'MH', 'SC', 'BZ', 'PA', 'WS', 'VU'])
+
+function isOffshoreCountry(s?: string): boolean {
+  if (!s) return false
+  return OFFSHORE_CC_SET.has(s.slice(0, 2).toUpperCase())
+}
+
+const KIND_LABEL: Record<BeneficialOwner['kind'], string> = {
+  'individual':      'Individual',
+  'corporate-entity': 'Corporate',
+  'legal-person':    'Legal Person',
+}
+
+function formatControlType(nature: string): string {
+  return nature
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+function BeneficialOwnersPanel({ company }: { company: Company }) {
+  const owners = company.beneficialOwners
+
+  if (!owners || owners.length === 0) {
+    return (
+      <div style={card}>
+        <p style={sectionTitle}>Beneficial Owners (PSC)</p>
+        <p style={emptyState}>
+          {company.dataSource?.includes('Companies House UK')
+            ? 'No persons with significant control registered at Companies House.'
+            : 'No PSC data available for non-UK entities.'}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div style={card}>
+      <p style={sectionTitle}>Beneficial Owners (PSC) — {owners.length}</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        {owners.map((o, i) => {
+          const offshore = isOffshoreCountry(o.countryOfResidence) ||
+            isOffshoreCountry(o.addressCountry) ||
+            isOffshoreCountry(o.nationality)
+          return (
+            <div
+              key={i}
+              style={{
+                padding: 'var(--space-3) 0',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <p style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500 }}>
+                      {o.name}
+                    </p>
+                    <span style={{
+                      fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                      letterSpacing: '0.06em', color: 'var(--text-muted)',
+                      backgroundColor: 'var(--bg-elevated)',
+                      border: '1px solid var(--border-subtle)',
+                      padding: '1px 6px', borderRadius: '4px',
+                    }}>
+                      {KIND_LABEL[o.kind] ?? o.kind}
+                    </span>
+                    {offshore && (
+                      <span style={{
+                        fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
+                        letterSpacing: '0.06em', color: '#f97316',
+                        backgroundColor: 'rgba(249,115,22,0.1)',
+                        padding: '1px 6px', borderRadius: '4px',
+                      }}>
+                        Offshore
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
+                    {[
+                      o.nationality,
+                      o.countryOfResidence ? `Resident: ${o.countryOfResidence}` : null,
+                      o.addressCountry ? `Address: ${o.addressCountry}` : null,
+                    ].filter(Boolean).join(' · ')}
+                  </p>
+                  {o.naturesOfControl.length > 0 && (
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px' }}>
+                      {o.naturesOfControl.map(formatControlType).join(', ')}
+                    </p>
+                  )}
+                </div>
+                {o.notifiedOn && (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '12px', flexShrink: 0 }}>
+                    Since {new Date(o.notifiedOn).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+                  </span>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -627,19 +731,23 @@ export default async function CompanyPage({ params }: PageProps) {
   })
 
   const tabs = [
-    { id: 'registration',  label: 'Registration' },
-    { id: 'directors',     label: 'Directors' },
-    { id: 'vessels',       label: 'Vessels' },
-    { id: 'flags',         label: 'Risk Flags' },
-    { id: 'offshore',      label: 'Offshore Leaks' },
-    { id: 'intelligence',  label: 'Intelligence' },
-    { id: 'sources',       label: 'Sources' },
+    { id: 'registration',       label: 'Registration' },
+    { id: 'directors',          label: 'Directors' },
+    { id: 'beneficial-owners',  label: 'Beneficial Owners' },
+    { id: 'vessels',            label: 'Vessels' },
+    { id: 'flags',              label: 'Risk Flags' },
+    { id: 'offshore',           label: 'Offshore Leaks' },
+    { id: 'intelligence',       label: 'Intelligence' },
+    { id: 'sources',            label: 'Sources' },
   ]
 
   const panels = [
     <RegistrationPanel key="registration" company={company} />,
     <ContentLock key="directors" unlocked={f3Unlocked} reason={lockReason}>
       <DirectorsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="beneficial-owners" unlocked={f3Unlocked} reason={lockReason}>
+      <BeneficialOwnersPanel company={company} />
     </ContentLock>,
     <ContentLock key="vessels" unlocked={f3Unlocked} reason={lockReason}>
       <VesselsPanel company={company} />

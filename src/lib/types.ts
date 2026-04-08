@@ -54,6 +54,16 @@ export interface BaseEntity {
   dataSource: string[]
 }
 
+export interface BeneficialOwner {
+  name: string
+  kind: 'individual' | 'corporate-entity' | 'legal-person'
+  naturesOfControl: string[]
+  nationality?: string
+  countryOfResidence?: string
+  addressCountry?: string
+  notifiedOn?: string
+}
+
 export interface Company extends BaseEntity {
   type: 'company'
   slug: string
@@ -62,6 +72,7 @@ export interface Company extends BaseEntity {
   registeredAddress?: string
   directors?: Director[]
   vessels?: VesselRef[]
+  beneficialOwners?: BeneficialOwner[]
 }
 
 export interface Director {
