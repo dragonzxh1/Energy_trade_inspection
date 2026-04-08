@@ -18,6 +18,7 @@ export interface ScoreDimension {
   score: number
   maxScore: number
   phase2Pending?: boolean // Trading Track Record is Phase 2
+  evidence?: string[]     // Human-readable reasons explaining this dimension's score
 }
 
 // Score breakdown: 5 dimensions, Phase 1 max = 75 (trading track record pending)

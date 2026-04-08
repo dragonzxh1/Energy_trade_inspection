@@ -67,6 +67,101 @@ function normalizeBreakdown(raw: unknown, totalScore: number): Company['scoreBre
   }
 }
 
+/**
+ * Attach human-readable evidence strings to each score dimension.
+ * Evidence is derived dynamically from the entity row — no DB migration needed.
+ */
+function attachEvidence(
+  breakdown: Company['scoreBreakdown'],
+  row: EntityRow,
+  metadata: Record<string, unknown>,
+): Company['scoreBreakdown'] {
+  // ── entityExistence ────────────────────────────────────────────────────────
+  const existenceEvidence: string[] = []
+  if (row.registration_number) {
+    existenceEvidence.push(`Registration number on record: ${row.registration_number}`)
+  }
+  if (row.country) {
+    existenceEvidence.push(`Jurisdiction: ${row.country.toUpperCase()}`)
+  }
+  if (existenceEvidence.length === 0) {
+    existenceEvidence.push('Entity not found in official registries')
+  }
+
+  // ── assetReality ──────────────────────────────────────────────────────────
+  const assetEvidence: string[] = []
+  if (row.entity_type === 'vessel') {
+    if (row.imo) assetEvidence.push(`IMO number verified: ${row.imo}`)
+    if (typeof metadata.grossTonnage === 'number') {
+      assetEvidence.push(`Gross tonnage: ${metadata.grossTonnage.toLocaleString()} GT`)
+    }
+    if (typeof metadata.yearBuilt === 'number') {
+      assetEvidence.push(`Year built: ${metadata.yearBuilt}`)
+    }
+    if (typeof metadata.vesselType === 'string') {
+      assetEvidence.push(`Vessel type: ${metadata.vesselType}`)
+    }
+  } else if (row.entity_type === 'company') {
+    const vessels = Array.isArray(metadata.vessels) ? metadata.vessels : []
+    const directors = Array.isArray(metadata.directors) ? metadata.directors : []
+    if (vessels.length > 0) {
+      assetEvidence.push(`${vessels.length} vessel(s) associated with this entity`)
+    }
+    if (directors.length > 0) {
+      assetEvidence.push(`${directors.length} director(s) on record`)
+    }
+  } else if (row.entity_type === 'terminal') {
+    if (typeof metadata.terminalType === 'string') {
+      assetEvidence.push(`Terminal type: ${metadata.terminalType}`)
+    }
+    if (typeof metadata.capacity === 'number') {
+      assetEvidence.push(`Storage capacity: ${metadata.capacity.toLocaleString()} m³`)
+    }
+  }
+  if (assetEvidence.length === 0) {
+    assetEvidence.push('Minimal asset documentation available')
+  }
+
+  // ── documentConsistency ───────────────────────────────────────────────────
+  const docEvidence: string[] = []
+  if (typeof metadata.incorporationDate === 'string') {
+    docEvidence.push(`Incorporation date on record: ${metadata.incorporationDate}`)
+  }
+  if (typeof metadata.registeredAddress === 'string') {
+    docEvidence.push('Registered address on file')
+  }
+  if (typeof metadata.location === 'string') {
+    docEvidence.push(`Location on file: ${metadata.location}`)
+  }
+  if (docEvidence.length === 0) {
+    docEvidence.push('No document metadata available')
+  }
+
+  // ── communityReputation ───────────────────────────────────────────────────
+  const repEvidence: string[] = []
+  if (row.sanction_status === 'not_listed') {
+    repEvidence.push('No matches on trade sanctions lists (OFAC, EU, UN)')
+  } else if (row.sanction_status === 'listed') {
+    repEvidence.push('Appears on one or more trade sanctions lists')
+  }
+  if (breakdown.communityReputation.score >= 7) {
+    repEvidence.push('No significant adverse findings in public databases')
+  } else if (breakdown.communityReputation.score === 0) {
+    repEvidence.push('Adverse findings detected in public databases')
+  }
+
+  // ── tradingTrackRecord ────────────────────────────────────────────────────
+  const trackEvidence: string[] = ['Trading history analysis requires Phase 2 data']
+
+  return {
+    entityExistence:     { ...breakdown.entityExistence,     evidence: existenceEvidence },
+    assetReality:        { ...breakdown.assetReality,        evidence: assetEvidence },
+    tradingTrackRecord:  { ...breakdown.tradingTrackRecord,  evidence: trackEvidence },
+    documentConsistency: { ...breakdown.documentConsistency, evidence: docEvidence },
+    communityReputation: { ...breakdown.communityReputation, evidence: repEvidence },
+  }
+}
+
 /** Normalize dataSource — legacy OpenSanctions rows store [{source, dataset}] objects. */
 function normalizeDataSource(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
@@ -83,9 +178,10 @@ function normalizeDataSource(raw: unknown): string[] {
 }
 
 function parseEntity(row: EntityRow): Company | Vessel | Terminal {
-  const scoreBreakdown = normalizeBreakdown(row.score_breakdown_json, row.authenticity_score)
+  const rawBreakdown = normalizeBreakdown(row.score_breakdown_json, row.authenticity_score)
   const dataSource = normalizeDataSource(row.data_source_json)
   const metadata = row.metadata_json as Record<string, unknown>
+  const scoreBreakdown = attachEvidence(rawBreakdown, row, metadata)
 
   if (row.entity_type === 'vessel') {
     return {

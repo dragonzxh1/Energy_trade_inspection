@@ -201,6 +201,35 @@ export default function ScoreGauge({ score, tier, breakdown }: ScoreGaugeProps) 
                     }}
                   />
                 </div>
+                {entry.evidence && entry.evidence.length > 0 && (
+                  <ul style={{ margin: '4px 0 0', padding: 0, listStyle: 'none' }}>
+                    {entry.evidence.map((ev, i) => (
+                      <li
+                        key={i}
+                        style={{
+                          fontSize: '10px',
+                          color: 'var(--text-muted)',
+                          lineHeight: '1.5',
+                          paddingLeft: '10px',
+                          position: 'relative',
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            left: 0,
+                            color: isPending ? 'var(--text-muted)' : strokeColor,
+                            opacity: 0.6,
+                          }}
+                        >
+                          ·
+                        </span>
+                        {ev}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )
           }
