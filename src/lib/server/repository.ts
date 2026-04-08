@@ -600,6 +600,75 @@ export async function getIcijOfficerNetwork(entityId: string): Promise<IcijOffic
   }))
 }
 
+// ── ICIJ: person search & person-entity links ─────────────────────────────────
+
+export interface IcijPersonResult {
+  nodeId: string
+  name: string
+  dataset: string
+  entityType: string
+}
+
+/**
+ * Search ICIJ offshore leaks database for individuals by name.
+ * Matches Officer and Intermediary node types using trigram similarity.
+ */
+export async function searchIcijByPersonName(name: string): Promise<IcijPersonResult[]> {
+  const { rows } = await db.query(
+    `SELECT node_id, name, dataset, entity_type
+     FROM icij_entities
+     WHERE entity_type IN ('Officer', 'Intermediary')
+       AND lower(name) % lower($1)
+     ORDER BY similarity(lower(name), lower($1)) DESC
+     LIMIT 5`,
+    [name]
+  )
+  return rows.map((r) => ({
+    nodeId:     r.node_id,
+    name:       r.name,
+    dataset:    r.dataset ?? '',
+    entityType: r.entity_type ?? '',
+  }))
+}
+
+/**
+ * Find all ICIJ entities (companies/shells) that a given officer node is linked to.
+ */
+export async function getIcijPersonEntities(officerNodeId: string): Promise<IcijOfficerLink[]> {
+  const { rows } = await db.query(
+    `SELECT
+       r.from_node_id   AS officer_node_id,
+       off.name         AS officer_name,
+       r.rel_type,
+       r.to_node_id     AS entity_node_id,
+       ent.name         AS entity_name,
+       ent.dataset      AS entity_dataset,
+       ent.jurisdiction AS entity_jurisdiction,
+       ent.status       AS entity_status
+     FROM icij_entities off
+     JOIN icij_relationships r
+       ON r.from_node_id = off.node_id
+      AND r.rel_type = 'officer_of'
+     JOIN icij_entities ent
+       ON ent.node_id = r.to_node_id
+      AND ent.entity_type = 'Entity'
+     WHERE off.node_id = $1
+     ORDER BY ent.name
+     LIMIT 20`,
+    [officerNodeId]
+  )
+  return rows.map((r) => ({
+    officerNodeId:      r.officer_node_id,
+    officerName:        r.officer_name,
+    relType:            r.rel_type,
+    entityNodeId:       r.entity_node_id,
+    entityName:         r.entity_name,
+    entityDataset:      r.entity_dataset,
+    entityJurisdiction: r.entity_jurisdiction,
+    entityStatus:       r.entity_status,
+  }))
+}
+
 export async function searchIcijByName(name: string, limit = 10): Promise<IcijMatch[]> {
   const { rows } = await db.query(
     `SELECT node_id, name, dataset, entity_type, countries, jurisdiction,

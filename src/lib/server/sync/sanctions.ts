@@ -39,9 +39,10 @@ async function checkLocalSanctions(
   if (!query || query.length < 2) return { listed: false, sources: [] }
 
   const { rows } = await db.query<LocalHit>(
+    // 阈值从 0.35 提高到 0.72，避免仅凭通用词（energy/hong kong/petroleum）误匹配
     `SELECT id, name, schema, dataset, sanctions
      FROM sanctions_entries
-     WHERE word_similarity($1, search_text) > 0.35
+     WHERE word_similarity($1, search_text) > 0.72
      ORDER BY word_similarity($1, search_text) DESC
      LIMIT 5`,
     [query]
@@ -49,10 +50,55 @@ async function checkLocalSanctions(
 
   if (rows.length === 0) return { listed: false, sources: [] }
 
+  // 只计入实际有制裁措施的条目（sanctions 字段非 null）
+  // sanctions 为 null 的条目是 PEP（政治公众人物），不等于受制裁
+  const sanctionedRows = rows.filter((r) => r.sanctions != null)
+  if (sanctionedRows.length === 0) return { listed: false, sources: [] }
+
+  // 排除纯监管执法数据集（银行监管令、政府采购黑名单等）——不属于贸易制裁
+  // 这些数据集的条目即使 sanctions 字段非空，也不是贸易制裁意义上的"制裁"
+  const EXCLUDED_REGULATORY_DATASETS = [
+    'US OCC Enforcement Actions',
+    'US CFTC Enforcement Actions',
+    'US FDIC Enforcement Actions',
+    'US FRB Enforcement Actions',
+    'US SEC Enforcement Actions',
+    'US FHFA Enforcement Actions',
+    'US NCUA Enforcement Actions',
+    'US BIS Alleged Antiboycott Violations',
+    'US SAM Procurement Exclusions',   // 政府采购排除名单，非贸易制裁
+  ]
+
+  // 贸易相关制裁关键词：OFAC SDN、EU FSF、UN、OFSI、SDGT、EO13、EntityList 等
+  // 注意：仅用"OFAC"不够精确（OCC 执法令中可能出现"OFAC Compliance Issue"）
+  // 因此同时结合数据集排除过滤
+  const TRADE_SANCTION_KEYWORDS = [
+    'SDN', 'SDGT', 'SDNTK', 'Entity List', 'EL)', 'Unverified List',
+    'Executive Order', 'EU FSF', 'OFSI', 'Consolidated List',
+    'GLOMAG', 'RUSSIA', 'IRAN', 'DPRK', 'CUBA', 'SYRIA',
+    'VENEZUELA', 'MYANMAR', 'BELARUS', 'UKRAINE', 'Terrorism',
+    'debarred',
+  ]
+  const tradeRows = sanctionedRows.filter((r) => {
+    // 先排除纯监管执法数据集
+    if (r.dataset) {
+      const isRegulatory = EXCLUDED_REGULATORY_DATASETS.some((ds) =>
+        r.dataset!.includes(ds)
+      )
+      if (isRegulatory) return false
+    }
+    // 再检查是否含有贸易制裁关键词
+    return TRADE_SANCTION_KEYWORDS.some((kw) => r.sanctions?.includes(kw))
+  })
+  if (tradeRows.length === 0) return { listed: false, sources: [] }
+
+  // 用 tradeRows 替代 sanctionedRows 提取来源
+  const relevantRows = tradeRows
+
   // 从 dataset 字段提取来源名（分号分隔）
   const sources = [
     ...new Set(
-      rows.flatMap((r) => {
+      relevantRows.flatMap((r) => {
         if (!r.dataset) return ['OpenSanctions']
         return r.dataset
           .split(';')

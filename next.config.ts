@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@react-pdf/renderer'],
+  serverExternalPackages: ['@react-pdf/renderer', 'pdf-parse', 'mammoth', 'xlsx'],
   // Allow local dev tools (browse daemon, DevTools) to access /_next/* resources
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   // Allow AI crawlers to index entity pages for GEO

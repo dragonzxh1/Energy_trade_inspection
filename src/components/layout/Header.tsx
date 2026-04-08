@@ -113,6 +113,16 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
               Pricing
             </Link>
 
+            {plan !== 'free' && (
+              <Link
+                href="/screen"
+                className="nav-text-link"
+                style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
+              >
+                Screen
+              </Link>
+            )}
+
             {(plan === 'professional' || plan === 'enterprise') && (
               <Link
                 href="/watchlist"
