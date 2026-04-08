@@ -1,7 +1,7 @@
 /**
  * Deterministic trade risk rule engine.
  *
- * Nine standard flags (Phase 1 + Phase 2):
+ * Eleven standard flags (Phase 1 + Phase 2):
  *   NO_REGISTRY_MATCH          — seller not found in any registry
  *   SANCTION_EXPOSURE          — seller or vessel on trade sanctions list
  *   LIMITED_BUSINESS_FOOTPRINT — seller has negligible verifiable presence
@@ -11,6 +11,8 @@
  *   NEWLY_INCORPORATED_SELLER  — seller < 24 months old trading high-value commodity
  *   VESSEL_FLAG_ROUTE_MISMATCH — vessel under known evasion flag state
  *   MULTIPLE_OPERATOR_CHANGES  — vessel changed operator/owner > 2× in 18 months
+ *   VESSEL_COMPLIANCE_RISK     — PSC detentions or chronic deficiency rate > 30%
+ *   OFFSHORE_HOLDING_STRUCTURE — GLEIF ultimate parent in known offshore jurisdiction
  *
  * Each flag includes: code, severity, target, reason, evidence[].
  * Rules are deterministic: same input → same flags, always.
@@ -34,6 +36,7 @@ export type FlagCode =
   | 'VESSEL_FLAG_ROUTE_MISMATCH'
   | 'MULTIPLE_OPERATOR_CHANGES'
   | 'VESSEL_COMPLIANCE_RISK'
+  | 'OFFSHORE_HOLDING_STRUCTURE'
 
 export interface TradeFlag {
   code: FlagCode
@@ -49,8 +52,13 @@ export interface TradeRuleInput {
   sellerDbMatch: SearchResult | null
   sellerSanctioned: boolean
   sellerSanctionSources: string[]
-  /** ISO date string from entity metadata_json.incorporationDate. Null if unknown. */
+  /** ISO date string from entity metadata_json.incorporationDate or GLEIF LEI registration. Null if unknown. */
   sellerIncorporationDate?: string | null
+  /**
+   * ISO 3166-1 alpha-2 jurisdiction of the seller's GLEIF ultimate parent entity.
+   * Null if not found or GLEIF Level-2 data is unavailable.
+   */
+  sellerUltimateParentJurisdiction?: string | null
 
   // Vessel
   vesselName: string
@@ -93,6 +101,20 @@ const HIGH_RISK_CC = new Set([
 
 /** Flag states associated with sanctions-evasion routing per OFAC/IMO risk lists. */
 const EVASION_FLAGS = new Set(['km', 'pw', 'tg', 'sl', 'md'])
+
+/** Offshore/shell jurisdictions for GLEIF ultimate parent ownership check. */
+const OFFSHORE_CC = new Set(['VG', 'KY', 'MH', 'SC', 'BZ', 'PA', 'WS', 'VU'])
+
+const OFFSHORE_NAMES: Record<string, string> = {
+  VG: 'British Virgin Islands',
+  KY: 'Cayman Islands',
+  MH: 'Marshall Islands',
+  SC: 'Seychelles',
+  BZ: 'Belize',
+  PA: 'Panama',
+  WS: 'Samoa',
+  VU: 'Vanuatu',
+}
 
 /** High-value bulk energy commodities that amplify counterparty risk. */
 const HIGH_VALUE_COMMODITY_RE = /crude|lng|bunker|fuel\s*oil|petroleum/i
@@ -417,6 +439,26 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
+  // ── Rule 11: OFFSHORE_HOLDING_STRUCTURE ───────────────────────────────────
+  // GLEIF Level-2 ultimate parent registered in a known offshore jurisdiction.
+  if (
+    input.sellerUltimateParentJurisdiction &&
+    OFFSHORE_CC.has(input.sellerUltimateParentJurisdiction.toUpperCase())
+  ) {
+    const cc = input.sellerUltimateParentJurisdiction.toUpperCase()
+    flags.push({
+      code: 'OFFSHORE_HOLDING_STRUCTURE',
+      severity: 'high',
+      target: 'seller',
+      reason: `Seller "${input.sellerName}" is ultimately owned through ${OFFSHORE_NAMES[cc] ?? cc} — a jurisdiction commonly used for opaque holding structures that can obscure beneficial ownership.`,
+      evidence: [
+        `Ultimate parent jurisdiction: ${cc} (${OFFSHORE_NAMES[cc] ?? 'known offshore jurisdiction'})`,
+        'Source: GLEIF Level-2 Relationship Data',
+        'Offshore set: BVI, Cayman, Marshall Is., Seychelles, Belize, Panama, Samoa, Vanuatu',
+      ],
+    })
+  }
+
   return flags
 }
 
@@ -448,7 +490,7 @@ function detectPattern(flags: TradeFlag[]): RiskPattern {
   ) return 'SANCTIONS_EVASION'
 
   if (
-    (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER')) &&
+    (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER') || codes.has('OFFSHORE_HOLDING_STRUCTURE')) &&
     (codes.has('NO_REGISTRY_MATCH') || codes.has('SANCTION_EXPOSURE'))
   ) return 'SHELL_COMPANY'
 
@@ -459,7 +501,11 @@ function detectPattern(flags: TradeFlag[]): RiskPattern {
     (codes.has('MULTIPLE_OPERATOR_CHANGES') || codes.has('INCONSISTENT_TRADE_STORY'))
   ) return 'DARK_VESSEL'
 
-  if (codes.has('LIMITED_BUSINESS_FOOTPRINT') || codes.has('NEWLY_INCORPORATED_SELLER')) {
+  if (
+    codes.has('LIMITED_BUSINESS_FOOTPRINT') ||
+    codes.has('NEWLY_INCORPORATED_SELLER') ||
+    codes.has('OFFSHORE_HOLDING_STRUCTURE')
+  ) {
     return 'SHELL_COMPANY'
   }
 

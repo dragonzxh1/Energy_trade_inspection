@@ -29,6 +29,7 @@ import {
   getIcijOfficerNetwork,
   type PscSummary,
 } from '@/lib/server/repository'
+import { searchGleifByName, getGleifUltimateParentJurisdiction } from '@/lib/server/gleif'
 import {
   runTradeRules,
   overallRiskFromFlags,
@@ -48,6 +49,10 @@ export interface TradePartyResult {
   dbMatch: SearchResult | null
   icijConnections: number        // ICIJ officer network hits (companies only)
   riskLevel: RiskLevel
+  /** Incorporation date from local DB or GLEIF initial registration date (fallback). Null if unknown. */
+  incorporationDate?: string | null
+  /** GLEIF ultimate parent jurisdiction (ISO 3166-1 alpha-2). Null if not found. */
+  ultimateParentJurisdiction?: string | null
 }
 
 export interface TradeVesselResult {
@@ -164,7 +169,7 @@ export async function POST(req: NextRequest) {
 
   const vesselImo = extractImo(vessel, imoField)
 
-  // ── Run all checks in parallel ─────────────────────────────────────────────
+  // ── Run all primary checks in parallel ────────────────────────────────────
   const [
     sellerSanction,
     sellerDbResults,
@@ -172,6 +177,7 @@ export async function POST(req: NextRequest) {
     vesselDbMatch,
     portData,
     vesselAis,
+    gleifRecord,
   ] = await Promise.all([
     checkSanctions(seller).catch(() => ({ listed: false, sources: [] as string[] })),
     searchEntities(seller, 'company').catch(() => [] as SearchResult[]),
@@ -182,37 +188,54 @@ export async function POST(req: NextRequest) {
       : searchEntities(vessel, 'vessel').then(r => r[0] ?? null).catch(() => null),
     loadingPort ? getPortByLocode(loadingPort).catch(() => null) : Promise.resolve(null),
     vesselImo ? getCachedAis(vesselImo) : Promise.resolve(null),
+    // TASK-07/08: GLEIF name search — LEI + registration date + jurisdiction
+    searchGleifByName(seller).catch(() => null),
   ])
 
   const sellerDbMatch  = sellerDbResults[0] ?? null
   const vesselDbResult = vesselDbMatch as SearchResult | null
+  const resolvedImo    = vesselImo ?? vesselDbResult?.imo ?? null
+  const vesselDraftM   = vesselAis?.position?.draught ?? null
 
-  // ── ICIJ check for seller ─────────────────────────────────────────────────
-  const sellerIcijCount = sellerDbMatch?.id
-    ? await getIcijOfficerNetwork(sellerDbMatch.id)
-        .then(links => links.length)
-        .catch(() => 0)
-    : 0
+  // ── Second parallel: ICIJ, DB inc date, GLEIF parent chain, PSC, draft risk
+  const [
+    sellerIcijCount,
+    sellerDbIncDate,
+    sellerUltimateParentJurisdiction,
+    pscSummary,
+    draftRisk,
+  ] = await Promise.all([
+    // ICIJ officer network count
+    sellerDbMatch?.id
+      ? getIcijOfficerNetwork(sellerDbMatch.id).then(links => links.length).catch(() => 0)
+      : Promise.resolve(0),
 
-  // ── Seller incorporation date (for NEWLY_INCORPORATED_SELLER rule) ─────────
-  const sellerIncorporationDate: string | null = sellerDbMatch?.id
-    ? await db.query<{ inc_date: string | null }>(
-        `SELECT metadata_json->>'incorporationDate' AS inc_date FROM entities WHERE id = $1`,
-        [sellerDbMatch.id]
-      ).then(r => r.rows[0]?.inc_date ?? null).catch(() => null)
-    : null
+    // Local DB incorporation date (TASK-07 primary source)
+    sellerDbMatch?.id
+      ? db.query<{ inc_date: string | null }>(
+          `SELECT metadata_json->>'incorporationDate' AS inc_date FROM entities WHERE id = $1`,
+          [sellerDbMatch.id]
+        ).then(r => r.rows[0]?.inc_date ?? null).catch(() => null)
+      : Promise.resolve(null),
 
-  // ── PSC check for vessel ───────────────────────────────────────────────────
-  const resolvedImo = vesselImo ?? vesselDbResult?.imo ?? null
-  const pscSummary  = resolvedImo
-    ? await getPscSummary(resolvedImo).catch(() => null)
-    : null
+    // TASK-08: GLEIF ultimate parent jurisdiction
+    gleifRecord?.lei
+      ? getGleifUltimateParentJurisdiction(gleifRecord.lei).catch(() => null)
+      : Promise.resolve(null),
 
-  // ── Draft risk check ───────────────────────────────────────────────────────
-  const vesselDraftM = vesselAis?.position?.draught ?? null
-  const draftRisk: DraftRiskResult | null = loadingPort
-    ? await checkDraftRisk(loadingPort, vesselDraftM).catch(() => null)
-    : null
+    // PSC inspection history
+    resolvedImo
+      ? getPscSummary(resolvedImo).catch(() => null)
+      : Promise.resolve(null),
+
+    // Draft / STS risk
+    loadingPort
+      ? checkDraftRisk(loadingPort, vesselDraftM).catch(() => null)
+      : Promise.resolve(null),
+  ])
+
+  // TASK-07: final incorporation date — DB row first, GLEIF LEI registration as fallback
+  const sellerIncorporationDate = sellerDbIncDate ?? gleifRecord?.initialRegistrationDate ?? null
 
   // ── Derive risk levels ────────────────────────────────────────────────────
   const sellerSanctionStatus: SanctionStatus = sellerSanction.listed ? 'listed' : 'not_listed'
@@ -246,11 +269,12 @@ export async function POST(req: NextRequest) {
 
   // ── Run deterministic rule engine ─────────────────────────────────────────
   const flags = runTradeRules({
-    sellerName:               seller,
+    sellerName:                      seller,
     sellerDbMatch,
-    sellerSanctioned:         sellerSanction.listed,
-    sellerSanctionSources:    sellerSanction.sources,
+    sellerSanctioned:                sellerSanction.listed,
+    sellerSanctionSources:           sellerSanction.sources,
     sellerIncorporationDate,
+    sellerUltimateParentJurisdiction,
 
     vesselName:               vessel,
     vesselImo:                resolvedImo,
@@ -291,12 +315,14 @@ export async function POST(req: NextRequest) {
     input: { seller, vessel, date, loadingPort, commodity },
 
     seller: {
-      name:             seller,
-      sanctionStatus:   sellerSanctionStatus,
-      sanctionSources:  sellerSanction.sources,
-      dbMatch:          sellerDbMatch,
-      icijConnections:  sellerIcijCount,
-      riskLevel:        sellerLevel,
+      name:                       seller,
+      sanctionStatus:             sellerSanctionStatus,
+      sanctionSources:            sellerSanction.sources,
+      dbMatch:                    sellerDbMatch,
+      icijConnections:            sellerIcijCount,
+      riskLevel:                  sellerLevel,
+      incorporationDate:          sellerIncorporationDate,
+      ultimateParentJurisdiction: sellerUltimateParentJurisdiction,
     },
 
     vessel: {

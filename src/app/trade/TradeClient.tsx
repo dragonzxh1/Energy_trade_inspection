@@ -39,6 +39,7 @@ const FLAG_LABEL: Record<string, string> = {
   VESSEL_FLAG_ROUTE_MISMATCH: 'Evasion Flag State',
   MULTIPLE_OPERATOR_CHANGES:  'Multiple Operator Changes',
   VESSEL_COMPLIANCE_RISK:     'Vessel Compliance Risk',
+  OFFSHORE_HOLDING_STRUCTURE: 'Offshore Holding Structure',
 }
 
 const TARGET_LABEL: Record<string, string> = {
@@ -370,6 +371,16 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
       {(party.icijConnections > 0) && (
         <p style={{ fontSize: '12px', color: '#f97316', margin: 'var(--space-2) 0 0' }}>
           ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
+        </p>
+      )}
+      {party.incorporationDate && (
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--space-2) 0 0' }}>
+          Incorporated {new Date(party.incorporationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
+        </p>
+      )}
+      {party.ultimateParentJurisdiction && (
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 'var(--space-1) 0 0' }}>
+          Ultimate parent: <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{party.ultimateParentJurisdiction}</span>
         </p>
       )}
       {!party.dbMatch && (
