@@ -98,8 +98,39 @@ export function mightBeSwissUid(s: string): boolean {
   return /^CHE[-\s]?\d{3}[.\s]?\d{3}[.\s]?\d{3}$/i.test(s.trim())
 }
 
+/**
+ * Compute authenticity score for a Zefix company.
+ * entityExistence: ACTIVE status in Swiss official registry (max 18/25)
+ * documentConsistency: canton/registerOffice always present (+3), city address (+4) (max 7/10)
+ * communityReputation: sanction screen result (max 8/10)
+ */
+function computeZefixScore(
+  c: ZefixCompany,
+  sanctionStatus: SanctionStatus = 'unknown',
+) {
+  const isActive           = c.status === 'ACTIVE'
+  const entityExistence    = isActive ? 18 : 0
+  const documentConsistency =
+    (c.registerOffice  ? 3 : 0) +  // canton always set for active companies
+    (c.address?.city   ? 4 : 0)
+  const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
+  const total = entityExistence + documentConsistency + communityReputation
+
+  return {
+    authenticityScore: total,
+    scoreBreakdown: {
+      entityExistence:     { score: entityExistence,     maxScore: 25 },
+      assetReality:        { score: 0,                   maxScore: 30 },
+      tradingTrackRecord:  { score: 0,                   maxScore: 25, phase2Pending: true as const },
+      documentConsistency: { score: documentConsistency, maxScore: 10 },
+      communityReputation: { score: communityReputation, maxScore: 10 },
+    },
+  }
+}
+
 /** Convert a Zefix company to SearchResult format. */
 export function zefixToSearchResult(c: ZefixCompany) {
+  const { authenticityScore } = computeZefixScore(c)  // no sanctions in search path
   return {
     id: `zefix:${c.uid}`,
     name: c.name,
@@ -107,7 +138,7 @@ export function zefixToSearchResult(c: ZefixCompany) {
     country: 'Switzerland',
     jurisdictionFlag: '🇨🇭',
     sanctionStatus: 'unknown' as const,
-    authenticityScore: 0,
+    authenticityScore,
     riskLevel: 'medium' as const,
     registrationNumber: c.uid,
     slug: c.uid.toLowerCase().replace(/[^a-z0-9]/g, '-'),
@@ -118,6 +149,7 @@ export function zefixToSearchResult(c: ZefixCompany) {
 export function buildZefixCompany(c: ZefixCompany, sanctionStatus: SanctionStatus) {
   const addressParts = [c.address?.street, c.address?.swissZipCode, c.address?.city].filter(Boolean)
   const registeredAddress = addressParts.length > 0 ? addressParts.join(', ') : undefined
+  const { authenticityScore, scoreBreakdown } = computeZefixScore(c, sanctionStatus)
 
   return {
     id: `zefix:${c.uid}`,
@@ -129,14 +161,8 @@ export function buildZefixCompany(c: ZefixCompany, sanctionStatus: SanctionStatu
     country: 'Switzerland',
     jurisdictionFlag: '🇨🇭',
     sanctionStatus,
-    authenticityScore: 0,
-    scoreBreakdown: {
-      entityExistence:     { score: 0, maxScore: 25 },
-      assetReality:        { score: 0, maxScore: 30 },
-      tradingTrackRecord:  { score: 0, maxScore: 25, phase2Pending: true },
-      documentConsistency: { score: 0, maxScore: 10 },
-      communityReputation: { score: 0, maxScore: 10 },
-    },
+    authenticityScore,
+    scoreBreakdown,
     riskLevel: (sanctionStatus === 'listed' ? 'critical' : 'medium') as 'critical' | 'medium',
     riskFlags: [] as never[],
     lastVerified: new Date().toISOString(),

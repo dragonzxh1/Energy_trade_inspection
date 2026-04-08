@@ -164,10 +164,22 @@ export async function getGleifRecordByLei(lei: string): Promise<GleifLeiRecord |
 /**
  * Build a Company object from a GLEIF LEI record (not persisted to DB).
  * id prefix: `gleif:${lei}` — signals GLEIF-only provenance to registry source detection.
+ *
+ * Scoring: LEI existence is a weaker signal than direct registry — indicates the entity
+ * is regulated enough to have obtained an LEI, but no direct registry verification.
+ * entityExistence: 10/25 (has valid LEI)
+ * documentConsistency: +5 if registration date is known
+ * communityReputation: +8 if not_listed
+ * Max score: ~23 (Suspicious/Insufficient boundary — appropriate for indirect source)
  */
 export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: SanctionStatus) {
   const cc = record.jurisdiction ?? record.country
   const country = jurisdictionToCountry(cc)
+
+  const entityExistence    = 10  // valid LEI = minimal existence signal
+  const documentConsistency = record.initialRegistrationDate ? 5 : 0
+  const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
+  const authenticityScore   = entityExistence + documentConsistency + communityReputation
 
   return {
     id: `gleif:${record.lei}`,
@@ -179,13 +191,13 @@ export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: Sancti
     country,
     jurisdictionFlag: cc ?? '',
     sanctionStatus,
-    authenticityScore: 0,
+    authenticityScore,
     scoreBreakdown: {
-      entityExistence:     { score: 0, maxScore: 25 },
-      assetReality:        { score: 0, maxScore: 30 },
-      tradingTrackRecord:  { score: 0, maxScore: 25, phase2Pending: true },
-      documentConsistency: { score: 0, maxScore: 10 },
-      communityReputation: { score: 0, maxScore: 10 },
+      entityExistence:     { score: entityExistence,     maxScore: 25 },
+      assetReality:        { score: 0,                   maxScore: 30 },
+      tradingTrackRecord:  { score: 0,                   maxScore: 25, phase2Pending: true as const },
+      documentConsistency: { score: documentConsistency, maxScore: 10 },
+      communityReputation: { score: communityReputation, maxScore: 10 },
     },
     riskLevel: (sanctionStatus === 'listed' ? 'critical' : 'medium') as 'critical' | 'medium',
     riskFlags: [] as never[],

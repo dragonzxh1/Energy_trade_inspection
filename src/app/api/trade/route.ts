@@ -134,12 +134,13 @@ async function getAisForTrade(imo: string): Promise<VesselAisData | null> {
  * Derive the registry source from an entity id prefix.
  * Convention: id prefix encodes the data source; no additional fields needed.
  */
-function deriveRegistrySource(id?: string): 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | null {
+function deriveRegistrySource(id?: string): 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | 'oc' | null {
   if (!id) return null
   if (id.startsWith('acra:'))  return 'acra'
   if (id.startsWith('ch:'))    return 'ch'
   if (id.startsWith('zefix:')) return 'zefix'
   if (id.startsWith('gleif:')) return 'gleif'
+  if (id.startsWith('oc:'))    return 'oc'
   return 'local_db'
 }
 

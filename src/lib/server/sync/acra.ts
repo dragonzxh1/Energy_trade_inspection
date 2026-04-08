@@ -116,18 +116,52 @@ export function mapACRAEntityType(acraType: string): 'company' | 'terminal' {
 }
 
 /**
+ * Compute authenticity score components for an ACRA entity.
+ * Called from both search results (no sanctions) and entity builds (with sanctions).
+ *
+ * entityExistence: active status in official SG registry (max 18/25)
+ * documentConsistency: registration date + street address (max 9/10)
+ * communityReputation: sanction screen result (max 8/10)
+ * assetReality + tradingTrackRecord: always 0 (no registry data for these)
+ */
+export function computeACRAScore(
+  entity: ACRAEntity,
+  sanctionStatus: 'not_listed' | 'listed' | 'unknown' = 'unknown',
+) {
+  const isActive           = entity.uen_status?.toLowerCase() === 'live'
+  const entityExistence    = isActive ? 18 : 0
+  const documentConsistency =
+    (entity.registration_date ? 5 : 0) +
+    (entity.street_name       ? 4 : 0)
+  const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
+  const total = entityExistence + documentConsistency + communityReputation
+
+  return {
+    authenticityScore: total,
+    scoreBreakdown: {
+      entityExistence:     { score: entityExistence,     maxScore: 25 },
+      assetReality:        { score: 0,                   maxScore: 30 },
+      tradingTrackRecord:  { score: 0,                   maxScore: 25, phase2Pending: true as const },
+      documentConsistency: { score: documentConsistency, maxScore: 10 },
+      communityReputation: { score: communityReputation, maxScore: 10 },
+    },
+  }
+}
+
+/**
  * 将 ACRA 结果转换为 SearchResult 格式
  */
 export function acraToSearchResult(entity: ACRAEntity) {
+  const { authenticityScore } = computeACRAScore(entity)  // no sanctions in search path
   return {
     id: `acra:${entity.uen}`,
     name: entity.entity_name,
     type: 'company' as const,
     country: 'Singapore',
     jurisdictionFlag: '🇸🇬',
-    sanctionStatus: 'unknown' as const,  // 后续由制裁检查更新
-    authenticityScore: 0,                // ACRA 来源暂无评分
-    riskLevel: 'medium' as const,        // 默认中等风险，待评分后更新
+    sanctionStatus: 'unknown' as const,
+    authenticityScore,
+    riskLevel: 'medium' as const,
     registrationNumber: entity.uen,
     slug: entity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
   }

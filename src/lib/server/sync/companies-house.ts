@@ -114,9 +114,40 @@ export function formatCHAddress(addr: CHCompany['registered_office_address']): s
 }
 
 /**
+ * Compute authenticity score components for a Companies House company.
+ * entityExistence: active status in UK official registry (max 18/25)
+ * documentConsistency: date of creation + registered address (max 9/10)
+ * communityReputation: sanction screen result (max 8/10)
+ */
+export function computeCHScore(
+  company: CHCompany,
+  sanctionStatus: 'not_listed' | 'listed' | 'unknown' = 'unknown',
+) {
+  const isActive           = company.company_status === 'active'
+  const entityExistence    = isActive ? 18 : 0
+  const documentConsistency =
+    (company.date_of_creation                         ? 5 : 0) +
+    (company.registered_office_address?.address_line_1 ? 4 : 0)
+  const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
+  const total = entityExistence + documentConsistency + communityReputation
+
+  return {
+    authenticityScore: total,
+    scoreBreakdown: {
+      entityExistence:     { score: entityExistence,     maxScore: 25 },
+      assetReality:        { score: 0,                   maxScore: 30 },
+      tradingTrackRecord:  { score: 0,                   maxScore: 25, phase2Pending: true as const },
+      documentConsistency: { score: documentConsistency, maxScore: 10 },
+      communityReputation: { score: communityReputation, maxScore: 10 },
+    },
+  }
+}
+
+/**
  * Convert a CH company to SearchResult format.
  */
 export function chToSearchResult(company: CHCompany) {
+  const { authenticityScore } = computeCHScore(company)  // no sanctions in search path
   return {
     id: `ch:${company.company_number}`,
     name: company.title,
@@ -124,7 +155,7 @@ export function chToSearchResult(company: CHCompany) {
     country: 'United Kingdom',
     jurisdictionFlag: '🇬🇧',
     sanctionStatus: 'unknown' as const,
-    authenticityScore: 0,
+    authenticityScore,
     riskLevel: 'medium' as const,
     registrationNumber: company.company_number,
     slug: company.company_number.toLowerCase(),
@@ -252,9 +283,14 @@ export async function getCHPSC(companyNumber: string): Promise<CHPSC[]> {
 
 /**
  * Build a Company object from a CH API response (not persisted to DB).
+ * Pass sanctionStatus to get accurate communityReputation scoring.
  */
-export function buildCHCompany(company: CHCompany) {
+export function buildCHCompany(
+  company: CHCompany,
+  sanctionStatus: 'not_listed' | 'listed' | 'unknown' = 'unknown',
+) {
   const address = formatCHAddress(company.registered_office_address)
+  const { authenticityScore, scoreBreakdown } = computeCHScore(company, sanctionStatus)
   return {
     id: `ch:${company.company_number}`,
     type: 'company' as const,
@@ -265,17 +301,11 @@ export function buildCHCompany(company: CHCompany) {
     registeredAddress: address,
     country: 'United Kingdom',
     jurisdictionFlag: '🇬🇧',
-    sanctionStatus: 'unknown' as const,
-    authenticityScore: 0,
-    scoreBreakdown: {
-      entityExistence:     { score: 0, maxScore: 25 },
-      assetReality:        { score: 0, maxScore: 30 },
-      tradingTrackRecord:  { score: 0, maxScore: 25, phase2Pending: true },
-      documentConsistency: { score: 0, maxScore: 10 },
-      communityReputation: { score: 0, maxScore: 10 },
-    },
-    riskLevel: 'medium' as const,
-    riskFlags: [],
+    sanctionStatus,
+    authenticityScore,
+    scoreBreakdown,
+    riskLevel: (sanctionStatus === 'listed' ? 'critical' : 'medium') as 'critical' | 'medium',
+    riskFlags: [] as never[],
     lastVerified: new Date().toISOString(),
     dataSource: ['Companies House UK'],
   }

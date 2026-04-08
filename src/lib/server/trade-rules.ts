@@ -100,7 +100,7 @@ export interface TradeRuleInput {
    * 'gleif'    — found only in GLEIF LEI register (id starts with 'gleif:')
    * null       — not found in any registry
    */
-  sellerRegistrySource?: 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | null
+  sellerRegistrySource?: 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | 'oc' | null
 
   /**
    * When true, AIS-dependent rules (NO_RECENT_ACTIVITY, AIS destination mismatch,
@@ -184,8 +184,8 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
       code: 'NO_REGISTRY_MATCH',
       severity: 'high',
       target: 'seller',
-      reason: `Seller "${input.sellerName}" could not be found in any company registry (local database, Singapore ACRA, or UK Companies House).`,
-      evidence: ['Local Entity Database', 'Singapore ACRA', 'UK Companies House'],
+      reason: `Seller "${input.sellerName}" could not be found in any company registry (local database, Singapore ACRA, UK Companies House, Swiss Zefix, or GLEIF LEI register).`,
+      evidence: ['Local Entity Database', 'Singapore ACRA', 'UK Companies House', 'Swiss Zefix', 'GLEIF LEI Registry'],
     })
   }
 

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { Company, RiskFlag, SearchResult, SanctionStatus, Terminal, Vessel } from '@/lib/types'
 import { db } from './db'
 import { checkSanctions } from './sync/sanctions'
-import { searchACRA, getACRAByUEN, acraToSearchResult } from './sync/acra'
+import { searchACRA, getACRAByUEN, acraToSearchResult, computeACRAScore } from './sync/acra'
 import {
   searchCompaniesHouse,
   getCHCompanyByNumber,
@@ -24,6 +24,13 @@ import {
   getGleifRecordByLei,
   buildGleifCompany,
 } from './gleif'
+import {
+  searchOpenCorporates,
+  getOCCompanyByNumber,
+  mightBeOCId,
+  ocToSearchResult,
+  buildOCCompany,
+} from './sync/opencorporates'
 
 interface EntityRow {
   id: string
@@ -415,11 +422,12 @@ export async function searchEntities(query: string, entityType?: string): Promis
 
   const shouldSearchCompanies = !entityType || entityType === 'company'
   if (shouldSearchCompanies && localResults.length === 0) {
-    // 并行查询 ACRA（新加坡）、Companies House（英国）、Zefix（瑞士）、GLEIF（全球后备）
-    const [acraEntities, chEntities, zefixEntities, gleifRecords] = await Promise.all([
+    // 并行查询 ACRA（新加坡）、Companies House（英国）、Zefix（瑞士）、OpenCorporates（全球聚合）、GLEIF（最终后备）
+    const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
       searchACRA(query, 5).catch(() => []),
       searchCompaniesHouse(query, 5).catch(() => []),
       searchZefix(query, 5).catch(() => []),
+      searchOpenCorporates(query, 5).catch(() => []),
       searchGleifMultiple(query, 5).catch(() => []),
     ])
 
@@ -438,12 +446,18 @@ export async function searchEntities(query: string, entityType?: string): Promis
       .filter((c) => !localIds.has(c.uid))
       .map(zefixToSearchResult)
 
+    // OpenCorporates 结果去重（聚合注册册，覆盖 NL/HK/DE/FR 等无直接注册册的司法管辖区）
+    const ocResults = ocEntities
+      .filter((c) => !localIds.has(c.company_number))
+      .map(ocToSearchResult)
+
     // GLEIF 结果去重（仅添加未被其他来源覆盖的 LEI）
     const allRegNums = new Set([
       ...localIds,
       ...acraResults.map(r => r.registrationNumber).filter(Boolean),
       ...chResults.map(r => r.registrationNumber).filter(Boolean),
       ...zefixResults.map(r => r.registrationNumber).filter(Boolean),
+      ...ocResults.map(r => r.registrationNumber).filter(Boolean),
     ])
     const gleifResults = gleifRecords
       .filter((r) => !allRegNums.has(r.lei))
@@ -454,14 +468,15 @@ export async function searchEntities(query: string, entityType?: string): Promis
         country: r.jurisdiction ?? r.country ?? '',
         jurisdictionFlag: r.jurisdiction ?? '',
         sanctionStatus: 'unknown' as const,
-        authenticityScore: 0,
+        // LEI = 10 pts existence; +5 if registration date known; no sanctions in search path
+        authenticityScore: 10 + (r.initialRegistrationDate ? 5 : 0),
         riskLevel: 'medium' as const,
         registrationNumber: r.lei,
         slug: `lei-${r.lei.toLowerCase()}`,
       }))
 
     // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
-    return [...localResults, ...acraResults, ...chResults, ...zefixResults, ...gleifResults].slice(0, 20)
+    return [...localResults, ...acraResults, ...chResults, ...zefixResults, ...ocResults, ...gleifResults].slice(0, 20)
   }
 
   // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
@@ -491,6 +506,8 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
         const sanctionStatus = await screenSanctions(acraEntity.entity_name).catch(
           () => 'unknown' as SanctionStatus
         )
+        const { authenticityScore: acraScore, scoreBreakdown: acraBreakdown } =
+          computeACRAScore(acraEntity, sanctionStatus)
         const company: Company = {
           id: `acra:${acraEntity.uen}`,
           type: 'company',
@@ -500,14 +517,8 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           country: 'Singapore',
           jurisdictionFlag: '🇸🇬',
           sanctionStatus,
-          authenticityScore: 0,
-          scoreBreakdown: {
-            entityExistence:    { score: 0, maxScore: 25 },
-            assetReality:       { score: 0, maxScore: 30 },
-            tradingTrackRecord: { score: 0, maxScore: 25, phase2Pending: true },
-            documentConsistency:{ score: 0, maxScore: 10 },
-            communityReputation:{ score: 0, maxScore: 10 },
-          },
+          authenticityScore: acraScore,
+          scoreBreakdown: acraBreakdown,
           riskLevel: sanctionStatus === 'listed' ? 'critical' : 'medium',
           riskFlags: [],
           lastVerified: new Date().toISOString(),
@@ -536,10 +547,8 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
         }))
 
         const company: Company = {
-          ...buildCHCompany(chCompany),
-          sanctionStatus,
-          riskLevel: sanctionStatus === 'listed' ? 'critical' : 'medium',
-          directors:       directors.length > 0 ? directors : undefined,
+          ...buildCHCompany(chCompany, sanctionStatus),
+          directors:        directors.length > 0 ? directors : undefined,
           beneficialOwners: psc.length > 0 ? psc : undefined,
         }
         return company
@@ -557,7 +566,24 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 4. 尝试 GLEIF 精确查询（gleif:${lei} 前缀）
+    // 4. 尝试 OpenCorporates（oc:{jurisdiction}:{number} 前缀）
+    if (mightBeOCId(idOrSlugOrImo) || idOrSlugOrImo.startsWith('oc:')) {
+      // Extract jurisdiction and company number from oc:{jur}:{num} format
+      const parts = idOrSlugOrImo.replace(/^oc:/, '').split(':')
+      if (parts.length >= 2) {
+        const [jurisdictionCode, ...numParts] = parts
+        const companyNumber = numParts.join(':')
+        const ocCompany = await getOCCompanyByNumber(jurisdictionCode, companyNumber).catch(() => null)
+        if (ocCompany) {
+          const sanctionStatus = await screenSanctions(ocCompany.name).catch(
+            () => 'unknown' as SanctionStatus
+          )
+          return buildOCCompany(ocCompany, sanctionStatus) as unknown as Company
+        }
+      }
+    }
+
+    // 5. 尝试 GLEIF 精确查询（gleif:${lei} 前缀）
     if (idOrSlugOrImo.startsWith('gleif:')) {
       const lei = idOrSlugOrImo.slice(6)
       const record = await getGleifRecordByLei(lei).catch(() => null)
@@ -569,7 +595,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 5. GLEIF 名称搜索（最后兜底）
+    // 6. GLEIF 名称搜索（最后兜底）
     const gleifResults = await searchGleifMultiple(idOrSlugOrImo, 1).catch(() => [])
     if (gleifResults[0]) {
       const record = gleifResults[0]
