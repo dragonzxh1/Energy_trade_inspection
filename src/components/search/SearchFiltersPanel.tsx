@@ -9,6 +9,7 @@ import SanctionBadge from '@/components/entity/SanctionBadge'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type SanctionFilter = 'all' | 'listed' | 'not_listed'
+type SortKey = 'risk' | 'score_asc' | 'score_desc' | 'name'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -27,6 +28,21 @@ const RISK_LABEL: Record<RiskLevel, string> = {
   medium:   'Medium',
   low:      'Low',
 }
+
+const MIN_SCORE_OPTIONS: { label: string; value: number }[] = [
+  { label: 'Score ≥ 40', value: 40 },
+  { label: 'Score ≥ 60', value: 60 },
+  { label: 'Score ≥ 80', value: 80 },
+]
+
+const SORT_OPTIONS: { label: string; value: SortKey }[] = [
+  { label: 'Risk',        value: 'risk'       },
+  { label: 'Score ↓',    value: 'score_desc'  },
+  { label: 'Score ↑',    value: 'score_asc'   },
+  { label: 'Name A–Z',   value: 'name'        },
+]
+
+const RISK_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
 
 // ── EntityCard (client-safe copy) ─────────────────────────────────────────────
 
@@ -168,13 +184,15 @@ interface Props {
 }
 
 export default function SearchFiltersPanel({ results, query, entityType }: Props) {
-  const [riskFilter, setRiskFilter]       = useState<Set<RiskLevel>>(new Set())
+  const [riskFilter, setRiskFilter]         = useState<Set<RiskLevel>>(new Set())
   const [sanctionFilter, setSanctionFilter] = useState<SanctionFilter>('all')
-  const [countryFilter, setCountryFilter] = useState<string>('all')
+  const [countryFilter, setCountryFilter]   = useState<string>('all')
+  const [minScore, setMinScore]             = useState<number>(0)
+  const [sortKey, setSortKey]               = useState<SortKey>('risk')
 
   // Derive unique countries from the result set
   const countries = useMemo(() => {
-    const seen = new Map<string, string>() // country code → "flag country"
+    const seen = new Map<string, string>() // country → "flag country"
     for (const r of results) {
       if (r.country && !seen.has(r.country)) {
         seen.set(r.country, `${countryCodeToFlag(r.jurisdictionFlag)} ${r.country}`)
@@ -183,17 +201,34 @@ export default function SearchFiltersPanel({ results, query, entityType }: Props
     return [...seen.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }, [results])
 
-  const isFiltered = riskFilter.size > 0 || sanctionFilter !== 'all' || countryFilter !== 'all'
+  const isFiltered =
+    riskFilter.size > 0 ||
+    sanctionFilter !== 'all' ||
+    countryFilter !== 'all' ||
+    minScore > 0 ||
+    sortKey !== 'risk'
 
   const filtered = useMemo(() => {
-    return results.filter((r) => {
+    const base = results.filter((r) => {
       if (riskFilter.size > 0 && !riskFilter.has(r.riskLevel)) return false
       if (sanctionFilter === 'listed'     && r.sanctionStatus !== 'listed')     return false
       if (sanctionFilter === 'not_listed' && r.sanctionStatus !== 'not_listed') return false
       if (countryFilter !== 'all' && r.country !== countryFilter) return false
+      if (minScore > 0 && r.authenticityScore < minScore) return false
       return true
     })
-  }, [results, riskFilter, sanctionFilter, countryFilter])
+
+    return [...base].sort((a, b) => {
+      if (sortKey === 'risk') {
+        const rd = (RISK_ORDER[a.riskLevel] ?? 9) - (RISK_ORDER[b.riskLevel] ?? 9)
+        return rd !== 0 ? rd : b.authenticityScore - a.authenticityScore
+      }
+      if (sortKey === 'score_desc') return b.authenticityScore - a.authenticityScore
+      if (sortKey === 'score_asc')  return a.authenticityScore - b.authenticityScore
+      if (sortKey === 'name')       return a.name.localeCompare(b.name)
+      return 0
+    })
+  }, [results, riskFilter, sanctionFilter, countryFilter, minScore, sortKey])
 
   function toggleRisk(level: RiskLevel) {
     setRiskFilter((prev) => {
@@ -208,6 +243,8 @@ export default function SearchFiltersPanel({ results, query, entityType }: Props
     setRiskFilter(new Set())
     setSanctionFilter('all')
     setCountryFilter('all')
+    setMinScore(0)
+    setSortKey('risk')
   }
 
   return (
@@ -290,6 +327,47 @@ export default function SearchFiltersPanel({ results, query, entityType }: Props
             </select>
           </>
         )}
+
+        {/* Min score filter */}
+        <span style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-subtle)', margin: '0 4px', flexShrink: 0 }} />
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '2px', flexShrink: 0 }}>
+          Score:
+        </span>
+        {MIN_SCORE_OPTIONS.map((opt) => (
+          <Chip
+            key={opt.value}
+            active={minScore === opt.value}
+            color="var(--accent-primary)"
+            onClick={() => setMinScore(minScore === opt.value ? 0 : opt.value)}
+          >
+            {opt.label}
+          </Chip>
+        ))}
+
+        {/* Sort */}
+        <span style={{ width: '1px', height: '16px', backgroundColor: 'var(--border-subtle)', margin: '0 4px', flexShrink: 0 }} />
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '2px', flexShrink: 0 }}>
+          Sort:
+        </span>
+        <select
+          value={sortKey}
+          onChange={(e) => setSortKey(e.target.value as SortKey)}
+          style={{
+            fontSize: '11px',
+            color: sortKey !== 'risk' ? 'var(--text-primary)' : 'var(--text-muted)',
+            backgroundColor: 'var(--bg-elevated)',
+            border: `1px solid ${sortKey !== 'risk' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
+            borderRadius: '20px',
+            padding: '4px 8px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
 
         {/* Clear all */}
         {isFiltered && (

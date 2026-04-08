@@ -9,7 +9,7 @@ import { searchEntities } from '@/lib/server/repository'
 import { db } from '@/lib/server/db'
 
 interface PageProps {
-  searchParams: Promise<{ q?: string; type?: string }>
+  searchParams: Promise<{ q?: string; type?: string; sort?: string }>
 }
 
 // Search results are dynamic — no ISR caching
@@ -54,7 +54,7 @@ interface BrowseRow {
 async function getBrowseEntities(type?: string): Promise<BrowseRow[]> {
   try {
     await applyMigrations()
-    const typeFilter = type === 'company' || type === 'vessel'
+    const typeFilter = type === 'company' || type === 'vessel' || type === 'terminal'
       ? `AND entity_type = '${type}'`
       : ''
     const { rows } = await db.query<BrowseRow>(`
@@ -77,10 +77,13 @@ async function getBrowseEntities(type?: string): Promise<BrowseRow[]> {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  all:     'All',
-  company: 'Companies',
-  vessel:  'Vessels',
+  all:      'All',
+  company:  'Companies',
+  vessel:   'Vessels',
+  terminal: 'Terminals',
 }
+
+type TypeTab = 'all' | 'company' | 'vessel' | 'terminal'
 
 function TypeFilterTabs({ current, query }: { current: string; query: string }) {
   const qParam = query ? `&q=${encodeURIComponent(query)}` : ''
@@ -90,13 +93,16 @@ function TypeFilterTabs({ current, query }: { current: string; query: string }) 
         display: 'flex',
         gap: 'var(--space-2)',
         marginBottom: 'var(--space-6)',
+        flexWrap: 'wrap',
       }}
       role="tablist"
       aria-label="Filter by entity type"
     >
-      {(['all', 'company', 'vessel'] as const).map((t) => {
+      {(['all', 'company', 'vessel', 'terminal'] as TypeTab[]).map((t) => {
         const isActive = current === t || (t === 'all' && !current)
-        const href = t === 'all' ? `/search${qParam ? `?${qParam.slice(1)}` : ''}` : `/search?type=${t}${qParam}`
+        const href = t === 'all'
+          ? `/search${qParam ? `?${qParam.slice(1)}` : ''}`
+          : `/search?type=${t}${qParam}`
         return (
           <Link
             key={t}
