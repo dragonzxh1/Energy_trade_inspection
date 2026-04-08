@@ -69,9 +69,8 @@ async function checkLocalSanctions(
     'US SAM Procurement Exclusions',   // 政府采购排除名单，非贸易制裁
   ]
 
-  // 贸易相关制裁关键词：OFAC SDN、EU FSF、UN、OFSI、SDGT、EO13、EntityList 等
+  // 贸易相关制裁关键词：用于检查 sanctions 文本字段
   // 注意：仅用"OFAC"不够精确（OCC 执法令中可能出现"OFAC Compliance Issue"）
-  // 因此同时结合数据集排除过滤
   const TRADE_SANCTION_KEYWORDS = [
     'SDN', 'SDGT', 'SDNTK', 'Entity List', 'EL)', 'Unverified List',
     'Executive Order', 'EU FSF', 'OFSI', 'Consolidated List',
@@ -79,6 +78,25 @@ async function checkLocalSanctions(
     'VENEZUELA', 'MYANMAR', 'BELARUS', 'UKRAINE', 'Terrorism',
     'debarred',
   ]
+
+  // 权威贸易制裁数据集名称关键词（用于 dataset 字段）
+  // 若 dataset 字段包含这些来源，即使 sanctions 文本用 EU 法规编号格式（如 126/2018），
+  // 也直接确认为贸易制裁——覆盖 Rosneft 等跨国列名实体
+  const TRADE_SANCTION_DATASET_KEYWORDS = [
+    'OFAC Specially Designated',   // US OFAC SDN List
+    'OFAC Consolidated',           // US OFAC Non-SDN Consolidated
+    'EU Council Official Journal', // EU 理事会制裁令
+    'EU FSF',                      // EU Financial Sanctions Files
+    'UN Security Council',         // 联合国安理会制裁
+    'UK FCDO Sanctions',           // 英国外交部制裁
+    'UK HMT/OFSI',                 // 英国财政部 OFSI
+    'SECO Sanctions',              // 瑞士 SECO
+    'Australian Sanctions',        // 澳大利亚
+    'Canadian Consolidated Autonomous Sanctions', // 加拿大
+    'Ukraine War and Sanctions',   // 乌克兰制裁登记
+    'US Trade Consolidated Screening List',       // BIS/DDTC/OFAC 合并
+  ]
+
   const tradeRows = sanctionedRows.filter((r) => {
     // 先排除纯监管执法数据集
     if (r.dataset) {
@@ -87,7 +105,14 @@ async function checkLocalSanctions(
       )
       if (isRegulatory) return false
     }
-    // 再检查是否含有贸易制裁关键词
+    // 方式一：dataset 字段包含权威制裁来源名称 → 直接确认
+    if (r.dataset) {
+      const isAuthoritativeSource = TRADE_SANCTION_DATASET_KEYWORDS.some((kw) =>
+        r.dataset!.includes(kw)
+      )
+      if (isAuthoritativeSource) return true
+    }
+    // 方式二：sanctions 文本包含贸易制裁关键词
     return TRADE_SANCTION_KEYWORDS.some((kw) => r.sanctions?.includes(kw))
   })
   if (tradeRows.length === 0) return { listed: false, sources: [] }
