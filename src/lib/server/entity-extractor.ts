@@ -1,5 +1,5 @@
-/**
- * Entity extractor — uses Qwen LLM via DashScope OpenAI-compatible API
+﻿/**
+ * Entity extractor using the Qwen LLM through the DashScope OpenAI-compatible API.
  * to extract structured entities (companies, persons, vessels) from contract text.
  */
 
@@ -24,7 +24,7 @@ export interface ExtractedEntity {
 
 /**
  * Trade parameters extracted from a contract document.
- * Used to feed the trade rules engine as part of the Screen → Trade loop.
+ * Used to feed the trade rules engine as part of the Screen -> Trade loop.
  */
 export interface ExtractedTradeParams {
   seller?: string       // Seller / exporter / supplier company name
@@ -74,7 +74,7 @@ Focus on:
 
 Rules:
 - Include each unique entity once (deduplicate by name)
-- Only include entities explicitly named in the text — do not infer or guess
+- Only include entities explicitly named in the text - do not infer or guess
 - For IMO numbers, extract only the 7-digit number
 - Keep context excerpts under 100 characters`
 
@@ -94,7 +94,7 @@ Return ONLY a JSON object with this exact structure:
 
 Rules:
 - seller must be a company name, not a person name
-- Only include fields explicitly stated in the contract — do not infer or guess
+- Only include fields explicitly stated in the contract - do not infer or guess
 - If a field is not found, omit it from the response
 - confidence: high = seller + vessel + port all found; medium = at least seller + vessel; low = only one or none`
 
@@ -163,11 +163,11 @@ export async function extractTradeParams(text: string): Promise<ExtractedTradePa
  * Returns up to 30 entities sorted by type.
  */
 export async function extractEntities(text: string): Promise<ExtractedEntity[]> {
-  // Truncate to avoid token limits — keep first 8000 chars of meaningful content
+  // Truncate to avoid token limits and keep the first 8000 chars of meaningful content.
   const truncated =
     text.length > 8000 ? text.slice(0, 8000) + '\n[... document truncated]' : text
 
-  // ── API call (throws EntityExtractionError on failure/timeout) ────────────
+  // 鈹€鈹€ API call (throws EntityExtractionError on failure/timeout) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   let response: Awaited<ReturnType<typeof qwen.chat.completions.create>>
   try {
     response = await qwen.chat.completions.create(
@@ -191,7 +191,7 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
     throw new EntityExtractionError('Qwen API call failed or timed out', err)
   }
 
-  // ── Parse response (returns [] if LLM output is malformed) ────────────────
+  // 鈹€鈹€ Parse response (returns [] if LLM output is malformed) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   try {
     const content = response.choices[0]?.message?.content
     if (!content) return []
@@ -220,3 +220,4 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
     return []
   }
 }
+

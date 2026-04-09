@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Zefix (Swiss Commercial Register) integration.
  * Source: https://www.zefix.admin.ch/ZefixPublicREST/api/v1
  * Auth: HTTP Basic (ZEFIX_USERNAME / ZEFIX_PASSWORD env vars)
@@ -13,7 +13,7 @@ export interface ZefixCompany {
   name: string
   uid: string             // e.g. "CHE-123.456.789"
   ehraid: string          // internal Zefix ID
-  legalForm: string       // e.g. "Gesellschaft mit beschränkter Haftung"
+  legalForm: string       // e.g. "Gesellschaft mit beschr盲nkter Haftung"
   status: string          // "ACTIVE" | "CANCELLED" | ...
   registerOffice: string  // Canton
   address?: {
@@ -169,3 +169,4 @@ export function buildZefixCompany(c: ZefixCompany, sanctionStatus: SanctionStatu
     dataSource: ['Zefix Swiss Commercial Register'],
   }
 }
+

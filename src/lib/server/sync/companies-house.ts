@@ -1,4 +1,4 @@
-/**
+﻿/**
  * UK Companies House API integration
  * Source: https://developer-specs.company-information.service.gov.uk/
  * License: Open Government Licence v3.0
@@ -310,3 +310,4 @@ export function buildCHCompany(
     dataSource: ['Companies House UK'],
   }
 }
+

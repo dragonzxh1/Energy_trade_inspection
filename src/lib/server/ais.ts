@@ -1,25 +1,25 @@
-/**
+﻿/**
  * AIS vessel tracking data layer.
  *
  * Supported providers (set AIS_PROVIDER in .env.local):
  *
- *   vesselapi   — Free REST API. Sign up at vesselapi.com, set VESSELAPI_KEY.
+ *   vesselapi   - Free REST API. Sign up at vesselapi.com and set `VESSELAPI_KEY`.
  *                 Best for on-demand vessel lookup by IMO.
  *
- *   aisstream   — Free WebSocket stream. Sign up at aisstream.io, set AISSTREAM_KEY.
+ *   aisstream   - Free WebSocket stream. Sign up at aisstream.io and set `AISSTREAM_KEY`.
  *                 Requires MMSI (not IMO). Good for monitoring known fleets.
  *
- *   hifleet     — Commercial REST API. Contact hifleet.com (021-20956899) for token.
+ *   hifleet     - Commercial REST API. Contact hifleet.com for a token.
  *                 Set HIFLEET_KEY. Requires MMSI for position/port-calls; uses IMO for PSC.
  *                 Returns position + 12-month port call history in one bundle.
  *
- *   datalastic  — Paid (€199+/mo). Set DATALASTIC_API_KEY.
+ *   datalastic  - Paid REST API. Set `DATALASTIC_API_KEY`.
  *                 Best data quality; port calls, draught, ETA.
  *
  * Without AIS_PROVIDER set, deterministic mock data is used (good for dev/demo).
  */
 
-// ── Types (re-exported from shared client-safe module) ─────────────────────────
+// Types re-exported from the shared client-safe module.
 export type {
   AisNavStatus,
   AisPosition,
@@ -36,7 +36,7 @@ import type {
   VesselAisData,
 } from '@/lib/ais-types'
 
-// ── VesselAPI provider (free) ─────────────────────────────────────────────────
+// 鈹€鈹€ VesselAPI provider (free) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //
 // Docs: https://vesselapi.com/docs/vessels
 // Sign up: https://vesselapi.com  (free tier, no credit card)
@@ -112,7 +112,8 @@ async function fetchVesselApi(imo: string): Promise<VesselAisData | null> {
         destination: v.destination ?? '',
         eta:         v.eta ?? null,
         draught:     v.draught   ?? 0,
-        maxDraught:  0, // VesselAPI free tier 不含最大吃水
+        // VesselAPI free tier does not expose max draught.
+        maxDraught:  0,
         lastUpdate:  v.timestamp ?? new Date().toISOString(),
       },
       portCalls:   [],
@@ -126,7 +127,7 @@ async function fetchVesselApi(imo: string): Promise<VesselAisData | null> {
   }
 }
 
-// ── aisstream.io provider (free WebSocket) ────────────────────────────────────
+// 鈹€鈹€ aisstream.io provider (free WebSocket) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //
 // Docs: https://aisstream.io/documentation
 // Sign up: https://aisstream.io  (completely free)
@@ -137,10 +138,10 @@ async function fetchVesselApi(imo: string): Promise<VesselAisData | null> {
 // We collect ShipStaticData (draught/destination) if it arrives before PositionReport.
 // Timeout: 15 seconds. Vessels in open ocean have no terrestrial AIS coverage.
 //
-// Subscription format (CRITICAL — from docs):
+// Subscription format (critical, from provider docs):
 //   APIKey: string
-//   BoundingBoxes: [[[lat1, lon1], [lat2, lon2]], ...]  ← 3 levels of nesting
-//   FiltersShipMMSI: ["mmsi1", ...]  ← strings
+//   BoundingBoxes: [[[lat1, lon1], [lat2, lon2]], ...]  -> three levels of nesting
+//   FiltersShipMMSI: ["mmsi1", ...]  -> strings
 //   FilterMessageTypes: ["PositionReport", ...]
 
 async function fetchAisStream(mmsi: string): Promise<VesselAisData | null> {
@@ -185,7 +186,7 @@ async function fetchAisStream(mmsi: string): Promise<VesselAisData | null> {
             return
           }
 
-          // Collect static data (draught, destination) — arrives less frequently
+          // Collect static data like draught and destination. It arrives less frequently.
           if (type === 'ShipStaticData') {
             const s = msg?.Message?.ShipStaticData
             if (s) {
@@ -195,7 +196,7 @@ async function fetchAisStream(mmsi: string): Promise<VesselAisData | null> {
             }
           }
 
-          // Position report — resolve as soon as we get one
+          // Resolve as soon as we receive a position report.
           if (type === 'PositionReport') {
             const pos = msg?.Message?.PositionReport
             if (!pos || !meta) return
@@ -237,13 +238,13 @@ async function fetchAisStream(mmsi: string): Promise<VesselAisData | null> {
   })
 }
 
-// ── Datalastic provider ────────────────────────────────────────────────────────
+// 鈹€鈹€ Datalastic provider 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //
 // API docs: https://datalastic.com/api-reference/
 //
 // Endpoints used:
-//   /vessel_pro — live position + draught + ETA (1 credit/call)
-//   /vessel_info — static particulars: GT, DWT, year built, etc. (1 credit/call)
+//   /vessel_pro  - live position, draught, and ETA (1 credit/call)
+//   /vessel_info - static particulars: GT, DWT, year built, etc. (1 credit/call)
 //
 // Port call history: Datalastic's vessel_portcalls is an async report API
 // (takes 2-5 min to generate). Not suitable for real-time page loads.
@@ -344,15 +345,15 @@ async function fetchDatalastic(imo: string): Promise<VesselAisData | null> {
   }
 }
 
-// ── HiFleet provider ──────────────────────────────────────────────────────────
+// 鈹€鈹€ HiFleet provider 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 //
 // Docs: https://www.hifleet.com/data/documentation-for-api.html (showdoc)
 // Contact: 021-20956899 / 17717038095 to obtain a usertoken
 // Set: HIFLEET_KEY=your_usertoken
 //
 // Endpoints used:
-//   /position/position/get/token    — real-time position (by MMSI)
-//   /position/getcallport/token     — port call history (by MMSI + time range)
+//   /position/position/get/token - real-time position by MMSI
+//   /position/getcallport/token  - port call history by MMSI and time range
 //
 // Notes:
 //   - Position requires MMSI; resolve via caller options or VesselAPI fallback.
@@ -365,8 +366,8 @@ interface HifleetPositionItem {
   sp:                   string   // speed (knots)
   co:                   string   // course (degrees)
   ti:                   string   // last update time (UTC+8)
-  la:                   string   // latitude (arc-minutes; ÷60 → decimal degrees)
-  lo:                   string   // longitude (arc-minutes; ÷60 → decimal degrees)
+  la:                   string   // latitude in arc-minutes; divide by 60 for decimal degrees
+  lo:                   string   // longitude in arc-minutes; divide by 60 for decimal degrees
   h:                    string   // heading (degrees)
   draught:              string   // draught (m)
   eta:                  string   // ETA (UTC, or '-')
@@ -414,13 +415,13 @@ function locodeToCountryCode(locode: string): string {
   return (locode ?? '').slice(0, 2).toLowerCase()
 }
 
-// ─── HiFleet PSC (public API surface) ─────────────────────────────────────────
+// 鈹€鈹€鈹€ HiFleet PSC (public API surface) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface HifleetPscDeficiency {
   seq_no:      number
   code:        string | null
   description: string | null
-  ground:      string | null   // "Yes" → detention ground
+  ground:      string | null   // "Yes" means detention ground
 }
 
 export interface HifleetPscInspection {
@@ -489,7 +490,7 @@ async function fetchHifleet(mmsi: string, imo: string): Promise<VesselAisData | 
     const lat = parseFloat(p.la) / 60
     const lon = parseFloat(p.lo) / 60
 
-    // 2. Port call history — last 12 months
+    // 2. Port call history for the last 12 months.
     const now    = new Date()
     const start  = new Date(now.getTime() - 365 * 86_400_000)
     const fmtHf  = (d: Date) =>
@@ -552,7 +553,7 @@ async function fetchHifleet(mmsi: string, imo: string): Promise<VesselAisData | 
   }
 }
 
-// ── Mock implementation ────────────────────────────────────────────────────────
+// 鈹€鈹€ Mock implementation 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 // Deterministic based on IMO so page renders are consistent.
 
 function imoHash(imo: string): number {
@@ -576,7 +577,7 @@ interface MockScenario {
 
 const MOCK_SCENARIOS: MockScenario[] = [
   {
-    // Hormuz anchorage — likely loading Iranian crude
+    // Hormuz anchorage is often associated with loading Iranian crude.
     status: 'anchored', lat: 26.85, lon: 56.32, destination: 'CNZSN', speed: 0,
     draught: 19.2, maxDraught: 21.5,
     portCalls: [
@@ -694,21 +695,20 @@ function buildMock(imo: string): VesselAisData {
   }
 }
 
-// ── PostgreSQL 缓存层 ──────────────────────────────────────────────────────────
+// PostgreSQL cache layer.
 //
-// TTL 策略（软过期）：
-//   航行中 (SOG > 0)        → 10 分钟（位置变化快）
-//   锚泊 / 靠泊 (SOG = 0)   → 45 分钟（位置稳定）
-//   aisstream 超时（无信号） → 5  分钟（短 TTL，下次可能进入覆盖区）
-//   mock 数据               → 不缓存
+// TTL policy:
+//   underway (SOG > 0) -> 10 minutes because position changes quickly
+//   anchored or moored (SOG = 0) -> 45 minutes because position is stable
+//   AIS timeout / no signal -> 5 minutes to retry soon
+//   mock data -> do not cache
 //
-// Stale-While-Revalidate（SWR）：
-//   当缓存在软过期（expires_at）后的宽限窗口内（= 再加一个 TTL）时，
-//   立即返回旧数据，同时在后台异步刷新缓存；超出宽限窗口则同步等待新数据。
-
+// Stale-while-revalidate:
+//   if the cache is just past `expires_at`, return stale data immediately
+//   and refresh in the background; beyond the grace window, fetch fresh data
 function cacheTtlMinutes(data: VesselAisData): number | null {
   if (data.provider === 'mock') return null
-  if (!data.position)                        return 5   // 无信号
+  if (!data.position) return 5
   return data.position.speed > 0 ? 10 : 45
 }
 
@@ -720,7 +720,7 @@ interface CacheRow {
 
 interface CacheResult {
   data:  VesselAisData
-  stale: boolean   // true = 软过期但在宽限窗口内，需后台刷新
+  stale: boolean   // true = 杞繃鏈熶絾鍦ㄥ闄愮獥鍙ｅ唴锛岄渶鍚庡彴鍒锋柊
 }
 
 async function readCache(imo: string): Promise<CacheResult | null> {
@@ -735,18 +735,17 @@ async function readCache(imo: string): Promise<CacheResult | null> {
     const now       = Date.now()
     const expiresMs = rows[0].expires_at.getTime()
     const fetchedMs = rows[0].fetched_at.getTime()
-    const originalTtlMs = expiresMs - fetchedMs          // 原始 TTL（毫秒）
-    const graceEndMs    = expiresMs + originalTtlMs      // 宽限截止 = 2× TTL
+    const originalTtlMs = expiresMs - fetchedMs
+    const graceEndMs    = expiresMs + originalTtlMs
 
     if (now <= expiresMs) {
-      // 新鲜命中
+      // 鏂伴矞鍛戒腑
       return { data: rows[0].data_json as VesselAisData, stale: false }
     }
     if (now <= graceEndMs) {
-      // 软过期，宽限窗口内 → 返回旧数据并后台刷新
+      // Within the grace window, return stale data and refresh in background.
       return { data: rows[0].data_json as VesselAisData, stale: true }
     }
-    // 超出宽限窗口，视为缓存失效
     return null
   } catch {
     return null
@@ -774,10 +773,10 @@ async function writeCache(imo: string, data: VesselAisData): Promise<void> {
   }
 }
 
-// 追踪正在后台刷新的 IMO，避免同一船舶并发重复拉取
+// 杩借釜姝ｅ湪鍚庡彴鍒锋柊鐨?IMO锛岄伩鍏嶅悓涓€鑸硅埗骞跺彂閲嶅鎷夊彇
 const refreshingSet = new Set<string>()
 
-// ── Public API ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Public API 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface GetVesselAisOptions {
   /** MMSI if already known (e.g. from vessel entity in DB). Skips VesselAPI resolution. */
@@ -785,9 +784,7 @@ export interface GetVesselAisOptions {
 }
 
 /**
- * 调用实际 AIS provider（不走缓存）。
- * 供 getVesselAis 和后台 SWR 刷新共用。
- */
+ * 璋冪敤瀹為檯 AIS provider锛堜笉璧扮紦瀛橈級銆? * 渚?getVesselAis 鍜屽悗鍙?SWR 鍒锋柊鍏辩敤銆? */
 async function fetchFromProvider(
   imo: string,
   options: GetVesselAisOptions,
@@ -809,7 +806,7 @@ async function fetchFromProvider(
       const streamed = await fetchAisStream(mmsi)
       if (streamed) data = { ...streamed, imo }
     }
-    if (!data) console.warn('[ais] aisstream: no MMSI for IMO', imo, '— falling back to mock')
+    if (!data) console.warn('[ais] aisstream: no MMSI for IMO', imo, '- falling back to mock')
   }
 
   if (!data && provider === 'hifleet') {
@@ -821,7 +818,7 @@ async function fetchFromProvider(
     if (mmsi) {
       data = await fetchHifleet(mmsi, imo)
     }
-    if (!data) console.warn('[ais] hifleet: no MMSI for IMO', imo, '— falling back to mock')
+    if (!data) console.warn('[ais] hifleet: no MMSI for IMO', imo, '- falling back to mock')
   }
 
   if (!data && provider === 'datalastic') {
@@ -835,17 +832,16 @@ export async function getVesselAis(
   imo: string,
   options: GetVesselAisOptions = {},
 ): Promise<VesselAisData> {
-  // 1. 查缓存（含 SWR 宽限窗口逻辑）
+  // 1. Read cache first, including the SWR grace window.
   const cached = await readCache(imo)
 
   if (cached) {
     if (!cached.stale) {
-      // 新鲜命中，直接返回
       console.log(`[ais] cache hit for IMO ${imo} (provider: ${cached.data.provider})`)
       return cached.data
     }
 
-    // 软过期（宽限窗口内）：立即返回旧数据，后台异步刷新
+    // Within the grace window, return stale data and refresh in background.
     if (!refreshingSet.has(imo)) {
       refreshingSet.add(imo)
       console.log(`[ais] stale cache for IMO ${imo}, triggering background refresh`)
@@ -857,13 +853,14 @@ export async function getVesselAis(
     return cached.data
   }
 
-  // 2. 缓存完全失效或首次请求 → 同步拉取
+  // 2. Cache miss or fully expired cache: fetch synchronously.
   const result = await fetchFromProvider(imo, options)
 
-  // 3. 写入缓存（mock 数据不缓存）
+  // 3. Persist cache in the background.
   writeCache(imo, result).catch(console.error)
 
   return result
 }
 
 export { navStatusLabel, navStatusColor } from '@/lib/ais-utils'
+
