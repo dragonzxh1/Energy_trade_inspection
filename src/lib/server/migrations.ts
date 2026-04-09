@@ -4,6 +4,7 @@ import { db } from './db'
 
 const migrationsDir = path.join(process.cwd(), 'db', 'migrations')
 let applied = false
+const MIGRATION_LOCK_ID = 402601
 
 /** 等待 Postgres 就绪，最多重试 N 次（Docker 启动时 DB 可能比应用慢） */
 async function waitForDb(maxRetries = 10, delayMs = 1000): Promise<void> {
@@ -30,6 +31,7 @@ export async function applyMigrations(): Promise<void> {
 
   const client = await db.connect()
   try {
+    await client.query('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID])
     await client.query('BEGIN')
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -66,6 +68,7 @@ export async function applyMigrations(): Promise<void> {
     console.error('[migrations] 迁移失败:', error)
     throw error
   } finally {
+    await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID]).catch(() => {})
     client.release()
   }
 }

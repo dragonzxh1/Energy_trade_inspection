@@ -54,22 +54,22 @@ interface BrowseRow {
 async function getBrowseEntities(type?: string): Promise<BrowseRow[]> {
   try {
     await applyMigrations()
-    const typeFilter = type === 'company' || type === 'vessel' || type === 'terminal'
-      ? `AND entity_type = '${type}'`
-      : ''
+    const browseType = type === 'company' || type === 'vessel' || type === 'terminal'
+      ? type
+      : null
     const { rows } = await db.query<BrowseRow>(`
       SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
              country, sanction_status, authenticity_score, risk_level,
              registration_number,
              metadata_json->>'vesselType' AS vessel_type
       FROM entities
-      WHERE 1=1 ${typeFilter}
+      WHERE ($1::text IS NULL OR entity_type = $1)
       ORDER BY
         CASE sanction_status WHEN 'listed' THEN 0 WHEN 'unknown' THEN 1 ELSE 2 END,
         CASE risk_level WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
         authenticity_score ASC
       LIMIT 30
-    `)
+    `, [browseType])
     return rows
   } catch {
     return []

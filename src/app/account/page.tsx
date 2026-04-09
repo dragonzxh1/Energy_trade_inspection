@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { auth } from '@/auth'
-import { getQuotaStatus } from '@/lib/server/quota'
+import { getQuotaStatus, UNLIMITED_QUOTA } from '@/lib/server/quota'
 import { stripe } from '@/lib/stripe'
 import { db } from '@/lib/server/db'
 
@@ -45,7 +45,9 @@ export default async function AccountPage() {
   const plan  = user.plan ?? 'free'
   const quota = await getQuotaStatus(user.id, plan)
 
-  const usedPercent = isFinite(quota.limit)
+  const isUnlimited = quota.limit === UNLIMITED_QUOTA
+
+  const usedPercent = !isUnlimited
     ? Math.min(100, Math.round((quota.used / quota.limit) * 100))
     : 0
 
@@ -54,7 +56,6 @@ export default async function AccountPage() {
     : '?'
 
   const isPaid      = plan !== 'free'
-  const isUnlimited = !isFinite(quota.limit)
   const resetLabel  = new Date(quota.resetDate).toLocaleDateString('en-US', {
     month: 'long', day: 'numeric',
   })

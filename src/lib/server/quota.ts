@@ -16,6 +16,8 @@ const PLAN_LIMITS: Record<string, number> = {
   enterprise:   Infinity,
 }
 
+export const UNLIMITED_QUOTA = -1
+
 export interface QuotaStatus {
   used:       number
   limit:      number
@@ -36,7 +38,7 @@ export async function getQuotaStatus(
   const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 
   if (!isFinite(limit)) {
-    return { used: 0, limit: Infinity, remaining: Infinity, blocked: false, resetDate: end }
+    return { used: 0, limit: UNLIMITED_QUOTA, remaining: UNLIMITED_QUOTA, blocked: false, resetDate: end }
   }
 
   const { rows } = await db.query<{ query_count: number }>(
@@ -74,7 +76,7 @@ export async function consumeQuota(
   // Unlimited plans — just log, don't check
   if (!isFinite(limit)) {
     await logQuery(userId, entityId, queryText, 'full')
-    return { used: 0, limit: Infinity, remaining: Infinity, blocked: false, resetDate: end }
+    return { used: 0, limit: UNLIMITED_QUOTA, remaining: UNLIMITED_QUOTA, blocked: false, resetDate: end }
   }
 
   // Upsert usage row
