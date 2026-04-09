@@ -4,6 +4,7 @@ import PostgresAdapter from '@auth/pg-adapter'
 import { db } from '@/lib/server/db'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   adapter: PostgresAdapter(db),
 
   providers: [
