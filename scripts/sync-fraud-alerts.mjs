@@ -426,11 +426,11 @@ async function upsertSource(client, source, entries) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 const SCRAPERS = [
-  { source: 'storagespoofing',    fn: scrapeStorageSpoofing },
-  { source: 'fuelscamalert',      fn: scrapeFuelScamAlert },
-  { source: 'ametheus',           fn: scrapeAmetheus },
-  { source: 'glo-innovations',    fn: scrapeGloInnovations },
-  { source: 'capitalgaslogistics',fn: scrapeCapitalGasLogistics },
+  { source: 'storagespoofing', fn: scrapeStorageSpoofing },
+  { source: 'fuelscamalert',   fn: scrapeFuelScamAlert },
+  // ametheus.com — removed: HTTP 404, site no longer exists
+  // glo-innovations.com — removed: sparse content, only captures legitimate company links
+  // capitalgaslogistics.us — removed: fraud alert about 2 individuals, captures legitimate sites as scam
 ]
 
 const targetSource = process.argv[2] ?? 'all'

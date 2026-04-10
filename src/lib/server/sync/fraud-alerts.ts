@@ -443,9 +443,11 @@ const SCRAPERS: {
 }[] = [
   { source: 'storagespoofing', fn: scrapeStorageSpoofing },
   { source: 'fuelscamalert', fn: scrapeFuelScamAlert },
-  { source: 'ametheus', fn: scrapeAmetheus },
-  { source: 'glo-innovations', fn: scrapeGloInnovations },
-  { source: 'capitalgaslogistics', fn: scrapeCapitalGasLogistics },
+  // ametheus.com — removed: HTTP 404, site no longer exists
+  // glo-innovations.com — removed: page content is sparse and only lists external
+  //   links to legitimate companies; no reliable blacklist data extractable
+  // capitalgaslogistics.us — removed: fraud alert is about 2 individual impostors,
+  //   external links captured were all legitimate companies being impersonated
 ]
 
 export interface FraudSyncResult {
