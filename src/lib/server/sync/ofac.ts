@@ -1,17 +1,16 @@
-/**
- * OFAC SDN（特别指定国民）制裁名单同步
- * 来源：美国财政部海外资产控制办公室
- * URL：https://www.treasury.gov/ofac/downloads/sdn_advanced.xml
- * 更新频率：每日（工作日）
- * 许可：公共领域，无使用限制
- */
+﻿/**
+ * OFAC SDN锛堢壒鍒寚瀹氬浗姘戯級鍒惰鍚嶅崟鍚屾
+ * 鏉ユ簮锛氱編鍥借储鏀块儴娴峰璧勪骇鎺у埗鍔炲叕瀹? * URL锛歨ttps://www.treasury.gov/ofac/downloads/sdn_advanced.xml
+ * 鏇存柊棰戠巼锛氭瘡鏃ワ紙宸ヤ綔鏃ワ級
+ * 璁稿彲锛氬叕鍏遍鍩燂紝鏃犱娇鐢ㄩ檺鍒? */
 
 import { XMLParser } from 'fast-xml-parser'
 import { db } from '@/lib/server/db'
+import { normalizeEntityName } from '@/lib/server/normalize'
 
 const OFAC_XML_URL = 'https://www.treasury.gov/ofac/downloads/sdn_advanced.xml'
 
-// OFAC 实体类型映射
+// OFAC 瀹炰綋绫诲瀷鏄犲皠
 const ENTITY_TYPE_MAP: Record<string, string> = {
   Individual: 'individual',
   Entity: 'entity',
@@ -48,13 +47,9 @@ interface OFACAddress {
   city?: string
 }
 
+// normalizeText replaced by shared normalizeEntityName from normalize.ts
 function normalizeText(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/\b(sa|ltd|limited|inc|corp|bv|gmbh|pte|fze|fzco|llc|plc|co|company)\b/g, ' ')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return normalizeEntityName(text, true)
 }
 
 function toArray<T>(val: T | T[] | undefined): T[] {
@@ -69,7 +64,7 @@ function buildFullName(entry: { firstName?: string; lastName: string }): string 
 export async function syncOFAC(): Promise<{ count: number }> {
   const startMs = Date.now()
 
-  // 下载 OFAC XML（需要 User-Agent 否则返回 403）
+  // OFAC blocks generic requests, so send a user agent.
   const response = await fetch(OFAC_XML_URL, {
     headers: {
       'User-Agent': 'EnergyTradeInspection/1.0 (compliance@energytradeinspection.com)',
@@ -77,12 +72,12 @@ export async function syncOFAC(): Promise<{ count: number }> {
   })
 
   if (!response.ok) {
-    throw new Error(`OFAC 下载失败: HTTP ${response.status}`)
+    throw new Error(`OFAC 涓嬭浇澶辫触: HTTP ${response.status}`)
   }
 
   const xmlText = await response.text()
 
-  // 解析 XML
+  // 瑙ｆ瀽 XML
   const parser = new XMLParser({
     ignoreAttributes: false,
     attributeNamePrefix: '_',
@@ -93,17 +88,17 @@ export async function syncOFAC(): Promise<{ count: number }> {
   const entries: OFACEntry[] = parsed?.sdnList?.sdnEntry ?? []
 
   if (entries.length === 0) {
-    throw new Error('OFAC XML 解析后无条目，可能格式已变更')
+    throw new Error('OFAC XML 瑙ｆ瀽鍚庢棤鏉＄洰锛屽彲鑳芥牸寮忓凡鍙樻洿')
   }
 
-  // 批量 upsert 到 sanctions_entries
+  // 鎵归噺 upsert 鍒?sanctions_entries
   const client = await db.connect()
   let upsertCount = 0
 
   try {
     await client.query('BEGIN')
 
-    // 先删除旧的 OFAC 数据
+    // 鍏堝垹闄ゆ棫鐨?OFAC 鏁版嵁
     await client.query("DELETE FROM sanctions_entries WHERE source = 'ofac'")
 
     const BATCH_SIZE = 500
@@ -112,7 +107,7 @@ export async function syncOFAC(): Promise<{ count: number }> {
     async function flushBatch() {
       if (batch.length === 0) return
 
-      // 构建批量 INSERT
+      // 鏋勫缓鎵归噺 INSERT
       const placeholders = batch
         .map((_, i) => {
           const base = i * 8
@@ -148,7 +143,7 @@ export async function syncOFAC(): Promise<{ count: number }> {
       const addresses = toArray(entry.addressList?.address)
       const country = addresses.find((a) => a.country)?.country ?? null
 
-      // programs 存为 JSONB 数组
+      // programs 瀛樹负 JSONB 鏁扮粍
       const programsJson = JSON.stringify(programs)
       const aliasesJson = JSON.stringify(akas)
 
@@ -170,7 +165,7 @@ export async function syncOFAC(): Promise<{ count: number }> {
 
     await flushBatch()
 
-    // 记录同步日志
+    // 璁板綍鍚屾鏃ュ織
     await client.query(
       `INSERT INTO sanctions_sync_log (source, status, record_count, duration_ms)
        VALUES ('ofac', 'success', $1, $2)`,
@@ -194,7 +189,7 @@ export async function syncOFAC(): Promise<{ count: number }> {
   }
 }
 
-/** 查询本地 OFAC 缓存，返回匹配的制裁条目 */
+/** 鏌ヨ鏈湴 OFAC 缂撳瓨锛岃繑鍥炲尮閰嶇殑鍒惰鏉＄洰 */
 export async function checkOFAC(name: string): Promise<boolean> {
   const normalized = normalizeText(name)
   if (!normalized || normalized.length < 2) return false
@@ -215,3 +210,4 @@ export async function checkOFAC(name: string): Promise<boolean> {
 
   return rows.length > 0
 }
+

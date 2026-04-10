@@ -1,6 +1,7 @@
-import { randomUUID } from 'node:crypto'
+﻿import { randomUUID } from 'node:crypto'
 import type { Company, RiskFlag, SearchResult, SanctionStatus, Terminal, Vessel } from '@/lib/types'
 import { db } from './db'
+import { normalizeEntityName } from './normalize'
 import { checkSanctions } from './sync/sanctions'
 import { searchACRA, getACRAByUEN, acraToSearchResult, computeACRAScore } from './sync/acra'
 import {
@@ -50,15 +51,38 @@ interface EntityRow {
   last_verified: string
 }
 
+export interface BrowseRow {
+  id: string
+  entity_type: 'company' | 'vessel' | 'terminal'
+  name: string
+  slug: string | null
+  imo: string | null
+  jurisdiction_flag: string
+  country: string
+  sanction_status: 'not_listed' | 'listed' | 'unknown'
+  authenticity_score: number
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+  registration_number: string | null
+  vessel_type: string | null
+}
+
+export interface FeaturedRow {
+  id: string
+  entity_type: 'company' | 'vessel'
+  name: string
+  slug: string | null
+  imo: string | null
+  jurisdiction_flag: string
+  country: string
+  sanction_status: 'not_listed' | 'listed' | 'unknown'
+  authenticity_score: number
+  risk_level: 'low' | 'medium' | 'high' | 'critical'
+}
+
+// normalizeInput replaced by normalizeEntityName from ./normalize
+// kept as thin wrapper for any internal callers not yet migrated
 function normalizeInput(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')                      // decompose accented chars: ö → o + combining ̈
-    .replace(/[\u0300-\u036f]/g, '')       // strip diacritics → torbjörn becomes torbjorn
-    .replace(/\b(sa|ltd|limited|inc|corp|bv|gmbh|pte|fze|fzco|llc|plc)\b/g, ' ')
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  return normalizeEntityName(value, false)
 }
 
 /** Ensure breakdown uses the 5 expected dimension keys.
@@ -90,14 +114,14 @@ function normalizeBreakdown(raw: unknown, totalScore: number): Company['scoreBre
 
 /**
  * Attach human-readable evidence strings to each score dimension.
- * Evidence is derived dynamically from the entity row — no DB migration needed.
+ * Evidence is derived dynamically from the entity row, so no DB migration is needed.
  */
 function attachEvidence(
   breakdown: Company['scoreBreakdown'],
   row: EntityRow,
   metadata: Record<string, unknown>,
 ): Company['scoreBreakdown'] {
-  // ── entityExistence ────────────────────────────────────────────────────────
+  // 鈹€鈹€ entityExistence 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const existenceEvidence: string[] = []
   if (row.registration_number) {
     existenceEvidence.push(`Registration number on record: ${row.registration_number}`)
@@ -109,7 +133,7 @@ function attachEvidence(
     existenceEvidence.push('Entity not found in official registries')
   }
 
-  // ── assetReality ──────────────────────────────────────────────────────────
+  // 鈹€鈹€ assetReality 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const assetEvidence: string[] = []
   if (row.entity_type === 'vessel') {
     if (row.imo) assetEvidence.push(`IMO number verified: ${row.imo}`)
@@ -136,14 +160,14 @@ function attachEvidence(
       assetEvidence.push(`Terminal type: ${metadata.terminalType}`)
     }
     if (typeof metadata.capacity === 'number') {
-      assetEvidence.push(`Storage capacity: ${metadata.capacity.toLocaleString()} m³`)
+      assetEvidence.push(`Storage capacity: ${metadata.capacity.toLocaleString()} m3`)
     }
   }
   if (assetEvidence.length === 0) {
     assetEvidence.push('Minimal asset documentation available')
   }
 
-  // ── documentConsistency ───────────────────────────────────────────────────
+  // 鈹€鈹€ documentConsistency 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const docEvidence: string[] = []
   if (typeof metadata.incorporationDate === 'string') {
     docEvidence.push(`Incorporation date on record: ${metadata.incorporationDate}`)
@@ -158,7 +182,7 @@ function attachEvidence(
     docEvidence.push('No document metadata available')
   }
 
-  // ── communityReputation ───────────────────────────────────────────────────
+  // 鈹€鈹€ communityReputation 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const repEvidence: string[] = []
   if (row.sanction_status === 'not_listed') {
     repEvidence.push('No matches on trade sanctions lists (OFAC, EU, UN)')
@@ -171,7 +195,7 @@ function attachEvidence(
     repEvidence.push('Adverse findings detected in public databases')
   }
 
-  // ── tradingTrackRecord ────────────────────────────────────────────────────
+  // 鈹€鈹€ tradingTrackRecord 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const trackEvidence: string[] = ['Trading history analysis requires Phase 2 data']
 
   return {
@@ -185,7 +209,7 @@ function attachEvidence(
 
 /**
  * Compute the tradingTrackRecord dimension score (Phase 2) from trade_events table.
- * Returns score 0–15, evidence strings, and phase2Pending: false.
+ * Returns a score from 0 to 25, evidence strings, and `phase2Pending: false`.
  */
 export async function computeTradingTrackRecord(entityId: string): Promise<{
   score: number
@@ -221,7 +245,7 @@ export async function computeTradingTrackRecord(entityId: string): Promise<{
     }
 
     if (total > unique) {
-      // more events than unique counterparties → at least one repeat
+  // More events than unique counterparties means there was at least one repeat counterparty.
       score += 5
       evidence.push('Established relationship: repeat counterparty detected')
     }
@@ -237,7 +261,7 @@ export async function computeTradingTrackRecord(entityId: string): Promise<{
   }
 }
 
-/** Normalize dataSource — legacy OpenSanctions rows store [{source, dataset}] objects. */
+/** Normalize `dataSource`; legacy OpenSanctions rows store `[{source, dataset}]` objects. */
 function normalizeDataSource(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
   return raw.map((item) => {
@@ -342,16 +366,16 @@ function parseEntity(row: EntityRow): Company | Vessel | Terminal {
 }
 
 /**
- * 对实体名称进行制裁筛查（OFAC + EU + UN，一次 API 调用覆盖全部来源）
- */
+ * 瀵瑰疄浣撳悕绉拌繘琛屽埗瑁佺瓫鏌ワ紙OFAC + EU + UN锛屼竴娆?API 璋冪敤瑕嗙洊鍏ㄩ儴鏉ユ簮锛? */
 async function screenSanctions(name: string): Promise<SanctionStatus> {
   const { listed } = await checkSanctions(name).catch(() => ({ listed: false, sources: [] }))
   return listed ? 'listed' : 'not_listed'
 }
 
 export async function searchEntities(query: string, entityType?: string): Promise<SearchResult[]> {
-  const normalized = normalizeInput(query)
-  if (!normalized || normalized.length < 2) return []
+  // Query-time: strip legal suffixes only (keep generic words to preserve user intent)
+  const normalized = normalizeEntityName(query, false)
+  if (!normalized || normalized.length < 3) return []
 
   const params: unknown[] = [normalized, `${normalized}%`]
   let typeClause = ''
@@ -359,9 +383,10 @@ export async function searchEntities(query: string, entityType?: string): Promis
     params.push(entityType)
     typeClause = `AND e.entity_type = $${params.length}`
   }
-
-  // 查询本地实体库
-  // $1 = trigram normalized query, $2 = prefix pattern for ILIKE fallback
+  // $1 = normalized query (legal suffixes stripped, generic words kept)
+  // $2 = prefix pattern for LIKE fallback
+  // WHERE: % = full trigram similarity; $1 %> stored = "query appears in stored name"
+  // HAVING: full similarity only, threshold raised to 0.45 (was 0.32)
   const sql = `
     SELECT
       e.id,
@@ -384,7 +409,9 @@ export async function searchEntities(query: string, entityType?: string): Promis
     LEFT JOIN entity_aliases a ON a.entity_id = e.id
     WHERE (
       e.normalized_name % $1
+      OR $1 %> e.normalized_name
       OR a.normalized_alias % $1
+      OR $1 %> a.normalized_alias
       OR e.normalized_name LIKE $2
       OR e.registration_number = $1
       OR e.imo = $1
@@ -394,7 +421,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
     HAVING GREATEST(
       similarity(e.normalized_name, $1),
       COALESCE(MAX(similarity(a.normalized_alias, $1)), 0)
-    ) > 0.32
+    ) > 0.45
     ORDER BY score DESC, e.authenticity_score DESC
     LIMIT 20
   `
@@ -415,14 +442,14 @@ export async function searchEntities(query: string, entityType?: string): Promis
     vesselType: row.vessel_type ?? undefined,
   }))
 
-  // 当本地结果较少时，从外部数据源补充（仅当搜索类型包含公司）
+  // When local results are thin, supplement from external registries.
   const localIds = new Set(localResults.map((r) => r.registrationNumber).filter(Boolean))
   let acraResults: SearchResult[] = []
   let chResults: SearchResult[] = []
 
   const shouldSearchCompanies = !entityType || entityType === 'company'
   if (shouldSearchCompanies && localResults.length === 0) {
-    // 并行查询 ACRA（新加坡）、Companies House（英国）、Zefix（瑞士）、OpenCorporates（全球聚合）、GLEIF（最终后备）
+    // 骞惰鏌ヨ ACRA锛堟柊鍔犲潯锛夈€丆ompanies House锛堣嫳鍥斤級銆乑efix锛堢憺澹級銆丱penCorporates锛堝叏鐞冭仛鍚堬級銆丟LEIF锛堟渶缁堝悗澶囷級
     const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
       searchACRA(query, 5).catch(() => []),
       searchCompaniesHouse(query, 5).catch(() => []),
@@ -431,27 +458,27 @@ export async function searchEntities(query: string, entityType?: string): Promis
       searchGleifMultiple(query, 5).catch(() => []),
     ])
 
-    // ACRA 结果去重
+    // ACRA 缁撴灉鍘婚噸
     acraResults = acraEntities
       .filter((e) => !localIds.has(e.uen))
       .map(acraToSearchResult)
 
-    // Companies House 结果去重
+    // Companies House 缁撴灉鍘婚噸
     chResults = chEntities
       .filter((c) => !localIds.has(c.company_number))
       .map(chToSearchResult)
 
-    // Zefix 结果去重
+    // Zefix 缁撴灉鍘婚噸
     const zefixResults = zefixEntities
       .filter((c) => !localIds.has(c.uid))
       .map(zefixToSearchResult)
 
-    // OpenCorporates 结果去重（聚合注册册，覆盖 NL/HK/DE/FR 等无直接注册册的司法管辖区）
+    // OpenCorporates 缁撴灉鍘婚噸锛堣仛鍚堟敞鍐屽唽锛岃鐩?NL/HK/DE/FR 绛夋棤鐩存帴娉ㄥ唽鍐岀殑鍙告硶绠¤緰鍖猴級
     const ocResults = ocEntities
       .filter((c) => !localIds.has(c.company_number))
       .map(ocToSearchResult)
 
-    // GLEIF 结果去重（仅添加未被其他来源覆盖的 LEI）
+    // De-duplicate GLEIF results and only keep records not covered by other sources.
     const allRegNums = new Set([
       ...localIds,
       ...acraResults.map(r => r.registrationNumber).filter(Boolean),
@@ -475,12 +502,63 @@ export async function searchEntities(query: string, entityType?: string): Promis
         slug: `lei-${r.lei.toLowerCase()}`,
       }))
 
-    // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
+    // Merge results with local records first. Heavy profile enrichment stays on entity pages.
     return [...localResults, ...acraResults, ...chResults, ...zefixResults, ...ocResults, ...gleifResults].slice(0, 20)
   }
 
-  // 合并结果，本地库优先；搜索路径不做实时制裁 API 调用（由实体页面延迟加载）
+  // Merge results with local records first. Heavy profile enrichment stays on entity pages.
   return [...localResults, ...acraResults, ...chResults].slice(0, 20)
+}
+
+export async function getBrowseEntities(entityType?: string): Promise<BrowseRow[]> {
+  const browseType = entityType === 'company' || entityType === 'vessel' || entityType === 'terminal'
+    ? entityType
+    : null
+
+  const { rows } = await db.query<BrowseRow>(
+    `
+      SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
+             country, sanction_status, authenticity_score, risk_level,
+             registration_number,
+             metadata_json->>'vesselType' AS vessel_type
+      FROM entities
+      WHERE ($1::text IS NULL OR entity_type = $1)
+      ORDER BY
+        CASE sanction_status WHEN 'listed' THEN 0 WHEN 'unknown' THEN 1 ELSE 2 END,
+        CASE risk_level WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
+        authenticity_score ASC
+      LIMIT 30
+    `,
+    [browseType]
+  )
+
+  return rows
+}
+
+export async function getFeaturedEntities(): Promise<FeaturedRow[]> {
+  const { rows } = await db.query<FeaturedRow>(
+    `
+      (
+        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
+               country, sanction_status, authenticity_score, risk_level
+        FROM entities
+        WHERE sanction_status = 'listed' OR risk_level = 'critical'
+        ORDER BY authenticity_score ASC
+        LIMIT 3
+      )
+      UNION ALL
+      (
+        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
+               country, sanction_status, authenticity_score, risk_level
+        FROM entities
+        WHERE sanction_status = 'not_listed' AND risk_level = 'low'
+        ORDER BY authenticity_score DESC
+        LIMIT 3
+      )
+    `
+  )
+
+  return rows
 }
 
 export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | Terminal | null> {
@@ -494,9 +572,9 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     [idOrSlugOrImo]
   )
 
-  // 本地库未找到时，尝试从外部数据源查询
+  // 鏈湴搴撴湭鎵惧埌鏃讹紝灏濊瘯浠庡閮ㄦ暟鎹簮鏌ヨ
   if (!rows[0]) {
-    // 1. 尝试 ACRA（新加坡 UEN 格式）
+    // 1. Try ACRA by UEN.
     const mightBeUEN = /^[0-9]{9}[A-Z]$|^[ST][0-9]{2}[A-Z]{2}[0-9]{4}[A-Z]$/.test(
       idOrSlugOrImo.toUpperCase()
     )
@@ -528,7 +606,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 2. 尝试 Companies House（英国注册号格式）
+    // 2. Try Companies House by company number.
     if (mightBeUKNumber(idOrSlugOrImo)) {
       const chCompany = await getCHCompanyByNumber(idOrSlugOrImo).catch(() => null)
       if (chCompany) {
@@ -555,7 +633,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 3. 尝试 Zefix（瑞士 UID 格式）
+    // 3. Try Zefix by Swiss UID.
     if (mightBeSwissUid(idOrSlugOrImo)) {
       const zefixCompany = await getZefixByUid(idOrSlugOrImo).catch(() => null)
       if (zefixCompany) {
@@ -566,7 +644,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 4. 尝试 OpenCorporates（oc:{jurisdiction}:{number} 前缀）
+    // 4. Try OpenCorporates by `oc:{jurisdiction}:{number}`.
     if (mightBeOCId(idOrSlugOrImo) || idOrSlugOrImo.startsWith('oc:')) {
       // Extract jurisdiction and company number from oc:{jur}:{num} format
       const parts = idOrSlugOrImo.replace(/^oc:/, '').split(':')
@@ -583,7 +661,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 5. 尝试 GLEIF 精确查询（gleif:${lei} 前缀）
+    // 5. Try GLEIF by `gleif:{lei}`.
     if (idOrSlugOrImo.startsWith('gleif:')) {
       const lei = idOrSlugOrImo.slice(6)
       const record = await getGleifRecordByLei(lei).catch(() => null)
@@ -595,7 +673,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
       }
     }
 
-    // 6. GLEIF 名称搜索（最后兜底）
+    // 6. GLEIF 鍚嶇О鎼滅储锛堟渶鍚庡厹搴曪級
     const gleifResults = await searchGleifMultiple(idOrSlugOrImo, 1).catch(() => [])
     if (gleifResults[0]) {
       const record = gleifResults[0]
@@ -610,7 +688,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
 
   const entity = parseEntity(rows[0])
 
-  // 获取已审核的风险标记
+  // 鑾峰彇宸插鏍哥殑椋庨櫓鏍囪
   const { rows: flags } = await db.query<RiskFlag & { submitted_at: string }>(
     `
       SELECT id, flag_type AS category, severity, status, submitted_at
@@ -629,7 +707,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     submittedAt: f.submitted_at,
   }))
 
-  // ── Phase 2: trading track record ────────────────────────────────────────
+  // 鈹€鈹€ Phase 2: trading track record 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const trackRecord = await computeTradingTrackRecord(entity.id)
   entity.scoreBreakdown.tradingTrackRecord = {
     score:         trackRecord.score,
@@ -639,12 +717,12 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
   }
   entity.authenticityScore = Math.min(100, entity.authenticityScore + trackRecord.score)
 
-  // 若制裁状态为 unknown，实时做一次筛查并更新
+  // 鑻ュ埗瑁佺姸鎬佷负 unknown锛屽疄鏃跺仛涓€娆＄瓫鏌ュ苟鏇存柊
   if (entity.sanctionStatus === 'unknown') {
     const status = await screenSanctions(entity.name).catch(() => 'unknown' as SanctionStatus)
     if (status !== 'unknown') {
       entity.sanctionStatus = status
-      // 异步更新 DB，不阻塞响应
+      // 寮傛鏇存柊 DB锛屼笉闃诲鍝嶅簲
       db.query(
         "UPDATE entities SET sanction_status = $1 WHERE id = $2",
         [status, entity.id]
@@ -699,7 +777,7 @@ export function getPeriodBounds(baseDate = new Date()) {
   }
 }
 
-// ── PSC Inspections ───────────────────────────────────────────────────────────
+// 鈹€鈹€ PSC Inspections 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface PscInspection {
   id: string
@@ -719,7 +797,7 @@ export interface PscInspection {
 export interface PscSummary {
   totalInspections: number
   detentions: number
-  deficiencyRate: number   // 0–1
+  deficiencyRate: number   // 0-1 fraction
   lastInspectionDate: string | null
   lastResult: string | null
 }
@@ -780,7 +858,7 @@ export async function getPscInspections(imo: string, limit = 10): Promise<PscIns
   }))
 }
 
-// ── ICIJ Offshore Leaks ───────────────────────────────────────────────────────
+// 鈹€鈹€ ICIJ Offshore Leaks 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface IcijMatch {
   nodeId: string
@@ -878,7 +956,7 @@ export async function getIcijOfficerNetwork(entityId: string): Promise<IcijOffic
   }))
 }
 
-// ── ICIJ: person search & person-entity links ─────────────────────────────────
+// 鈹€鈹€ ICIJ: person search & person-entity links 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface IcijPersonResult {
   nodeId: string
@@ -973,7 +1051,7 @@ export async function searchIcijByName(name: string, limit = 10): Promise<IcijMa
   }))
 }
 
-// ── Ports ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Ports 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface Port {
   locode: string
@@ -1071,7 +1149,7 @@ export async function checkDraftRisk(
     isStsPort: false,
     warning: canBerth
       ? null
-      : `Vessel draft (${vesselDraftM.toFixed(1)}m) exceeds ${port.name} max draft (${portMaxDraftM.toFixed(1)}m). Vessel cannot berth — reported loading location may be fraudulent.`,
+      : `Vessel draft (${vesselDraftM.toFixed(1)}m) exceeds ${port.name} max draft (${portMaxDraftM.toFixed(1)}m). Vessel cannot berth - reported loading location may be fraudulent.`,
   }
 }
 
@@ -1101,12 +1179,12 @@ function mapPort(r: Record<string, unknown>): Port {
   }
 }
 
-// ── AIS helpers ───────────────────────────────────────────────────────────────
+// 鈹€鈹€ AIS helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 /**
  * Write a discovered MMSI into a vessel entity's metadata_json.
  * Only updates if the vessel currently has no MMSI stored.
- * Fire-and-forget safe — does not throw.
+ * Safe for fire-and-forget usage; it does not throw.
  */
 export async function saveVesselMmsi(imo: string, mmsi: string): Promise<void> {
   await db.query(
@@ -1118,3 +1196,4 @@ export async function saveVesselMmsi(imo: string, mmsi: string): Promise<void> {
     [mmsi, imo]
   )
 }
+
