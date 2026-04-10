@@ -380,6 +380,28 @@ const MANUAL_SEED: SeedEntry[] = [
   { domain: 'abs.org',                     company_name: 'American Bureau of Shipping',          country_code: 'US' },
   { domain: 'rina.org',                    company_name: 'RINA',                                 country_code: 'IT' },
   { domain: 'classnk.or.jp',              company_name: 'ClassNK',                              country_code: 'JP' },
+  // ── Canada midstream & E&P ───────────────────────────────────────────────────
+  { domain: 'interpipeline.com',          company_name: 'Inter Pipeline',                       country_code: 'CA' },
+  { domain: 'baytex.ab.ca',              company_name: 'Baytex Energy',                        country_code: 'CA' },
+  { domain: 'vermilionenergy.com',        company_name: 'Vermilion Energy',                     country_code: 'CA' },
+  // ── US E&P & refining ────────────────────────────────────────────────────────
+  { domain: 'crc.com',                    company_name: 'California Resources Corporation',     country_code: 'US' },
+  { domain: 'vaalco.com',                 company_name: 'VAALCO Energy',                        country_code: 'US' },
+  { domain: 'bry.com',                    company_name: 'Berry Petroleum',                      country_code: 'US' },
+  { domain: 'sinclairoil.com',            company_name: 'Sinclair Oil',                         country_code: 'US' },
+  // ── Europe & Ireland ─────────────────────────────────────────────────────────
+  { domain: 'maxol.ie',                   company_name: 'Maxol',                                country_code: 'IE' },
+  { domain: 'petrol.bg',                  company_name: 'Petrol AD',                            country_code: 'BG' },
+  // ── Iraq state oil subsidiaries ──────────────────────────────────────────────
+  { domain: 'moc.oil.gov.iq',             company_name: 'Missan Oil Company',                   country_code: 'IQ' },
+  { domain: 'noc.oil.gov.iq',             company_name: 'North Oil Company',                    country_code: 'IQ' },
+  // ── South & Southeast Asia NOCs ──────────────────────────────────────────────
+  { domain: 'ceypetco.gov.lk',            company_name: 'Ceylon Petroleum Corporation',         country_code: 'LK' },
+  { domain: 'bpc.gov.bd',                 company_name: 'Bangladesh Petroleum Corporation',     country_code: 'BD' },
+  // ── Latin America NOCs ───────────────────────────────────────────────────────
+  { domain: 'petropar.gov.py',            company_name: 'Petróleos Paraguayos',                 country_code: 'PY' },
+  // ── China E&P ────────────────────────────────────────────────────────────────
+  { domain: 'geojade.com',                company_name: 'Geo-Jade Petroleum',                   country_code: 'CN' },
 ]
 
 // ── Wikidata SPARQL import ────────────────────────────────────────────────────
