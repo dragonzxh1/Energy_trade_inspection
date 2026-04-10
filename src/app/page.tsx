@@ -1,16 +1,15 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import SearchBox from '@/components/search/SearchBox'
 import Header from '@/components/layout/Header'
-import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 import type { SanctionStatus, RiskLevel } from '@/lib/types'
+import { getFeaturedEntities, type FeaturedRow } from '@/lib/server/repository'
 
 export const metadata: Metadata = {
   title: 'Energy Trade Inspection — Counterparty & Trade Risk',
   description:
-    'Screen companies, vessels, and terminals against sanctions lists, AIS data, and registry records. Check trade-level risk in seconds.',
+    'Screen companies, vessels, and terminals against sanctions lists, AIS data, and registry records. Check domain fraud risk via WHOIS and spoofing detection. Trade-level risk in seconds.',
 }
 
 const TOOL_CARDS = [
@@ -71,48 +70,6 @@ const RISK_COLOR: Record<RiskLevel, string> = {
   high:     '#f97316',
   medium:   '#eab308',
   low:      'var(--status-clear)',
-}
-
-interface FeaturedRow {
-  id: string
-  entity_type: 'company' | 'vessel'
-  name: string
-  slug: string | null
-  imo: string | null
-  jurisdiction_flag: string
-  country: string
-  sanction_status: SanctionStatus
-  authenticity_score: number
-  risk_level: RiskLevel
-}
-
-async function getFeaturedEntities() {
-  try {
-    await applyMigrations()
-    // 3 sanctioned/high-risk + 3 clean/low-risk
-    const { rows } = await db.query<FeaturedRow>(`
-      (
-        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
-               country, sanction_status, authenticity_score, risk_level
-        FROM entities
-        WHERE sanction_status = 'listed' OR risk_level = 'critical'
-        ORDER BY authenticity_score ASC
-        LIMIT 3
-      )
-      UNION ALL
-      (
-        SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
-               country, sanction_status, authenticity_score, risk_level
-        FROM entities
-        WHERE sanction_status = 'not_listed' AND risk_level = 'low'
-        ORDER BY authenticity_score DESC
-        LIMIT 3
-      )
-    `)
-    return rows
-  } catch {
-    return []
-  }
 }
 
 async function FeaturedEntities() {
@@ -351,8 +308,8 @@ export default function HomePage() {
               marginBottom: 'var(--space-6)',
             }}
           >
-            Search companies, vessels, and terminals. Get sanctions status,
-            authenticity scores, and risk flags — backed by OFAC, EU FSF, AIS, and registry data.
+            Search companies, vessels, and terminals — or enter a domain or email
+            address to check for fraud risk. Backed by OFAC, EU FSF, AIS, and registry data.
           </p>
 
           {/* Primary CTA — entity search */}
@@ -524,3 +481,7 @@ export default function HomePage() {
     </>
   )
 }
+
+
+
+

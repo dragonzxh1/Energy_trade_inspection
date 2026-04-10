@@ -26,18 +26,18 @@ export default function SearchBox() {
     <form
       onSubmit={handleSubmit}
       role="search"
-      aria-label="Search for companies or vessels"
+      aria-label="Search for companies, vessels, domains, or emails"
     >
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         <label htmlFor="search-input" className="sr-only">
-          Search by company name, registration number, or IMO number
+          Search by company name, registration number, IMO number, domain, or email
         </label>
         <input
           id="search-input"
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Company name, registration number, or IMO…"
+          placeholder="Company name, IMO number, domain, or email…"
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
