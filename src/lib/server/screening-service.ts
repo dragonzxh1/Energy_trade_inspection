@@ -19,6 +19,7 @@ import {
 } from './repository'
 import { checkSanctions } from './sync/sanctions'
 import { checkFraudAlerts, type FraudAlert } from './fraud-check'
+import { checkDomain, extractDomain } from './domain-check'
 import {
   runTradeRules,
   overallRiskFromFlags,
@@ -62,6 +63,23 @@ export const ALLOWED_SCREENING_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ])
+
+/**
+ * Extract unique email domains from document text.
+ * Looks for email address patterns (user@domain.tld) and returns the domain parts.
+ * Capped at 5 to keep RDAP lookup latency bounded.
+ */
+function extractEmailDomains(text: string): string[] {
+  const domains = new Set<string>()
+  // Match email addresses: word chars/dots/plus/dash @ domain.tld
+  const emailRe = /[\w.+\-]+@([\w\-]+(?:\.[\w\-]+)+)/g
+  let m: RegExpExecArray | null
+  while ((m = emailRe.exec(text)) !== null && domains.size < 5) {
+    const domain = extractDomain(`@${m[1]}`)
+    if (domain && domain.length >= 4) domains.add(domain)
+  }
+  return [...domains]
+}
 
 function maskPassport(raw: string): string {
   const s = raw.trim()
@@ -226,6 +244,21 @@ export async function runDocumentScreening(userId: string, file: File): Promise<
           ? params.loadingPort.slice(0, 2).toLowerCase()
           : null
 
+      // Domain risk check: extract email domains from the document text and
+      // run WHOIS + spoofing checks. Use the highest-severity result.
+      const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+      const emailDomains = extractEmailDomains(text)
+      const domainChecks = await Promise.all(
+        emailDomains.map((d) => checkDomain(d).catch(() => null))
+      )
+      const sellerDomainCheck = domainChecks
+        .filter((d): d is NonNullable<typeof d> => d !== null && d.flagged)
+        .reduce(
+          (worst, d) =>
+            !worst || SEVERITY_ORDER[d.severity] < SEVERITY_ORDER[worst.severity] ? d : worst,
+          null as (typeof domainChecks)[number] | null
+        )
+
       const flags = runTradeRules({
         sellerName: params.seller,
         sellerDbMatch: sellerMatch?.dbEntity ?? null,
@@ -245,6 +278,15 @@ export async function runDocumentScreening(userId: string, file: File): Promise<
         commodity: params.commodity ?? null,
         skipAisRules: true,
         sellerFraudAlerts: sellerMatch?.fraudAlerts,
+        sellerDomainCheck: sellerDomainCheck
+          ? {
+              domain: sellerDomainCheck.domain,
+              flagged: sellerDomainCheck.flagged,
+              severity: sellerDomainCheck.severity,
+              evidence: sellerDomainCheck.evidence,
+              spoofingMatches: sellerDomainCheck.spoofingMatches,
+            }
+          : null,
       })
 
       const risk = overallRiskFromFlags(flags)

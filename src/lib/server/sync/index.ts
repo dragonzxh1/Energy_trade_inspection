@@ -5,8 +5,9 @@
 
 import { syncOFAC } from './ofac'
 import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-alerts'
+import { syncLegitDomains } from './legitimate-domains'
 
-export type SyncSource = 'ofac' | 'fraud' | 'all'
+export type SyncSource = 'ofac' | 'fraud' | 'legitdomains' | 'all'
 
 export interface SyncResult {
   source: string
@@ -48,6 +49,26 @@ export async function runSync(source: SyncSource): Promise<SyncResult[]> {
         count: r.count,
         error: r.error,
         durationMs: r.durationMs,
+      })
+    }
+  }
+
+  if (source === 'legitdomains' || source === 'all') {
+    const start = Date.now()
+    try {
+      const r = await syncLegitDomains()
+      results.push({
+        source: 'legitdomains',
+        success: true,
+        count: r.total,
+        durationMs: Date.now() - start,
+      })
+    } catch (err) {
+      results.push({
+        source: 'legitdomains',
+        success: false,
+        error: String(err),
+        durationMs: Date.now() - start,
       })
     }
   }

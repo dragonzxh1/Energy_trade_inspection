@@ -41,6 +41,8 @@ export type FlagCode =
   | 'SPARSE_REGISTRY_DATA'
   | 'OFFSHORE_LOW_SUBSTANCE'
   | 'KNOWN_FRAUD_ALERT'
+  | 'DOMAIN_SPOOFING_RISK'
+  | 'DOMAIN_WHOIS_RISK'
 
 export interface TradeFlag {
   code: FlagCode
@@ -119,6 +121,22 @@ export interface TradeRuleInput {
     source_url: string
     fraud_type: string | null
   }>
+
+  /**
+   * Domain risk result for the seller's contact domain, from checkDomain().
+   * Null when no domain could be extracted from the trade document.
+   */
+  sellerDomainCheck?: {
+    domain: string
+    flagged: boolean
+    severity: 'critical' | 'high' | 'medium' | 'low'
+    evidence: string[]
+    spoofingMatches: Array<{
+      legitimateDomain: string
+      legitimateCompany: string
+      similarityScore: number
+    }>
+  } | null
 }
 
 // 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -583,6 +601,44 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         (a) => `${a.source_name}: ${a.source_url}`
       ),
     })
+  }
+
+  // ── Rule 16: DOMAIN_SPOOFING_RISK ───────────────────────────────────────────
+  // A domain found in the trade document closely resembles a legitimate company's
+  // official domain — a classic impersonation technique (typosquatting, TLD swap).
+  if (
+    input.sellerDomainCheck?.flagged &&
+    input.sellerDomainCheck.spoofingMatches.length > 0
+  ) {
+    const best = input.sellerDomainCheck.spoofingMatches[0]
+    flags.push({
+      code: 'DOMAIN_SPOOFING_RISK',
+      severity: input.sellerDomainCheck.severity === 'critical' ? 'critical' : 'high',
+      target: 'seller',
+      reason: `Domain "${input.sellerDomainCheck.domain}" in the trade document closely resembles "${best.legitimateDomain}" (${best.legitimateCompany}) — ${Math.round(best.similarityScore * 100)}% similarity. This is consistent with impersonation fraud.`,
+      evidence: input.sellerDomainCheck.evidence,
+    })
+  }
+
+  // ── Rule 17: DOMAIN_WHOIS_RISK ──────────────────────────────────────────────
+  // WHOIS/RDAP data shows the seller's contact domain has high-risk registration
+  // signals: very new domain, short registration, privacy-hidden, or no corporate
+  // registrant. Only fires when there is no spoofing match (otherwise Rule 16 covers it).
+  if (
+    input.sellerDomainCheck?.flagged &&
+    input.sellerDomainCheck.spoofingMatches.length === 0 &&
+    input.sellerDomainCheck.evidence.length > 0
+  ) {
+    const severity = input.sellerDomainCheck.severity
+    if (severity === 'high' || severity === 'medium') {
+      flags.push({
+        code: 'DOMAIN_WHOIS_RISK',
+        severity,
+        target: 'seller',
+        reason: `Domain "${input.sellerDomainCheck.domain}" shows suspicious registration patterns: ${input.sellerDomainCheck.evidence[0]}.`,
+        evidence: input.sellerDomainCheck.evidence,
+      })
+    }
   }
 
   return flags
