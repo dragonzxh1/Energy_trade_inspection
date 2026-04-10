@@ -1,10 +1,10 @@
-/**
+﻿/**
  * GET /api/ais/vessel/[imo]/draft-check?locode=XXXX
  *
  * Check whether a vessel (identified by IMO) can physically berth at a given port.
  *
  * Draught source priority:
- *   1. Live AIS cache (ais_cache table — most recent position)
+ *   1. Live AIS cache (`ais_cache`) for the most recent position
  *   2. Vessel metadata stored in entities table (static fallback)
  *
  * Returns DraftRiskResult: canBerth, margin, STS zone flag, and a human-readable warning.
@@ -40,9 +40,9 @@ export async function GET(
     )
   }
 
-  // ── Resolve draught ──────────────────────────────────────────────────────────
+  // Resolve draught.
 
-  // 1. Try AIS cache first (most accurate — reflects current load)
+  // 1. Try AIS cache first because it best reflects the current load.
   let vesselDraftM: number | null = null
   try {
     const { rows } = await db.query<{ data_json: VesselAisData }>(
@@ -54,7 +54,7 @@ export async function GET(
       vesselDraftM = aisData.position.draught
     }
   } catch {
-    // Non-fatal — fall through to entity metadata
+    // Non-fatal: fall through to entity metadata.
   }
 
   // 2. Fall back to vessel metadata (grossTonnage/type don't give draught, but
@@ -72,11 +72,11 @@ export async function GET(
         }
       }
     } catch {
-      // Ignore — proceed with null draught
+      // Ignore errors and proceed with a null draught.
     }
   }
 
-  // ── Run check ────────────────────────────────────────────────────────────────
+  // Run the port draft check.
   const result: DraftRiskResult = await checkDraftRisk(locode, vesselDraftM)
 
   return NextResponse.json({
@@ -88,3 +88,6 @@ export async function GET(
     ...result,
   })
 }
+
+
+

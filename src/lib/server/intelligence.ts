@@ -1,5 +1,5 @@
-/**
- * Entity intelligence — TypeScript wrapper for the Python intelligence package.
+﻿/**
+ * Entity intelligence TypeScript wrapper for the Python intelligence package.
  *
  * Calls intelligence/cli.py via child_process.execFile() and parses JSON stdout.
  * The Python venv must be set up:
@@ -22,7 +22,7 @@ const PYTHON      = path.join(ROOT, '.venv', 'Scripts', 'python.exe')
 const CLI_SCRIPT  = path.join(ROOT, 'intelligence', 'cli.py')
 const TIMEOUT_MS  = 30_000  // 30 s default; stealth/dynamic modes need more
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Types 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface TavilyResult {
   title:          string
@@ -67,7 +67,7 @@ export interface AuthenticitySignals {
   top_results:        TavilyResult[]
 }
 
-// ─── Core runner ─────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Core runner 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 async function runCli<T>(
   args: string[],
@@ -86,13 +86,13 @@ async function runCli<T>(
     }
     return parsed as T
   } catch (err) {
-    // Log but never throw — intelligence is supplemental, not blocking
+// Log but never throw because intelligence is supplemental and non-blocking.
     console.error('[intelligence] CLI failed:', err instanceof Error ? err.message : err)
     return null
   }
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Public API 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 /**
  * Research a company: sanctions news, corporate info, risk signals.
@@ -155,7 +155,7 @@ export async function researchTerminal(
 
 /**
  * Quick web-presence check for an entity.
- * Returns a 0–100 score + signal list. Returns null on error.
+ * Returns a 0-100 score plus a signal list. Returns null on error.
  */
 export async function getAuthenticitySignals(
   name: string,
@@ -178,3 +178,4 @@ export async function scrapeUrl(
     (timeoutSecs + 10) * 1000,
   )
 }
+

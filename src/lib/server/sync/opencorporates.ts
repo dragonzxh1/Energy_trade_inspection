@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OpenCorporates API integration.
  * Source: https://api.opencorporates.com/v0.4/
  * License: Open Database License (ODbL) for data; CC-BY-SA for content
@@ -9,7 +9,7 @@
  * and 140+ others. UK (gb) and Singapore (sg) are already covered by CH and ACRA
  * but OC can serve as a fallback for those too.
  *
- * Env: OC_API_TOKEN (optional — set for higher rate limits)
+ * Env: `OC_API_TOKEN` (optional; set it for higher rate limits)
  */
 
 import type { SanctionStatus } from '@/lib/types'
@@ -32,7 +32,7 @@ export interface OCCompany {
   registry_url?: string | null
 }
 
-/** Jurisdiction code → country name (OpenCorporates uses CLDR-like codes). */
+/** Map jurisdiction codes to country names. OpenCorporates uses CLDR-like codes. */
 const OC_JURISDICTION_TO_COUNTRY: Record<string, string> = {
   nl: 'Netherlands',   hk: 'Hong Kong',        de: 'Germany',
   fr: 'France',        au: 'Australia',         nz: 'New Zealand',
@@ -162,7 +162,7 @@ export function mightBeOCId(s: string): boolean {
 
 /**
  * Compute authenticity score for an OpenCorporates company.
- * entityExistence: active in aggregated official registry (max 15/25 — slightly below direct registry)
+ * `entityExistence`: active in an aggregated official registry (max 15/25, slightly below a direct registry)
  * documentConsistency: incorporation date + address (max 9/10)
  * communityReputation: sanction screen result (max 8/10)
  */
@@ -243,3 +243,4 @@ export function buildOCCompany(c: OCCompany, sanctionStatus: SanctionStatus) {
     dataSource:         [`OpenCorporates (${country})`],
   }
 }
+

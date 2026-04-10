@@ -1,9 +1,9 @@
-/**
+﻿/**
  * POST /api/stripe/checkout
  * Body: { plan: 'starter' | 'professional' }
  *
  * Creates a Stripe Checkout Session and returns the URL.
- * Requires authentication — guests get 401.
+ * Requires authentication; guests receive HTTP 401.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -73,3 +73,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ url: checkoutSession.url })
 }
+

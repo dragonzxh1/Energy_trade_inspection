@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 
 export const runtime = 'nodejs'
 
@@ -25,8 +24,6 @@ export async function POST() {
   if (plan !== 'professional' && plan !== 'enterprise') {
     return NextResponse.json({ error: 'Professional plan required' }, { status: 403 })
   }
-
-  await applyMigrations()
 
   // Join watchlist against entities to get live sanction status
   const { rows: watched } = await db.query<{
@@ -94,3 +91,5 @@ export async function POST() {
 
   return NextResponse.json({ checked: watched.length, alertsCreated })
 }
+
+

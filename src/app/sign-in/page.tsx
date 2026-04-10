@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { signIn } from '@/auth'
 import Link from 'next/link'
 
@@ -143,9 +143,10 @@ export default function SignInPage({
         </div>
 
         <p style={{ textAlign: 'center', marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '12px' }}>
-          <Link href="/" style={{ color: 'var(--accent-primary)' }}>← Back to search</Link>
+        <Link href="/" style={{ color: 'var(--accent-primary)' }}>← Back to search</Link>
         </p>
       </div>
     </div>
   )
 }
+

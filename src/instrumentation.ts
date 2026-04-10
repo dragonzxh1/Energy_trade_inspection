@@ -1,4 +1,4 @@
-// Next.js instrumentation hook —服务器启动时自动运行迁移
+﻿// Next.js instrumentation hook. Run migrations during Node.js startup.
 // https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
 
 export async function register() {
@@ -7,8 +7,8 @@ export async function register() {
       const { applyMigrations } = await import('./lib/server/migrations')
       await applyMigrations()
     } catch (err) {
-      // 迁移失败不阻断服务器启动（各页面的 applyMigrations() 调用会再次重试）
-      console.error('[instrumentation] 迁移失败，将在首次请求时重试:', err)
+      // Keep the server booting, but surface the migration failure clearly.
+      console.error('[instrumentation] migration startup failed:', err)
     }
   }
 }

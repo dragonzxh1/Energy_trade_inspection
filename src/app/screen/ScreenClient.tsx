@@ -1,11 +1,11 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import type { ScreeningReport, EntityScreeningResult, TradeAssessmentResult } from '@/app/api/screen/route'
 import type { RiskLevel } from '@/lib/types'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   critical: '#ef4444',
@@ -52,7 +52,7 @@ function fmt(iso: string) {
   }
 }
 
-// ── Sanction badge ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Sanction badge 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function SanctionBadge({ status }: { status: string }) {
   const color =
@@ -80,7 +80,7 @@ function SanctionBadge({ status }: { status: string }) {
   )
 }
 
-// ── Risk badge ────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Risk badge 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function RiskBadge({ level }: { level: RiskLevel }) {
   return (
@@ -101,7 +101,7 @@ function RiskBadge({ level }: { level: RiskLevel }) {
   )
 }
 
-// ── Entity result card ────────────────────────────────────────────────────────
+// 鈹€鈹€ Entity result card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function EntityCard({ result }: { result: EntityScreeningResult }) {
   const { extracted, sanctionStatus, dbEntity, icijConnections, pscDeficiencyRate, riskLevel, needsManualReview } =
@@ -155,8 +155,8 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
           <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
             {href ? (
               <Link href={href} style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
-                {extracted.name} →
-              </Link>
+                  {extracted.name} →
+                </Link>
             ) : (
               extracted.name
             )}
@@ -193,7 +193,7 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
           {icijCount > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '12px', color: '#eab308' }}>
-                ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
+                  ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
               </span>
               {needsManualReview && (
                 <span
@@ -244,7 +244,7 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
   )
 }
 
-// ── Trade assessment card ─────────────────────────────────────────────────────
+// 鈹€鈹€ Trade assessment card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const FLAG_LABEL: Record<string, string> = {
   NO_REGISTRY_MATCH:          'No Registry Match',
@@ -422,7 +422,7 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
   )
 }
 
-// ── Overall risk banner ───────────────────────────────────────────────────────
+// 鈹€鈹€ Overall risk banner 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function OverallRiskBanner({ report }: { report: ScreeningReport }) {
   const { overallRisk, entities, filename, screenedAt } = report
@@ -458,15 +458,15 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
         {entities.length} entit{entities.length !== 1 ? 'ies' : 'y'} extracted from{' '}
         <strong style={{ color: 'var(--text-secondary)' }}>{filename}</strong>
-        {' '} · Screened {fmt(screenedAt)}
+                {' '} · Screened {fmt(screenedAt)}
         {listedCount > 0 && (
           <span style={{ color: '#ef4444', marginLeft: '8px' }}>
-            · {listedCount} sanction hit{listedCount !== 1 ? 's' : ''}
+                  · {listedCount} sanction hit{listedCount !== 1 ? 's' : ''}
           </span>
         )}
         {icijCount > 0 && (
           <span style={{ color: '#f97316', marginLeft: '8px' }}>
-            · {icijCount} ICIJ flag{icijCount !== 1 ? 's' : ''}
+                  · {icijCount} ICIJ flag{icijCount !== 1 ? 's' : ''}
           </span>
         )}
       </div>
@@ -474,15 +474,15 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
   )
 }
 
-// ── Loading state ─────────────────────────────────────────────────────────────
+// 鈹€鈹€ Loading state 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const LOADING_STEPS = [
-  'Parsing document…',
-  'Extracting entities with AI…',
-  'Extracting trade parameters…',
-  'Screening against sanctions lists…',
-  'Checking ICIJ offshore leaks database…',
-  'Running trade rules engine…',
+  'Parsing document...',
+  'Extracting entities with AI...',
+  'Extracting trade parameters...',
+  'Screening against sanctions lists...',
+  'Checking ICIJ offshore leaks database...',
+  'Running trade rules engine...',
 ]
 
 function LoadingView({ filename }: { filename: string }) {
@@ -513,7 +513,7 @@ function LoadingView({ filename }: { filename: string }) {
   )
 }
 
-// ── Upload zone ───────────────────────────────────────────────────────────────
+// 鈹€鈹€ Upload zone 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function UploadZone({
   onFile,
@@ -556,12 +556,12 @@ function UploadZone({
           if (f) onFile(f)
         }}
       />
-      <div style={{ fontSize: '32px', marginBottom: 'var(--space-3)' }}>📄</div>
+              <div style={{ fontSize: '32px', marginBottom: 'var(--space-3)' }}>📄</div>
       <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
         Drop your contract here or click to upload
       </p>
       <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
-        PDF, DOCX, or XLSX · Max 10 MB
+              PDF, DOCX, or XLSX · Max 10 MB
       </p>
       <span
         style={{
@@ -581,7 +581,7 @@ function UploadZone({
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Main component 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 type ViewState = 'upload' | 'loading' | 'results' | 'error'
 
@@ -637,7 +637,7 @@ export default function ScreenClient() {
 
   return (
     <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-      {/* ── Page heading ── */}
+      {/* 鈹€鈹€ Page heading 鈹€鈹€ */}
       <div style={{ marginBottom: 'var(--space-8)' }}>
         <h1
           style={{
@@ -651,12 +651,12 @@ export default function ScreenClient() {
         </h1>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
           Upload a trade contract to automatically extract counterparties, directors,
-          and vessels — then screen them all against sanctions lists and ICIJ offshore
+              and vessels — then screen them all against sanctions lists and ICIJ offshore
           leak data in one step.
         </p>
       </div>
 
-      {/* ── Upload state ── */}
+      {/* 鈹€鈹€ Upload state 鈹€鈹€ */}
       {view === 'upload' && (
         <UploadZone
           onFile={handleFile}
@@ -667,10 +667,10 @@ export default function ScreenClient() {
         />
       )}
 
-      {/* ── Loading state ── */}
+      {/* 鈹€鈹€ Loading state 鈹€鈹€ */}
       {view === 'loading' && <LoadingView filename={filename} />}
 
-      {/* ── Error state ── */}
+      {/* 鈹€鈹€ Error state 鈹€鈹€ */}
       {view === 'error' && (
         <div
           style={{
@@ -705,7 +705,7 @@ export default function ScreenClient() {
         </button>
       )}
 
-      {/* ── Results state ── */}
+      {/* 鈹€鈹€ Results state 鈹€鈹€ */}
       {view === 'results' && report && (
         <>
           {/* Overall risk banner */}
@@ -757,7 +757,7 @@ export default function ScreenClient() {
             </div>
           </div>
 
-          {/* Trade assessment — shown above entity list when trade params extracted */}
+            {/* Trade assessment shown above the entity list when trade params were extracted. */}
           {report.tradeAssessment && (
             <TradeAssessmentCard assessment={report.tradeAssessment} />
           )}
@@ -814,7 +814,7 @@ export default function ScreenClient() {
         </>
       )}
 
-      {/* Spin keyframe — injected inline via style tag */}
+      {/* Spin keyframe injected inline via the style tag. */}
       {view === 'loading' && (
         // eslint-disable-next-line react/no-danger
         <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
@@ -822,3 +822,4 @@ export default function ScreenClient() {
     </div>
   )
 }
+

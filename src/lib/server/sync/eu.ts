@@ -1,10 +1,7 @@
-/**
- * EU 制裁名单查询
- * 来源：sanctions.network（免费开源 API，聚合了 OFAC、UN 及 EU FSF 数据）
- * API：https://api.sanctions.network/rpc/search_sanctions
- * 许可：免费，包括商业用途
- * 方式：实时查询（无需本地同步）
- */
+﻿/**
+ * EU 鍒惰鍚嶅崟鏌ヨ
+ * 鏉ユ簮锛歴anctions.network锛堝厤璐瑰紑婧?API锛岃仛鍚堜簡 OFAC銆乁N 鍙?EU FSF 鏁版嵁锛? * API锛歨ttps://api.sanctions.network/rpc/search_sanctions
+ * 璁稿彲锛氬厤璐癸紝鍖呮嫭鍟嗕笟鐢ㄩ€? * 鏂瑰紡锛氬疄鏃舵煡璇紙鏃犻渶鏈湴鍚屾锛? */
 
 const EU_API_BASE = 'https://api.sanctions.network'
 
@@ -16,9 +13,7 @@ interface SanctionsNetworkResult {
 }
 
 /**
- * 实时查询 EU 制裁数据库
- * 匹配 EU FSF（欧盟金融制裁档案）及其他来源
- */
+ * 瀹炴椂鏌ヨ EU 鍒惰鏁版嵁搴? * 鍖归厤 EU FSF锛堟鐩熼噾铻嶅埗瑁佹。妗堬級鍙婂叾浠栨潵婧? */
 export async function checkEUSanctions(name: string): Promise<boolean> {
   if (!name || name.trim().length < 2) return false
 
@@ -31,7 +26,7 @@ export async function checkEUSanctions(name: string): Promise<boolean> {
         Accept: 'application/json',
         'User-Agent': 'EnergyTradeInspection/1.0',
       },
-      // 3 秒超时，防止阻塞页面渲染
+      // 3 绉掕秴鏃讹紝闃叉闃诲椤甸潰娓叉煋
       signal: AbortSignal.timeout(3000),
     })
 
@@ -39,20 +34,19 @@ export async function checkEUSanctions(name: string): Promise<boolean> {
 
     const results: SanctionsNetworkResult[] = await response.json()
 
-    // 有结果且匹配分数较高则认为命中
-    if (!Array.isArray(results) || results.length === 0) return false
+    // 鏈夌粨鏋滀笖鍖归厤鍒嗘暟杈冮珮鍒欒涓哄懡涓?    if (!Array.isArray(results) || results.length === 0) return false
 
     const topScore = results[0]?.match_score ?? 1
     return topScore >= 0.85
   } catch {
-    // 网络超时或 API 不可用时，不阻断流程，返回 false（降级处理）
+    // 缃戠粶瓒呮椂鎴?API 涓嶅彲鐢ㄦ椂锛屼笉闃绘柇娴佺▼锛岃繑鍥?false锛堥檷绾у鐞嗭級
     return false
   }
 }
 
 /**
- * 批量查询多个名称
- * 串行执行以避免超出 API 限制
+ * 鎵归噺鏌ヨ澶氫釜鍚嶇О
+ * 涓茶鎵ц浠ラ伩鍏嶈秴鍑?API 闄愬埗
  */
 export async function checkEUSanctionsBatch(
   names: string[]
@@ -63,3 +57,4 @@ export async function checkEUSanctionsBatch(
   }
   return results
 }
+

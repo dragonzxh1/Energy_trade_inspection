@@ -1,17 +1,17 @@
-/**
+﻿/**
  * Orchestrates authenticity re-scoring for a single entity.
  *
  * Reads from ais_cache and intelligence_cache, calls computeScore(),
  * and writes authenticity_score / risk_level / score_breakdown_json back to entities.
  *
- * Fire-and-forget safe — never throws.
+ * Safe for fire-and-forget usage; it never throws.
  */
 
 import { db } from './db'
 import { computeScore, type IntelligenceSnapshot } from './scoring'
 import type { VesselAisData } from '@/lib/ais-types'
 
-// ── Cache readers ──────────────────────────────────────────────────────────────
+// 鈹€鈹€ Cache readers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 async function getAisCache(imo: string): Promise<VesselAisData | null> {
   try {
@@ -41,7 +41,7 @@ async function getIntelligenceCache(
   }
 }
 
-// ── Main entry ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Main entry 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 interface EntityMinimal {
   id:                  string
@@ -108,3 +108,4 @@ export async function rescoreEntity(entityId: string): Promise<void> {
     )
   }
 }
+

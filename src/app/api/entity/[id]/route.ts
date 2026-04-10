@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import type { ApiResponse, Company, Terminal, Vessel } from '@/lib/types'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
 
 export const runtime = 'nodejs'
@@ -13,7 +12,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params
 
   try {
-    await applyMigrations()
     const entity = await getEntityByKey(id)
 
     if (!entity) {
@@ -40,3 +38,5 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     )
   }
 }
+
+

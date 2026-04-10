@@ -1,6 +1,6 @@
-/**
- * GET  /api/watchlist/trades — list watched trade patterns for current user
- * POST /api/watchlist/trades — save (or toggle off) a trade pattern watch
+﻿/**
+ * GET  /api/watchlist/trades lists watched trade patterns for the current user.
+ * POST /api/watchlist/trades saves or toggles off a trade pattern watch.
  *
  * Access: Starter+ plan users only (Professional plan required for entity watchlist,
  * but trade watches are available from Starter since they're tied to the trade check).
@@ -9,11 +9,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 
 export const runtime = 'nodejs'
 
-// ── GET ───────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ GET 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export async function GET() {
   const session = await auth()
@@ -25,8 +24,6 @@ export async function GET() {
   if (plan === 'free') {
     return NextResponse.json({ error: 'Starter plan required.' }, { status: 403 })
   }
-
-  await applyMigrations()
 
   const [{ rows: trades }, { rows: alerts }] = await Promise.all([
     db.query(
@@ -60,7 +57,7 @@ export async function GET() {
   return NextResponse.json({ items })
 }
 
-// ── POST ──────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ POST 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -72,8 +69,6 @@ export async function POST(req: NextRequest) {
   if (plan === 'free') {
     return NextResponse.json({ error: 'Starter plan required.' }, { status: 403 })
   }
-
-  await applyMigrations()
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>
   const sellerName  = String(body.sellerName  ?? '').trim()
@@ -123,3 +118,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ watching: true })
 }
+
+

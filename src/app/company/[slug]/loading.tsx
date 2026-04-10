@@ -1,4 +1,4 @@
-export default function CompanyLoading() {
+﻿export default function CompanyLoading() {
   return (
     <div
       style={{
@@ -83,3 +83,4 @@ export default function CompanyLoading() {
     </div>
   )
 }
+

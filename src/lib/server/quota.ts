@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Query quota system
  * Free: 5 queries/month
  * Starter: 100 queries/month
@@ -73,7 +73,7 @@ export async function consumeQuota(
   const { start, end } = getPeriodBounds()
   const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 
-  // Unlimited plans — just log, don't check
+  // Unlimited plans only log usage; they do not enforce a cap.
   if (!isFinite(limit)) {
     await logQuery(userId, entityId, queryText, 'full')
     return { used: 0, limit: UNLIMITED_QUOTA, remaining: UNLIMITED_QUOTA, blocked: false, resetDate: end }
@@ -109,7 +109,7 @@ async function logQuery(
     `INSERT INTO query_log (id, user_id, entity_id, query_text, result_type)
      VALUES (gen_random_uuid()::text, $1, $2, $3, $4)`,
     [userId, entityId ?? null, queryText ?? null, resultType]
-  ).catch(() => {}) // Non-critical — don't block the response
+  ).catch(() => {}) // Non-critical; do not block the response.
 }
 
 /** Quota status for unauthenticated users (treated as anonymous free) */
@@ -122,3 +122,4 @@ export function guestQuotaStatus(): QuotaStatus {
     resetDate: getPeriodBounds().end,
   }
 }
+

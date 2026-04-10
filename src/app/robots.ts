@@ -1,4 +1,4 @@
-import type { MetadataRoute } from 'next'
+﻿import type { MetadataRoute } from 'next'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
 
@@ -20,3 +20,4 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: `${APP_URL}/sitemap.xml`,
   }
 }
+

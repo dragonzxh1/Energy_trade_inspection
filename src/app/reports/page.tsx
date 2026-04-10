@@ -1,4 +1,4 @@
-/**
+﻿/**
  * /reports — Report history page.
  *
  * Shows the user's past trade checks and document screenings,
@@ -12,8 +12,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { auth } from '@/auth'
-import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
+import { getReportHistory, type ScreeningSessionRow, type TradeSessionRow } from '@/lib/server/report-history'
 
 export const metadata: Metadata = {
   title: 'Reports — Energy Trade Inspection',
@@ -21,27 +20,6 @@ export const metadata: Metadata = {
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface TradeSessionRow {
-  id: string
-  input_json: {
-    seller: string
-    vessel: string
-    loadingPort?: string
-    commodity?: string
-  }
-  overall_risk: string
-  flag_count: number
-  created_at: string
-}
-
-interface ScreeningSessionRow {
-  id: string
-  filename: string
-  overall_risk: string
-  entity_count: number
-  created_at: string
-}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -72,7 +50,6 @@ function formatDate(iso: string): string {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function ReportsPage() {
-  await applyMigrations()
 
   const session = await auth()
   if (!session?.user) redirect('/sign-in?callbackUrl=/reports')
@@ -91,32 +68,7 @@ export default async function ReportsPage() {
 
   const userId = session.user.id
 
-  const [tradeResult, screeningResult] = await Promise.all([
-    db.query<TradeSessionRow>(
-      `SELECT id, input_json, overall_risk, flag_count, created_at
-       FROM trade_sessions
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 30`,
-      [userId]
-    ),
-    db.query<ScreeningSessionRow>(
-      `SELECT
-         id,
-         filename,
-         result_json->>'overallRisk'                     AS overall_risk,
-         COALESCE(jsonb_array_length(result_json->'entities'), 0) AS entity_count,
-         created_at
-       FROM screening_sessions
-       WHERE user_id = $1
-       ORDER BY created_at DESC
-       LIMIT 30`,
-      [userId]
-    ),
-  ])
-
-  const tradeSessions     = tradeResult.rows
-  const screeningSessions = screeningResult.rows
+  const { tradeSessions, screeningSessions } = await getReportHistory(userId)
 
   return (
     <>
@@ -395,3 +347,5 @@ function UpgradePrompt() {
     </div>
   )
 }
+
+

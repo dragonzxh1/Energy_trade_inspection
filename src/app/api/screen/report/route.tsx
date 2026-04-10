@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/screen/report?sessionId=xxx
  *
  * Downloads a PDF screening report for a previously-screened document.
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'sessionId is required.' }, { status: 400 })
   }
 
-  // user_id in WHERE prevents IDOR — no ownership check needed after fetch
+  // `user_id` in the WHERE clause prevents IDOR, so no extra ownership check is needed.
   const { rows } = await db.query<{ result_json: ScreeningReport }>(
     `SELECT result_json FROM screening_sessions WHERE id = $1 AND user_id = $2`,
     [sessionId, session.user.id]
@@ -74,3 +74,4 @@ export async function GET(req: NextRequest) {
     },
   })
 }
+

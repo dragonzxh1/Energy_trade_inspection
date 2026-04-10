@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Server-side cache for intelligence (Tavily + HiFleet PSC) results.
  * TTL: 24 hours. Stored in intelligence_cache table.
  */
@@ -41,7 +41,8 @@ export async function writeIntelligenceCache(
       [entityType, entityKey, JSON.stringify(data)],
     )
   } catch (err) {
-    // 缓存写失败不阻塞主流程，仅打日志
+    // 缂撳瓨鍐欏け璐ヤ笉闃诲涓绘祦绋嬶紝浠呮墦鏃ュ織
     console.error('[intelligence-cache] write failed:', err)
   }
 }
+

@@ -1,5 +1,5 @@
-/**
- * Document parser — converts uploaded files to plain text for entity extraction.
+﻿/**
+ * Document parser that converts uploaded files to plain text for entity extraction.
  * Supports: PDF (text layer), DOCX (Word), XLSX (Excel).
  *
  * All imports are dynamic to avoid Next.js bundler issues with native Node.js modules.
@@ -11,7 +11,7 @@
  * @param mimeType  MIME type of the file
  */
 export async function parseDocument(buffer: Buffer, mimeType: string): Promise<string> {
-  // ── PDF ───────────────────────────────────────────────────────────────────
+  // 鈹€鈹€ PDF 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (mimeType === 'application/pdf') {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const pdfParse = require('pdf-parse') as (
@@ -22,7 +22,7 @@ export async function parseDocument(buffer: Buffer, mimeType: string): Promise<s
     return result.text
   }
 
-  // ── DOCX (Word) ───────────────────────────────────────────────────────────
+  // 鈹€鈹€ DOCX (Word) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (
     mimeType ===
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -32,7 +32,7 @@ export async function parseDocument(buffer: Buffer, mimeType: string): Promise<s
     return result.value
   }
 
-  // ── XLSX (Excel) ──────────────────────────────────────────────────────────
+  // 鈹€鈹€ XLSX (Excel) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (
     mimeType ===
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -50,3 +50,4 @@ export async function parseDocument(buffer: Buffer, mimeType: string): Promise<s
   // Fallback: attempt UTF-8 text
   return buffer.toString('utf-8')
 }
+

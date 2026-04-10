@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getScoreTier, buildCompanyJsonLd, buildCompanyNarrative } from '@/lib/utils'
@@ -9,12 +9,11 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company, BeneficialOwner } from '@/lib/types'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork } from '@/lib/server/repository'
 import type { IcijMatch, IcijOfficerLink } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
-import { db } from '@/lib/server/db'
+import { getEntityWatchState } from '@/lib/server/watchlist'
 import WatchButton from '@/components/entity/WatchButton'
 import IntelligencePanel from '@/components/entity/IntelligencePanel'
 
@@ -25,7 +24,6 @@ interface PageProps {
 export const revalidate = 86400
 
 async function getCompany(slug: string): Promise<Company | null> {
-  await applyMigrations()
   const entity = await getEntityByKey(slug)
   if (!entity || entity.type !== 'company') return null
   return entity as Company
@@ -46,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// ── Shared styles ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Shared styles 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const card: React.CSSProperties = {
   backgroundColor: 'var(--bg-surface)',
@@ -94,7 +92,7 @@ const emptyState: React.CSSProperties = {
   padding: 'var(--space-8) 0',
 }
 
-// ── Tab panel components ─────────────────────────────────────────────────────
+// 鈹€鈹€ Tab panel components 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value) return null
@@ -135,7 +133,7 @@ function RegistrationPanel({ company }: { company: Company }) {
                 style={{ color: 'var(--text-primary)', textDecoration: 'none' }}
               >
                 {company.registeredAddress}{' '}
-                <span style={{ color: 'var(--accent-primary)', fontSize: '11px' }}>↗</span>
+                <span style={{ color: 'var(--accent-primary)', fontSize: '11px' }}>&rarr;</span>
               </a>
             )
             : undefined
@@ -201,7 +199,7 @@ function DirectorsPanel({ company }: { company: Company }) {
                 {d.name}
               </p>
               <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
-                {d.role}{d.nationality ? ` · ${d.nationality}` : ''}
+                    {d.role}{d.nationality ? ` · ${d.nationality}` : ''}
               </p>
             </div>
             {d.appointedDate && (
@@ -298,7 +296,7 @@ function BeneficialOwnersPanel({ company }: { company: Company }) {
                       o.nationality,
                       o.countryOfResidence ? `Resident: ${o.countryOfResidence}` : null,
                       o.addressCountry ? `Address: ${o.addressCountry}` : null,
-                    ].filter(Boolean).join(' · ')}
+                ].filter(Boolean).join(' · ')}
                   </p>
                   {o.naturesOfControl.length > 0 && (
                     <p style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px' }}>
@@ -512,7 +510,7 @@ function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
                     rel="noopener noreferrer"
                     style={{ color: 'var(--accent-primary)', fontSize: '11px', textDecoration: 'none' }}
                   >
-                    ICIJ ↗
+                    ICIJ
                   </a>
                 )}
               </div>
@@ -536,7 +534,7 @@ function datasetLabel(raw: string): string {
 function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
   if (links.length === 0) return null
 
-  // Group by officer node — same officer may control multiple offshore entities
+  // Group by officer node because the same officer may control multiple offshore entities.
   const byOfficer = new Map<string, { name: string; entities: IcijOfficerLink[] }>()
   for (const link of links) {
     if (!byOfficer.has(link.officerNodeId)) {
@@ -587,7 +585,7 @@ function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
                   </span>
                   {e.entityJurisdiction && (
                     <span style={{ color: 'var(--text-muted)', fontSize: '11px', marginLeft: '6px' }}>
-                      · {e.entityJurisdiction}
+                    · {e.entityJurisdiction}
                     </span>
                   )}
                 </div>
@@ -653,7 +651,7 @@ function SourcesPanel({ sources }: { sources: string[] }) {
                   textDecoration: 'none',
                 }}
               >
-                View source ↗
+                View Source
               </a>
             )}
           </div>
@@ -667,7 +665,7 @@ function SourcesPanel({ sources }: { sources: string[] }) {
   )
 }
 
-// ── Quota exceeded ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Quota exceeded 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function QuotaExceededPage({ resetDate }: { resetDate: string }) {
   const reset = new Date(resetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
@@ -676,7 +674,7 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
       <Header />
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-8) var(--space-4)' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <p style={{ fontSize: '32px', marginBottom: 'var(--space-5)' }}>⚠</p>
+          <p style={{ fontSize: '32px', marginBottom: 'var(--space-5)' }}>!</p>
           <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600, marginBottom: 'var(--space-3)' }}>
             Monthly query limit reached
           </h2>
@@ -705,7 +703,7 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
   )
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Page 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export default async function CompanyPage({ params }: PageProps) {
   const [{ slug }, session] = await Promise.all([params, auth()])
@@ -736,13 +734,12 @@ export default async function CompanyPage({ params }: PageProps) {
   let isWatching = false
   const [watchlistRows, icijMatches, icijOfficerLinks] = await Promise.all([
     session?.user && (plan === 'professional' || plan === 'enterprise')
-      ? db.query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [session.user.id, company.id])
-          .then((r) => r.rows)
-      : Promise.resolve([]),
+      ? getEntityWatchState(session.user.id, company.id)
+      : Promise.resolve(false),
     f3Unlocked ? getIcijMatches(company.id) : Promise.resolve([]),
     f3Unlocked ? getIcijOfficerNetwork(company.id) : Promise.resolve([]),
   ])
-  isWatching = watchlistRows.length > 0
+  isWatching = watchlistRows
 
   const jsonLd = buildCompanyJsonLd({
     name: company.name,
@@ -833,7 +830,7 @@ export default async function CompanyPage({ params }: PageProps) {
                 borderRadius: '6px',
               }}>
                 <span style={{ color: '#3b82f6', fontSize: '11px', lineHeight: '16px', display: 'block' }}>
-                  External registry — some fields may be incomplete.
+              External registry — some fields may be incomplete.
                 </span>
               </div>
             )}
@@ -938,3 +935,7 @@ export default async function CompanyPage({ params }: PageProps) {
     </>
   )
 }
+
+
+
+

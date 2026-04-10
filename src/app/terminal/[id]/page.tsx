@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getScoreTier, buildTerminalJsonLd, buildTerminalNarrative } from '@/lib/utils'
@@ -9,11 +9,10 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Terminal } from '@/lib/types'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
-import { db } from '@/lib/server/db'
+import { getEntityWatchState } from '@/lib/server/watchlist'
 import WatchButton from '@/components/entity/WatchButton'
 import IntelligencePanel from '@/components/entity/IntelligencePanel'
 
@@ -24,7 +23,6 @@ interface PageProps {
 export const revalidate = 86400
 
 async function getTerminal(id: string): Promise<Terminal | null> {
-  await applyMigrations()
   const entity = await getEntityByKey(id)
   if (!entity || entity.type !== 'terminal') return null
   return entity as Terminal
@@ -362,17 +360,11 @@ export default async function TerminalPage({ params }: PageProps) {
   const lockReason = !session?.user ? 'guest' : 'free'
 
   // Watchlist check
-  let isWatching = false
-  const watchlistRows =
-    session?.user && (plan === 'professional' || plan === 'enterprise')
-      ? await db
-          .query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [
-            session.user.id,
-            terminal.id,
-          ])
-          .then((r) => r.rows)
-      : []
-  isWatching = watchlistRows.length > 0
+  const isWatching =
+    !!session?.user &&
+    (plan === 'professional' || plan === 'enterprise')
+      ? await getEntityWatchState(session.user.id, terminal.id)
+      : false
 
   // Intelligence key: same as rescore.ts — slug ?? id
   const intelKey = terminal.slug ?? terminal.id
@@ -512,3 +504,7 @@ export default async function TerminalPage({ params }: PageProps) {
     </>
   )
 }
+
+
+
+

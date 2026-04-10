@@ -1,4 +1,4 @@
-export default function TerminalLoading() {
+﻿export default function TerminalLoading() {
   return (
     <div
       style={{
@@ -83,3 +83,4 @@ export default function TerminalLoading() {
     </div>
   )
 }
+

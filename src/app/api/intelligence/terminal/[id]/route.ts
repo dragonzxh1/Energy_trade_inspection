@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
 import { researchTerminal } from '@/lib/server/intelligence'
 import { readIntelligenceCache, writeIntelligenceCache } from '@/lib/server/intelligence-cache'
@@ -20,15 +19,14 @@ export async function GET(
   }
 
   const { id } = await params
-  await applyMigrations()
 
-  // 命中缓存直接返回
+  // 鍛戒腑缂撳瓨鐩存帴杩斿洖
   const cached = await readIntelligenceCache('terminal', id)
   if (cached) {
     return NextResponse.json(cached, { headers: { 'Cache-Control': 'private, max-age=86400' } })
   }
 
-  // id 可以是 entity id 或 slug；若查不到则用 id 本身作为名称直接搜索
+  // id 鍙互鏄?entity id 鎴?slug锛涜嫢鏌ヤ笉鍒板垯鐢?id 鏈韩浣滀负鍚嶇О鐩存帴鎼滅储
   let name = decodeURIComponent(id)
   let location: string | undefined
   let entityId: string | undefined
@@ -41,7 +39,7 @@ export async function GET(
       entityId = entity.id
     }
   } catch {
-    // 非致命 — 直接用 id 作为名称搜索
+  // Non-fatal: fall back to using the route id as the terminal name.
   }
 
   const result = await researchTerminal(name, { location, maxResults: 5 })
@@ -51,8 +49,11 @@ export async function GET(
   }
 
   await writeIntelligenceCache('terminal', id, result as unknown as Record<string, unknown>)
-  // terminal 可能没有对应 entity 记录，只在查到时重算
+  // terminal 鍙兘娌℃湁瀵瑰簲 entity 璁板綍锛屽彧鍦ㄦ煡鍒版椂閲嶇畻
   if (entityId) rescoreEntity(entityId).catch(console.error)
 
   return NextResponse.json(result, { headers: { 'Cache-Control': 'private, max-age=86400' } })
 }
+
+
+

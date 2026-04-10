@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/watchlist/trades/refresh
  *
  * For each watched trade:
@@ -13,7 +13,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 import { checkSanctions } from '@/lib/server/sync/sanctions'
 import { getPscSummary } from '@/lib/server/repository'
 
@@ -29,8 +28,6 @@ export async function POST() {
   if (plan === 'free') {
     return NextResponse.json({ error: 'Starter plan required.' }, { status: 403 })
   }
-
-  await applyMigrations()
 
   const { rows: trades } = await db.query<{
     id: string
@@ -55,7 +52,7 @@ export async function POST() {
   for (const trade of trades) {
     const alerts: Array<{ alert_type: string; detail: string }> = []
 
-    // ── Sanctions re-check ──────────────────────────────────────────────────
+    // 鈹€鈹€ Sanctions re-check 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     const [sellerSanction, vesselSanction] = await Promise.all([
       checkSanctions(trade.seller_name).catch(() => ({ listed: false, sources: [] as string[] })),
       checkSanctions(trade.vessel_name).catch(() => ({ listed: false, sources: [] as string[] })),
@@ -64,18 +61,18 @@ export async function POST() {
     if (sellerSanction.listed && !trade.last_seller_sanctioned) {
       alerts.push({
         alert_type: 'sanction_exposure',
-        detail: `Seller "${trade.seller_name}" is now listed on sanctions — status has changed since this trade was saved.`,
+        detail: `Seller "${trade.seller_name}" is now listed on sanctions - status has changed since this trade was saved.`,
       })
     }
 
     if (vesselSanction.listed && !trade.last_vessel_sanctioned) {
       alerts.push({
         alert_type: 'sanction_exposure',
-        detail: `Vessel "${trade.vessel_name}" is now listed on sanctions — status has changed since this trade was saved.`,
+        detail: `Vessel "${trade.vessel_name}" is now listed on sanctions - status has changed since this trade was saved.`,
       })
     }
 
-    // ── PSC detention re-check (vessels with IMO only) ──────────────────────
+    // 鈹€鈹€ PSC detention re-check (vessels with IMO only) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     let livePscDetentions: number | null = null
     if (trade.vessel_imo) {
       const psc = await getPscSummary(trade.vessel_imo).catch(() => null)
@@ -94,7 +91,7 @@ export async function POST() {
       }
     }
 
-    // ── Derive new overall risk (simplified: sanctions-only escalation) ─────
+    // 鈹€鈹€ Derive new overall risk (simplified: sanctions-only escalation) 鈹€鈹€鈹€鈹€鈹€
     const RISK_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
     let newRisk = trade.last_overall_risk
     if (sellerSanction.listed || vesselSanction.listed) {
@@ -114,7 +111,7 @@ export async function POST() {
       })
     }
 
-    // ── Persist alerts ──────────────────────────────────────────────────────
+    // 鈹€鈹€ Persist alerts 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     for (const alert of alerts) {
       await db.query(
         `INSERT INTO watched_trade_alerts (user_id, watched_trade_id, alert_type, detail)
@@ -124,7 +121,7 @@ export async function POST() {
       alertsCreated++
     }
 
-    // ── Update snapshot ─────────────────────────────────────────────────────
+    // 鈹€鈹€ Update snapshot 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     await db.query(
       `UPDATE watched_trades
           SET last_seller_sanctioned = $1,
@@ -145,3 +142,5 @@ export async function POST() {
 
   return NextResponse.json({ checked: trades.length, alertsCreated })
 }
+
+

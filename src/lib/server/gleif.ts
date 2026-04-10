@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GLEIF (Global Legal Entity Identifier Foundation) API client.
  *
  * Provides LEI lookup by company name and ultimate-parent chain resolution.
@@ -14,7 +14,7 @@ export interface GleifLeiRecord {
   legalName: string
   /**
    * ISO 3166-1 alpha-2 jurisdiction code, e.g. "GB", "VG", "KY".
-   * GLEIF may return subdivisions like "GB-ENG" — normalised to first 2 chars.
+ * GLEIF may return subdivisions like "GB-ENG"; normalize them to the first 2 chars.
    */
   jurisdiction: string | null
   /** Country code from the legal address (may differ from jurisdiction). */
@@ -27,7 +27,7 @@ export interface GleifLeiRecord {
   initialRegistrationDate: string | null
 }
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+// 鈹€鈹€ Internal helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseRecord(record: any): GleifLeiRecord | null {
@@ -50,9 +50,9 @@ function parseRecord(record: any): GleifLeiRecord | null {
   }
 }
 
-// ── Public API ────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Public API 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-// ── ISO 3166-1 alpha-2 → country name (subset covering common jurisdictions) ──
+// ISO 3166-1 alpha-2 to country name mapping for common jurisdictions.
 const ISO_TO_COUNTRY: Record<string, string> = {
   AE: 'United Arab Emirates', AT: 'Austria',   AU: 'Australia',
   BE: 'Belgium',  BH: 'Bahrain',  BR: 'Brazil',  BZ: 'Belize',
@@ -110,7 +110,7 @@ export async function searchGleifByName(name: string): Promise<GleifLeiRecord | 
  *   - GLEIF Level-2 data is unavailable (reporting exception or not filed)
  *   - Any network or API error occurs
  *
- * Performs up to 2 sequential GLEIF requests (relationship → parent record).
+ * Performs up to 2 sequential GLEIF requests: relationship, then parent record.
  */
 /**
  * Search GLEIF for up to `limit` LEI records matching a company name.
@@ -163,14 +163,14 @@ export async function getGleifRecordByLei(lei: string): Promise<GleifLeiRecord |
 
 /**
  * Build a Company object from a GLEIF LEI record (not persisted to DB).
- * id prefix: `gleif:${lei}` — signals GLEIF-only provenance to registry source detection.
+ * ID prefix `gleif:${lei}` signals GLEIF-only provenance to registry source detection.
  *
- * Scoring: LEI existence is a weaker signal than direct registry — indicates the entity
+ * Scoring note: LEI existence is a weaker signal than a direct registry match and only indicates the entity
  * is regulated enough to have obtained an LEI, but no direct registry verification.
  * entityExistence: 10/25 (has valid LEI)
  * documentConsistency: +5 if registration date is known
  * communityReputation: +8 if not_listed
- * Max score: ~23 (Suspicious/Insufficient boundary — appropriate for indirect source)
+ * Max score is about 23, which is appropriate for an indirect source.
  */
 export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: SanctionStatus) {
   const cc = record.jurisdiction ?? record.country
@@ -248,3 +248,4 @@ export async function getGleifUltimateParentJurisdiction(lei: string): Promise<s
     return null
   }
 }
+

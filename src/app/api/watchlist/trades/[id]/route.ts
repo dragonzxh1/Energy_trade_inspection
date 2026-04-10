@@ -1,5 +1,5 @@
-/**
- * DELETE /api/watchlist/trades/[id] — remove a watched trade pattern
+﻿/**
+ * DELETE /api/watchlist/trades/[id] removes a watched trade pattern.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -29,3 +29,4 @@ export async function DELETE(
 
   return NextResponse.json({ removed: true })
 }
+

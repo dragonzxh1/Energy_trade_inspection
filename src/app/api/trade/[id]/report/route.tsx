@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/trade/[id]/report
  *
  * Fetch a previously saved trade check session by ID and render a PDF.
@@ -41,7 +41,7 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid session ID.' }, { status: 400 })
   }
 
-  // Fetch session — enforce user ownership
+  // Fetch the session while enforcing user ownership.
   let result: TradeCheckResult
   try {
     const { rows } = await db.query<{ result_json: TradeCheckResult }>(
@@ -79,3 +79,4 @@ export async function GET(
     },
   })
 }
+

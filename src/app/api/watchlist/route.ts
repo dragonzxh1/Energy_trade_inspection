@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { db } from '@/lib/server/db'
 
 export const runtime = 'nodejs'
 
-// GET /api/watchlist — list all watched entities for the current user
+// GET /api/watchlist lists all watched entities for the current user.
 export async function GET() {
   const session = await auth()
   if (!session?.user) {
@@ -22,7 +22,7 @@ export async function GET() {
   return NextResponse.json({ items: rows })
 }
 
-// POST /api/watchlist — toggle watch for an entity (add if absent, remove if present)
+// POST /api/watchlist toggles a watch for an entity.
 export async function POST(request: NextRequest) {
   const session = await auth()
   if (!session?.user) {
@@ -60,3 +60,4 @@ export async function POST(request: NextRequest) {
   )
   return NextResponse.json({ watching: true })
 }
+

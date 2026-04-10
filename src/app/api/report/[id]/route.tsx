@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/report/[id]
  *
  * Generates and streams a PDF compliance report for a company, vessel, or terminal.
@@ -14,7 +14,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { auth } from '@/auth'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey } from '@/lib/server/repository'
 import { db } from '@/lib/server/db'
 import {
@@ -25,7 +24,7 @@ import {
 import type { Company, Terminal, Vessel } from '@/lib/types'
 import type { VesselAisData } from '@/lib/ais-types'
 
-// ── Cache helpers ─────────────────────────────────────────────────────────────
+// 鈹€鈹€ Cache helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 async function fetchAisCache(imo: string): Promise<VesselAisData | null> {
   try {
@@ -55,7 +54,7 @@ async function fetchIntelCache(
   }
 }
 
-// ── Filename sanitizer ────────────────────────────────────────────────────────
+// 鈹€鈹€ Filename sanitizer 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function safeFilename(name: string): string {
   return name
@@ -65,7 +64,7 @@ function safeFilename(name: string): string {
     .slice(0, 60)
 }
 
-// ── Route ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Route 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export async function GET(
   _req: NextRequest,
@@ -73,7 +72,7 @@ export async function GET(
 ) {
   const [{ id }, session] = await Promise.all([params, auth()])
 
-  // Auth guard — must be signed in with a paid plan
+  // Auth guard: the user must be signed in and on a paid plan.
   if (!session?.user) {
     return NextResponse.json(
       { error: 'Authentication required.' },
@@ -88,8 +87,6 @@ export async function GET(
       { status: 403 },
     )
   }
-
-  await applyMigrations()
   const entity = await getEntityByKey(id)
 
   if (!entity) {
@@ -103,7 +100,7 @@ export async function GET(
   let buffer: Buffer
   let filename: string
 
-  // ── Intelligence key (mirrors rescore.ts logic) ────────────────────────────
+  // 鈹€鈹€ Intelligence key (mirrors rescore.ts logic) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const intelKey = entity.type === 'vessel'
     ? (entity as Vessel).imo
     : (entity as Company | Terminal).slug ?? entity.id
@@ -168,3 +165,6 @@ export async function GET(
     },
   })
 }
+
+
+

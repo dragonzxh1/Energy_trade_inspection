@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -7,7 +7,7 @@ import type { TradeCheckResult, TradePartyResult, TradeVesselResult, TradePortRe
 import type { TradeFlag } from '@/lib/server/trade-rules'
 import type { RiskLevel } from '@/lib/types'
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// 鈹€鈹€ Design tokens 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   critical: '#ef4444',
@@ -49,7 +49,7 @@ const TARGET_LABEL: Record<string, string> = {
 }
 
 function fmt(iso: string | null | undefined) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   try {
     return new Date(iso).toLocaleString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric',
@@ -58,7 +58,7 @@ function fmt(iso: string | null | undefined) {
   } catch { return iso }
 }
 
-// ── Badges ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Badges 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function RiskBadge({ level, large }: { level: RiskLevel; large?: boolean }) {
   return (
@@ -95,7 +95,7 @@ function SanctionBadge({ status }: { status: string }) {
   )
 }
 
-// ── Form ──────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Form 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 interface FormValues {
   seller: string
@@ -203,10 +203,10 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
         {field('Seller / Counterparty', 'seller', 'e.g. ZHENFU ENERGY (HAINAN) CO., LTD', undefined, true)}
         {field('Vessel Name', 'vessel', 'e.g. MV START', undefined, true)}
-        {field('IMO Number', 'imo', '7-digit number', 'Optional — improves vessel lookup accuracy')}
+              {field('IMO Number', 'imo', '7-digit number', 'Optional — improves vessel lookup accuracy')}
         {field('Trade Date', 'date', '', 'Used to correlate AIS dark periods', false, 'date')}
         {field('Loading Port (LOCODE)', 'loadingPort', 'e.g. CNHAK, SGSIN, AEDXB',
-          'UN/LOCODE — enables draft risk and geo checks')}
+                'UN/LOCODE — enables draft risk and geo checks')}
         {field('Commodity', 'commodity', 'e.g. Fuel Oil, Crude Oil, LNG', 'Optional context')}
       </div>
 
@@ -226,21 +226,21 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
             letterSpacing: '0.01em',
           }}
         >
-          Run Trade Check →
-        </button>
+              Run Trade Check →
+            </button>
       </div>
     </form>
   )
 }
 
-// ── Loading view ──────────────────────────────────────────────────────────────
+// 鈹€鈹€ Loading view 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const STEPS = [
-  'Screening seller against sanctions lists…',
-  'Looking up seller in company registries…',
-  'Checking vessel AIS and PSC records…',
-  'Running geographic and draft risk checks…',
-  'Applying trade rule engine…',
+  'Screening seller against sanctions lists...',
+  'Looking up seller in company registries...',
+  'Checking vessel AIS and PSC records...',
+  'Running geographic and draft risk checks...',
+  'Applying trade rule engine...',
 ]
 
 function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
@@ -258,7 +258,7 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
         Checking trade risk
       </p>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
-        {seller} · {vessel}
+                {seller} · {vessel}
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxWidth: '300px', margin: '0 auto' }}>
         {STEPS.map((s, i) => (
@@ -270,7 +270,7 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
   )
 }
 
-// ── Flag card ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Flag card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function FlagCard({ flag }: { flag: TradeFlag }) {
   return (
@@ -326,7 +326,7 @@ function FlagCard({ flag }: { flag: TradeFlag }) {
   )
 }
 
-// ── Party card (seller / buyer) ───────────────────────────────────────────────
+// 鈹€鈹€ Party card (seller / buyer) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function PartyCard({ label, party }: { label: string; party: TradePartyResult }) {
   const href = party.dbMatch?.slug ? `/company/${party.dbMatch.slug}` : null
@@ -345,8 +345,8 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
         <div style={{ minWidth: 0 }}>
           {href ? (
             <Link href={href} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>
-              {party.name} →
-            </Link>
+                  {party.name} →
+                </Link>
           ) : (
             <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {party.name}
@@ -370,7 +370,7 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
       </div>
       {(party.icijConnections > 0) && (
         <p style={{ fontSize: '12px', color: '#f97316', margin: 'var(--space-2) 0 0' }}>
-          ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
+                  ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
         </p>
       )}
       {party.incorporationDate && (
@@ -392,7 +392,7 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
   )
 }
 
-// ── Vessel card ───────────────────────────────────────────────────────────────
+// 鈹€鈹€ Vessel card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
   const href = vessel.imo ? `/vessel/${vessel.imo}` : null
@@ -411,8 +411,8 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
         <div style={{ minWidth: 0 }}>
           {href ? (
             <Link href={href} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>
-              {vessel.name} →
-            </Link>
+                  {vessel.name} →
+                </Link>
           ) : (
             <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{vessel.name}</p>
           )}
@@ -446,7 +446,7 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
         </span>
         {vessel.darkPeriods > 0 && (
           <span style={{ fontSize: '12px', color: '#f97316' }}>
-            ⚠ {vessel.darkPeriods} dark period{vessel.darkPeriods !== 1 ? 's' : ''}
+                  ⚠ {vessel.darkPeriods} dark period{vessel.darkPeriods !== 1 ? 's' : ''}
           </span>
         )}
         {vessel.psc && vessel.psc.totalInspections > 0 && (
@@ -467,7 +467,7 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
   )
 }
 
-// ── Port card ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Port card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function PortCard({ port }: { port: TradePortResult }) {
   const hasWarning = port.isStsZone || port.draftRisk?.canBerth === false
@@ -493,13 +493,13 @@ function PortCard({ port }: { port: TradePortResult }) {
 
       {!port.found && (
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0', fontStyle: 'italic' }}>
-          Port not found in database — geo and draft checks skipped
+                Port not found in database — geo and draft checks skipped
         </p>
       )}
 
       {port.isStsZone && (
         <p style={{ fontSize: '12px', color: '#f97316', margin: '6px 0 0' }}>
-          ⚠ STS anchorage zone — not a terminal berth
+                  ⚠ STS anchorage zone — not a terminal berth
         </p>
       )}
 
@@ -511,7 +511,7 @@ function PortCard({ port }: { port: TradePortResult }) {
         }}>
           {port.draftRisk.warning ??
             (port.draftRisk.portMaxDraftM
-              ? `Max draft: ${port.draftRisk.portMaxDraftM}m${port.draftRisk.vesselDraftM ? ` · Vessel: ${port.draftRisk.vesselDraftM}m` : ''}`
+                  ? `Max draft: ${port.draftRisk.portMaxDraftM}m${port.draftRisk.vesselDraftM ? ` · Vessel: ${port.draftRisk.vesselDraftM}m` : ''}`
               : 'Draft data not available')}
         </p>
       )}
@@ -519,7 +519,7 @@ function PortCard({ port }: { port: TradePortResult }) {
   )
 }
 
-// ── Overall risk banner ───────────────────────────────────────────────────────
+// 鈹€鈹€ Overall risk banner 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function ResultBanner({ result }: { result: TradeCheckResult }) {
   const { overallRisk, flags, checkedAt, input } = result
@@ -548,20 +548,20 @@ function ResultBanner({ result }: { result: TradeCheckResult }) {
         </span>
       </div>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 4px' }}>
-        {input.seller} · {input.vessel}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
-        {input.date ? ` · ${input.date}` : ''}
+              {input.seller} · {input.vessel}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
+              {input.date ? ` · ${input.date}` : ''}
       </p>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
         {flags.length} flag{flags.length !== 1 ? 's' : ''} raised
-        {critical > 0 && <span style={{ color: '#ef4444', marginLeft: '8px' }}>· {critical} critical</span>}
-        {high > 0 && <span style={{ color: '#f97316', marginLeft: '8px' }}>· {high} high</span>}
-        <span style={{ marginLeft: '8px' }}>· Checked {fmt(checkedAt)}</span>
+              {critical > 0 && <span style={{ color: '#ef4444', marginLeft: '8px' }}>· {critical} critical</span>}
+              {high > 0 && <span style={{ color: '#f97316', marginLeft: '8px' }}>· {high} high</span>}
+              <span style={{ marginLeft: '8px' }}>· Checked {fmt(checkedAt)}</span>
       </p>
     </div>
   )
 }
 
-// ── Save trade watch button ───────────────────────────────────────────────────
+// 鈹€鈹€ Save trade watch button 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 type WatchState = 'idle' | 'saving' | 'watching' | 'error'
 
@@ -600,10 +600,10 @@ function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
   }, [state, result])
 
   const label =
-    state === 'saving'   ? 'Saving…' :
-    state === 'watching' ? '★ Watching' :
-    state === 'error'    ? 'Error — retry' :
-    '☆ Watch trade'
+    state === 'saving'   ? 'Saving...' :
+    state === 'watching' ? 'Watching' :
+    state === 'error'    ? 'Error - retry' :
+    'Watch trade'
 
   return (
     <button
@@ -622,7 +622,7 @@ function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
   )
 }
 
-// ── Results view ──────────────────────────────────────────────────────────────
+// 鈹€鈹€ Results view 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: () => void }) {
   return (
@@ -643,7 +643,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
             textDecoration: 'none', display: 'inline-block',
           }}
         >
-          ↓ Download PDF
+                ↓ Download PDF
         </a>
         <button
           onClick={onReset}
@@ -659,7 +659,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
         </button>
       </div>
 
-      {/* Flags — core output */}
+          {/* Flags are the core output. */}
       {result.flags.length > 0 && (
         <section style={{ marginBottom: 'var(--space-6)' }}>
           <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', letterSpacing: '0.03em' }}>
@@ -701,7 +701,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Main component 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 type ViewState = 'form' | 'loading' | 'results' | 'error'
 
@@ -766,7 +766,7 @@ export default function TradeClient() {
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
           Input a seller and vessel to run a multi-source risk check: sanctions screening,
           company registry lookup, AIS vessel tracking, PSC inspection history, and geographic
-          mismatch detection — with deterministic flags and evidence references.
+          mismatch detection with deterministic flags and evidence references.
         </p>
       </div>
 
@@ -806,3 +806,4 @@ export default function TradeClient() {
     </div>
   )
 }
+

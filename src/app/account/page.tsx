@@ -1,11 +1,11 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import { auth } from '@/auth'
 import { getQuotaStatus, UNLIMITED_QUOTA } from '@/lib/server/quota'
 import { stripe } from '@/lib/stripe'
-import { db } from '@/lib/server/db'
+import { getBillingCustomerId } from '@/lib/server/account'
 
 export const metadata: Metadata = {
   title: 'Account — Energy Trade Inspection',
@@ -23,11 +23,7 @@ async function openBillingPortal() {
   const session = await auth()
   if (!session?.user) redirect('/sign-in')
 
-  const { rows } = await db.query<{ stripe_customer_id: string }>(
-    'SELECT stripe_customer_id FROM users WHERE id = $1',
-    [session.user.id]
-  )
-  const customerId = rows[0]?.stripe_customer_id
+  const customerId = await getBillingCustomerId(session.user.id)
   if (!customerId) redirect('/pricing')
 
   const portal = await stripe.billingPortal.sessions.create({
@@ -238,3 +234,4 @@ export default async function AccountPage() {
     </>
   )
 }
+

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { getVesselAis } from '@/lib/server/ais'
 import { getEntityByKey, saveVesselMmsi } from '@/lib/server/repository'
@@ -31,7 +31,7 @@ export async function GET(
       entityId  = entity.id
     }
   } catch {
-    // Non-fatal — proceed without MMSI hint
+    // Non-fatal: proceed without an MMSI hint.
   }
 
   const data = await getVesselAis(imo, { mmsi: knownMmsi })
@@ -41,7 +41,7 @@ export async function GET(
     saveVesselMmsi(imo, data.mmsi).catch(console.error)
   }
 
-  // 每次获取到新鲜 AIS 数据（非缓存命中）后异步重算真实性评分
+  // Rescore the entity after a non-mock AIS refresh.
   if (entityId && data.provider !== 'mock') {
     rescoreEntity(entityId).catch(console.error)
   }
@@ -52,3 +52,4 @@ export async function GET(
     },
   })
 }
+

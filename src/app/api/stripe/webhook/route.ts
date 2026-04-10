@@ -1,10 +1,10 @@
-/**
+﻿/**
  * POST /api/stripe/webhook
  *
  * Handles Stripe webhook events:
- * - checkout.session.completed → activate subscription, set plan
- * - customer.subscription.updated → plan change / renewal
- * - customer.subscription.deleted → downgrade to free
+ * - `checkout.session.completed`: activate the subscription and set the plan
+ * - `customer.subscription.updated`: handle plan changes and renewals
+ * - `customer.subscription.deleted`: downgrade the user to free
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -100,3 +100,4 @@ function resolvePlanFromPrice(priceId: string): string {
   if (priceId === process.env.STRIPE_PRICE_PROFESSIONAL) return 'professional'
   return 'free'
 }
+

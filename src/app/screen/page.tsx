@@ -1,4 +1,4 @@
-/**
+﻿/**
  * /screen — Document screening page.
  *
  * Server component: handles auth check and plan gating.
@@ -58,7 +58,7 @@ function UpgradePrompt() {
         padding: 'var(--space-12) var(--space-4)',
       }}
     >
-      <div style={{ fontSize: '40px', marginBottom: 'var(--space-4)' }}>🔒</div>
+            <div style={{ fontSize: '40px', marginBottom: 'var(--space-4)' }}>🔒</div>
       <h1
         style={{
           fontSize: '22px',
@@ -67,7 +67,7 @@ function UpgradePrompt() {
           marginBottom: 'var(--space-3)',
         }}
       >
-        Document Screening — Starter Feature
+              Document Screening — Starter Feature
       </h1>
       <p
         style={{
@@ -94,8 +94,9 @@ function UpgradePrompt() {
           textDecoration: 'none',
         }}
       >
-        Upgrade to Starter →
-      </Link>
+                Upgrade to Starter →
+              </Link>
     </div>
   )
 }
+

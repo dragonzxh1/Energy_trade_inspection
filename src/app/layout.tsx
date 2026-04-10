@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import '@/styles/globals.css'
 
@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Energy Trade Inspection — Counterparty Verification',
+      default: 'Energy Trade Inspection — Counterparty Verification',
     template: '%s | Energy Trade Inspection',
   },
   description:
@@ -47,3 +47,4 @@ export default function RootLayout({
     </html>
   )
 }
+

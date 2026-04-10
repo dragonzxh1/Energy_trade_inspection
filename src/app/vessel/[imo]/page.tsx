@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getScoreTier, buildVesselJsonLd, buildVesselNarrative } from '@/lib/utils'
@@ -9,12 +9,11 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Vessel } from '@/lib/types'
-import { applyMigrations } from '@/lib/server/migrations'
 import { getEntityByKey, getPscSummary, getPscInspections } from '@/lib/server/repository'
 import type { PscSummary, PscInspection } from '@/lib/server/repository'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
-import { db } from '@/lib/server/db'
+import { getEntityWatchState } from '@/lib/server/watchlist'
 import WatchButton from '@/components/entity/WatchButton'
 import IntelligencePanel from '@/components/entity/IntelligencePanel'
 import AisPanel from '@/components/entity/AisPanel'
@@ -27,7 +26,6 @@ interface PageProps {
 export const revalidate = 86400
 
 async function getVessel(imo: string): Promise<Vessel | null> {
-  await applyMigrations()
   const entity = await getEntityByKey(imo)
   if (!entity || entity.type !== 'vessel') return null
   return entity as Vessel
@@ -44,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 }
 
-// ── Shared styles ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Shared styles 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const card: React.CSSProperties = {
   backgroundColor: 'var(--bg-surface)',
@@ -91,7 +89,7 @@ const emptyState: React.CSSProperties = {
   padding: 'var(--space-8) 0',
 }
 
-// ── Tab panel components ─────────────────────────────────────────────────────
+// 鈹€鈹€ Tab panel components 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   if (!value) return null
@@ -129,7 +127,7 @@ function VesselDetailsPanel({ vessel }: { vessel: Vessel }) {
               href={`/company/${vessel.ownerCompanySlug}`}
               style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}
             >
-              View profile ↗
+              View Profile
             </a>
           }
         />
@@ -247,7 +245,7 @@ function PscSummaryPanel({ summary }: { summary: PscSummary }) {
     if (result === 'detained')      return 'Detained'
     if (result === 'deficiency')    return 'Deficiency found'
     if (result === 'no_deficiency') return 'No deficiency'
-    return '—'
+    return '-'
   }
 
   return (
@@ -257,7 +255,7 @@ function PscSummaryPanel({ summary }: { summary: PscSummary }) {
         {[
           { label: 'Inspections', value: summary.totalInspections },
           { label: 'Detentions',  value: summary.detentions },
-          { label: 'Deficiency rate', value: summary.totalInspections > 0 ? `${Math.round(summary.deficiencyRate * 100)}%` : '—' },
+          { label: 'Deficiency rate', value: summary.totalInspections > 0 ? `${Math.round(summary.deficiencyRate * 100)}%` : '-' },
         ].map(({ label, value }) => (
           <div key={label} style={{ textAlign: 'center', padding: 'var(--space-3)', backgroundColor: 'var(--bg-elevated)', borderRadius: '8px' }}>
             <p style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700 }}>{value}</p>
@@ -304,16 +302,16 @@ function PscInspectionsPanel({ inspections }: { inspections: PscInspection[] }) 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>
-                {ins.portName ?? ins.portLocode ?? 'Unknown port'} · {ins.authority}
+                  {ins.portName ?? ins.portLocode ?? 'Unknown port'} · {ins.authority}
               </p>
               <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>
                 {new Date(ins.inspectionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                {ins.deficiencyCount > 0 && ` · ${ins.deficiencyCount} deficienc${ins.deficiencyCount === 1 ? 'y' : 'ies'}`}
-                {ins.detentionDays && ` · Detained ${ins.detentionDays}d`}
+                  {ins.deficiencyCount > 0 && ` · ${ins.deficiencyCount} deficienc${ins.deficiencyCount === 1 ? 'y' : 'ies'}`}
+                  {ins.detentionDays && ` · Detained ${ins.detentionDays}d`}
               </p>
               {ins.deficiencies.length > 0 && (
                 <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic' }}>
-                  {ins.deficiencies.slice(0, 3).join(', ')}{ins.deficiencies.length > 3 ? '…' : ''}
+                  {ins.deficiencies.slice(0, 3).join(', ')}{ins.deficiencies.length > 3 ? '...' : ''}
                 </p>
               )}
             </div>
@@ -362,7 +360,7 @@ function SourcesPanel({ sources }: { sources: string[] }) {
                 rel="noopener noreferrer"
                 style={{ color: 'var(--accent-primary)', fontSize: '12px', textDecoration: 'none' }}
               >
-                View source ↗
+                View Source
               </a>
             )}
           </div>
@@ -376,7 +374,7 @@ function SourcesPanel({ sources }: { sources: string[] }) {
   )
 }
 
-// ── Quota exceeded ────────────────────────────────────────────────────────────
+// 鈹€鈹€ Quota exceeded 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function QuotaExceededPage({ resetDate }: { resetDate: string }) {
   const reset = new Date(resetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
@@ -385,7 +383,7 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
       <Header />
       <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-8) var(--space-4)' }}>
         <div style={{ maxWidth: '400px', textAlign: 'center' }}>
-          <p style={{ fontSize: '32px', marginBottom: 'var(--space-5)' }}>⚠</p>
+          <p style={{ fontSize: '32px', marginBottom: 'var(--space-5)' }}>!</p>
           <h2 style={{ color: 'var(--text-primary)', fontSize: '18px', fontWeight: 600, marginBottom: 'var(--space-3)' }}>
             Monthly query limit reached
           </h2>
@@ -414,7 +412,7 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
   )
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Page 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export default async function VesselPage({ params }: PageProps) {
   const [{ imo }, session] = await Promise.all([params, auth()])
@@ -440,13 +438,12 @@ export default async function VesselPage({ params }: PageProps) {
   let isWatching = false
   const [watchlistRows, pscSummary, pscInspections] = await Promise.all([
     session?.user && (plan === 'professional' || plan === 'enterprise')
-      ? db.query(`SELECT id FROM watchlist WHERE user_id = $1 AND entity_id = $2`, [session.user.id, vessel.id])
-          .then((r) => r.rows)
-      : Promise.resolve([]),
+      ? getEntityWatchState(session.user.id, vessel.id)
+      : Promise.resolve(false),
     getPscSummary(vessel.imo),
     f3Unlocked ? getPscInspections(vessel.imo, 10) : Promise.resolve([]),
   ])
-  isWatching = watchlistRows.length > 0
+  isWatching = watchlistRows
 
   const jsonLd = buildVesselJsonLd({
     name: vessel.name,
@@ -578,7 +575,7 @@ export default async function VesselPage({ params }: PageProps) {
                   textAlign: 'center',
                 }}
               >
-                MarineTraffic ↗
+                MarineTraffic
               </a>
               <a
                 href={`https://www.vesselfinder.com/vessels?name=${encodeURIComponent(vessel.name)}&imo=${vessel.imo}`}
@@ -596,7 +593,7 @@ export default async function VesselPage({ params }: PageProps) {
                   textAlign: 'center',
                 }}
               >
-                VesselFinder ↗
+                VesselFinder
               </a>
             </div>
           </aside>
@@ -636,3 +633,7 @@ export default async function VesselPage({ params }: PageProps) {
     </>
   )
 }
+
+
+
+

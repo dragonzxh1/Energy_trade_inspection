@@ -1,6 +1,5 @@
-import type { MetadataRoute } from 'next'
+﻿import type { MetadataRoute } from 'next'
 import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
 
@@ -37,7 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic entity pages from DB
   let entityPages: MetadataRoute.Sitemap = []
   try {
-    await applyMigrations()
     const { rows } = await db.query<EntityRow>(`
       SELECT entity_type, slug, imo, updated_at
       FROM entities
@@ -60,8 +58,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     })
   } catch {
-    // DB unavailable at build time — return static only
+    // If the database is unavailable at build time, return static entries only.
   }
 
   return [...staticPages, ...entityPages]
 }
+
+

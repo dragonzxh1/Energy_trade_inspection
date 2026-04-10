@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GET /api/cron/cleanup
  *
  * Deletes screening_sessions and trade_sessions older than 90 days.
@@ -6,7 +6,7 @@
  * Auth: Authorization: Bearer <ADMIN_SECRET>
  *
  * Intended to be called by a scheduler (Vercel Cron, GitHub Actions, etc.)
- * on a daily or weekly schedule. Safe to call repeatedly — idempotent.
+ * on a daily or weekly schedule. Safe to call repeatedly because it is idempotent.
  *
  * Vercel cron.json example:
  *   { "crons": [{ "path": "/api/cron/cleanup", "schedule": "0 3 * * 0" }] }
@@ -14,7 +14,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/server/db'
-import { applyMigrations } from '@/lib/server/migrations'
 
 export const runtime = 'nodejs'
 
@@ -31,8 +30,6 @@ export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
   }
-
-  await applyMigrations()
 
   const cutoff = new Date(Date.now() - TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
 
@@ -61,3 +58,6 @@ export async function GET(req: NextRequest) {
     deleted,
   })
 }
+
+
+

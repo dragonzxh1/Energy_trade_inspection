@@ -1,14 +1,12 @@
-/**
- * ACRA 新加坡公司注册局数据
- * 来源：data.gov.sg 开放数据 API（基于 CKAN）
- * 数据集：Entities with Unique Entity Number（UEN 数据集）
- * 更新频率：每月
- * 许可：新加坡开放数据许可，允许商业使用
+﻿/**
+ * ACRA 鏂板姞鍧″叕鍙告敞鍐屽眬鏁版嵁
+ * 鏉ユ簮锛歞ata.gov.sg 寮€鏀炬暟鎹?API锛堝熀浜?CKAN锛? * 鏁版嵁闆嗭細Entities with Unique Entity Number锛圲EN 鏁版嵁闆嗭級
+ * 鏇存柊棰戠巼锛氭瘡鏈? * 璁稿彲锛氭柊鍔犲潯寮€鏀炬暟鎹鍙紝鍏佽鍟嗕笟浣跨敤
  */
 
 const DATA_GOV_SG = 'https://data.gov.sg/api/action/datastore_search'
 
-// UEN 实体数据集资源 ID（包含所有注册实体）
+// UEN 瀹炰綋鏁版嵁闆嗚祫婧?ID锛堝寘鍚墍鏈夋敞鍐屽疄浣擄級
 const ACRA_RESOURCE_ID = 'd_3f960c10fed6145404ca7b821f263b87'
 
 export interface ACRAEntity {
@@ -37,9 +35,7 @@ interface DataGovResponse {
 }
 
 /**
- * 按公司名称搜索 ACRA 数据集
- * 返回最多 10 条匹配结果
- */
+ * 鎸夊叕鍙稿悕绉版悳绱?ACRA 鏁版嵁闆? * 杩斿洖鏈€澶?10 鏉″尮閰嶇粨鏋? */
 export async function searchACRA(query: string, limit = 10): Promise<ACRAEntity[]> {
   if (!query || query.trim().length < 2) return []
 
@@ -55,7 +51,7 @@ export async function searchACRA(query: string, limit = 10): Promise<ACRAEntity[
         'User-Agent': 'EnergyTradeInspection/1.0',
       },
       signal: AbortSignal.timeout(5000),
-      // 结果缓存 5 分钟（data.gov.sg 支持 ETag）
+      // Cache upstream results for 5 minutes.
       next: { revalidate: 300 },
     } as RequestInit)
 
@@ -64,7 +60,7 @@ export async function searchACRA(query: string, limit = 10): Promise<ACRAEntity[
     const data: DataGovResponse = await response.json()
     if (!data.success) return []
 
-    // 只返回在营企业
+    // Only keep live businesses.
     return data.result.records.filter(
       (r) => r.uen_status?.toLowerCase() === 'live'
     )
@@ -74,7 +70,7 @@ export async function searchACRA(query: string, limit = 10): Promise<ACRAEntity[
 }
 
 /**
- * 按 UEN 精确查询单个实体
+ * 鎸?UEN 绮剧‘鏌ヨ鍗曚釜瀹炰綋
  */
 export async function getACRAByUEN(uen: string): Promise<ACRAEntity | null> {
   if (!uen) return null
@@ -98,7 +94,7 @@ export async function getACRAByUEN(uen: string): Promise<ACRAEntity | null> {
     const data: DataGovResponse = await response.json()
     if (!data.success) return null
 
-    // 精确匹配 UEN
+    // 绮剧‘鍖归厤 UEN
     return data.result.records.find(
       (r) => r.uen.toLowerCase() === uen.toLowerCase()
     ) ?? null
@@ -108,10 +104,10 @@ export async function getACRAByUEN(uen: string): Promise<ACRAEntity | null> {
 }
 
 /**
- * 将 ACRA 实体类型映射到本系统的 EntityType
+ * 灏?ACRA 瀹炰綋绫诲瀷鏄犲皠鍒版湰绯荤粺鐨?EntityType
  */
 export function mapACRAEntityType(acraType: string): 'company' | 'terminal' {
-  // 新加坡 ACRA 的实体类型全部归类为 company
+  // 鏂板姞鍧?ACRA 鐨勫疄浣撶被鍨嬪叏閮ㄥ綊绫讳负 company
   return 'company'
 }
 
@@ -149,7 +145,7 @@ export function computeACRAScore(
 }
 
 /**
- * 将 ACRA 结果转换为 SearchResult 格式
+ * 灏?ACRA 缁撴灉杞崲涓?SearchResult 鏍煎紡
  */
 export function acraToSearchResult(entity: ACRAEntity) {
   const { authenticityScore } = computeACRAScore(entity)  // no sanctions in search path
@@ -166,3 +162,4 @@ export function acraToSearchResult(entity: ACRAEntity) {
     slug: entity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
   }
 }
+

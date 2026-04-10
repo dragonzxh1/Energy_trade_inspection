@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import CheckoutButton from '@/components/pricing/CheckoutButton'
@@ -100,7 +100,7 @@ export default function PricingPage() {
             name="Starter"
             price="$99"
             period="mo"
-            annualNote="$990/year — save 2 months"
+      annualNote="$990/year — save 2 months"
             description="100 queries/month. Full profiles for independent traders and small teams."
             features={ALL_FEATURES.map((label, i) => ({ label, included: i < 8 }))}
           >
@@ -114,7 +114,7 @@ export default function PricingPage() {
             name="Professional"
             price="$299"
             period="mo"
-            annualNote="$2,988/year — save 2 months"
+      annualNote="$2,988/year — save 2 months"
             description="Unlimited queries, AIS data, legal records, and contract analysis for compliance teams."
             highlighted
             badge="Most popular"
@@ -161,7 +161,7 @@ export default function PricingPage() {
           {[
             {
               q: 'What sanction lists do you screen against?',
-              a: 'All plans screen against OFAC (SDN + non-SDN), EU Financial Sanctions Framework, and UN consolidated lists — in a single query.',
+    a: 'All plans screen against OFAC (SDN + non-SDN), EU Financial Sanctions Framework, and UN consolidated lists — in a single query.',
             },
             {
               q: 'Is there a free trial?',
@@ -183,7 +183,7 @@ export default function PricingPage() {
   )
 }
 
-// ── Plan card shell ───────────────────────────────────────────────────────────
+// 鈹€鈹€ Plan card shell 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function PlanCard({
   name, price, period, annualNote, description, highlighted, badge, features, children,
@@ -252,3 +252,4 @@ function PlanCard({
     </div>
   )
 }
+
