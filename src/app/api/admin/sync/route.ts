@@ -1,29 +1,12 @@
-/**
- * POST /api/admin/sync  — 触发数据同步
- * GET  /api/admin/sync  — 查询同步状态与记录数
- *
- * body.source 可选值：
- *   'opensanctions' （默认）— 下载 OpenSanctions CSV，覆盖 OFAC/EU/UN 等全部来源
- *   'ofac'          — 仅同步 OFAC XML（遗留，OpenSanctions 已包含 OFAC）
- *   'all'           — 触发 OFAC XML 同步
- *
- * 鉴权（二选一）：
- *   1. Authorization: Bearer <ADMIN_SECRET>（推荐用于 cron）
- *   2. 已登录用户 email 在 ADMIN_EMAILS 环境变量列表中
- */
-
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { auth } from '@/auth'
-import { applyMigrations } from '@/lib/server/migrations'
 import { db } from '@/lib/server/db'
-import { runSync, getSyncStatus, type SyncSource } from '@/lib/server/sync'
+import { runSync, runFraudSourceSync, getSyncStatus, type SyncSource } from '@/lib/server/sync'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
-
-// ─── 鉴权 ─────────────────────────────────────────────────────────────────────
 
 function isAuthorized(req: NextRequest, userEmail?: string | null): boolean {
   const adminSecret = process.env.ADMIN_SECRET ?? process.env.SYNC_SECRET
@@ -32,23 +15,19 @@ function isAuthorized(req: NextRequest, userEmail?: string | null): boolean {
     if (authHeader === `Bearer ${adminSecret}`) return true
   }
 
-  // 无 secret 时允许 localhost
   if (!adminSecret) {
     const host = req.headers.get('host') ?? ''
     if (host.startsWith('localhost') || host.startsWith('127.')) return true
   }
 
-  // 管理员邮箱
   const adminEmails = (process.env.ADMIN_EMAILS ?? '')
     .split(',')
-    .map((e) => e.trim())
+    .map((email) => email.trim())
     .filter(Boolean)
-  if (userEmail && adminEmails.includes(userEmail)) return true
 
+  if (userEmail && adminEmails.includes(userEmail)) return true
   return false
 }
-
-// ─── GET：查询状态 ────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -57,33 +36,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    await applyMigrations()
-
-    const [syncStatus, countRows] = await Promise.all([
+    const [syncStatus, countRows, recentLogs, fraudCountRows] = await Promise.all([
       getSyncStatus(),
-      db.query<{ n: string }>(`SELECT COUNT(*)::text AS n FROM sanctions_entries`),
+      db.query<{ n: string }>('SELECT COUNT(*)::text AS n FROM sanctions_entries'),
+      db.query(`
+        SELECT source, synced_at, record_count, status, error_message, duration_ms, version
+        FROM sanctions_sync_log
+        ORDER BY synced_at DESC
+        LIMIT 10
+      `),
+      db.query<{ n: string }>('SELECT COUNT(*)::text AS n FROM fraud_alerts').catch(() => ({ rows: [{ n: '0' }] })),
     ])
-
-    // 最近 10 条同步日志（含 opensanctions）
-    const { rows: recentLogs } = await db.query(`
-      SELECT source, synced_at, record_count, status, error_message, duration_ms, version
-      FROM sanctions_sync_log
-      ORDER BY synced_at DESC
-      LIMIT 10
-    `)
 
     return NextResponse.json({
       entries: parseInt(countRows.rows[0]?.n ?? '0', 10),
+      fraud_entries: parseInt(fraudCountRows.rows[0]?.n ?? '0', 10),
       sync_status: syncStatus,
-      recent_logs: recentLogs,
+      recent_logs: recentLogs.rows,
     })
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-
-// ─── POST：触发同步 ───────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -91,22 +66,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  let source: string = 'opensanctions'
+  let source = 'opensanctions'
   let force = false
   try {
     const body = await req.json()
-    if (body.source) source = body.source
+    if (body.source) source = String(body.source)
     if (body.force) force = true
   } catch {
-    // 无 body 或解析失败，使用默认值
+    // default body handling
   }
 
-  await applyMigrations()
-
-  // OpenSanctions 同步：后台运行（文件下载耗时较长）
   if (source === 'opensanctions') {
     const scriptPath = path.join(process.cwd(), 'scripts', 'sync-opensanctions.mjs')
-
     const child = spawn(process.execPath, [scriptPath], {
       detached: true,
       stdio: 'ignore',
@@ -122,21 +93,48 @@ export async function POST(req: NextRequest) {
       success: true,
       source: 'opensanctions',
       pid: child.pid,
-      message: '同步已在后台启动（约 2-5 分钟）。通过 GET /api/admin/sync 查看最新日志。',
+      message: 'OpenSanctions sync started in the background. Check GET /api/admin/sync for progress.',
     })
   }
 
-  // 遗留：OFAC XML 同步（同步执行）
+  // Fraud alert sync: POST { source: 'fraud' } or { source: 'fraud:storagespoofing' } etc.
+  if (source === 'fraud') {
+    try {
+      const results = await runSync('fraud')
+      const hasError = results.some((r) => !r.success)
+      return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
+  if (source.startsWith('fraud:')) {
+    const fraudSource = source.slice('fraud:'.length)
+    try {
+      const result = await runFraudSourceSync(fraudSource)
+      return NextResponse.json(
+        { results: [result] },
+        { status: result.success ? 200 : 207 }
+      )
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   const legacySource = (['ofac', 'all'] as SyncSource[]).includes(source as SyncSource)
     ? (source as SyncSource)
     : 'all'
 
   try {
     const results = await runSync(legacySource)
-    const hasError = results.some((r) => !r.success)
+    const hasError = results.some((result) => !result.success)
     return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: msg }, { status: 500 })
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
+
+

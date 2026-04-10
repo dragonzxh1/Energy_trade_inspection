@@ -1,11 +1,12 @@
 /**
- * 数据同步编排器
- * 统一管理所有外部数据源的同步任务
+ * Data sync orchestrator.
+ * Manages all external data source sync tasks.
  */
 
 import { syncOFAC } from './ofac'
+import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-alerts'
 
-export type SyncSource = 'ofac' | 'all'
+export type SyncSource = 'ofac' | 'fraud' | 'all'
 
 export interface SyncResult {
   source: string
@@ -38,24 +39,58 @@ export async function runSync(source: SyncSource): Promise<SyncResult[]> {
     }
   }
 
+  if (source === 'fraud' || source === 'all') {
+    const fraudResults = await syncFraudAlerts()
+    for (const r of fraudResults) {
+      results.push({
+        source: `fraud:${r.source}`,
+        success: !r.error,
+        count: r.count,
+        error: r.error,
+        durationMs: r.durationMs,
+      })
+    }
+  }
+
   return results
 }
 
-/** 查询上次各数据源的同步状态 */
+/** Sync a single fraud alert source by key (e.g. 'storagespoofing'). */
+export async function runFraudSourceSync(fraudSource: string): Promise<SyncResult> {
+  const r = await syncFraudSource(fraudSource)
+  return {
+    source: `fraud:${r.source}`,
+    success: !r.error,
+    count: r.count,
+    error: r.error,
+    durationMs: r.durationMs,
+  }
+}
+
+/** Query last sync status for all data sources. */
 export async function getSyncStatus() {
   const { db } = await import('@/lib/server/db')
 
-  const { rows } = await db.query(`
-    SELECT DISTINCT ON (source)
-      source,
-      synced_at,
-      status,
-      record_count,
-      error_message,
-      duration_ms
-    FROM sanctions_sync_log
-    ORDER BY source, synced_at DESC
-  `)
+  const [{ rows: sanctionRows }, fraudRows] = await Promise.all([
+    db.query(`
+      SELECT DISTINCT ON (source)
+        source,
+        synced_at,
+        status,
+        record_count,
+        error_message,
+        duration_ms
+      FROM sanctions_sync_log
+      ORDER BY source, synced_at DESC
+    `),
+    getFraudSyncStatus(),
+  ])
 
-  return rows
+  // Tag fraud rows with a 'fraud:' prefix so consumers can distinguish them
+  const taggedFraudRows = fraudRows.map((r: Record<string, unknown>) => ({
+    ...r,
+    source: `fraud:${r.source}`,
+  }))
+
+  return [...sanctionRows, ...taggedFraudRows]
 }

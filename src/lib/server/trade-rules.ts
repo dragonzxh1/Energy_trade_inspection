@@ -1,21 +1,21 @@
-/**
+﻿/**
  * Deterministic trade risk rule engine.
  *
  * Eleven standard flags (Phase 1 + Phase 2):
- *   NO_REGISTRY_MATCH          — seller not found in any registry
- *   SANCTION_EXPOSURE          — seller or vessel on trade sanctions list
- *   LIMITED_BUSINESS_FOOTPRINT — seller has negligible verifiable presence
- *   GEO_MISMATCH               — high-risk jurisdiction in seller / vessel / port
- *   NO_RECENT_ACTIVITY         — vessel AIS dark or stale > 72 h
- *   INCONSISTENT_TRADE_STORY   — physical impossibility or AIS contradiction
- *   NEWLY_INCORPORATED_SELLER  — seller < 24 months old trading high-value commodity
- *   VESSEL_FLAG_ROUTE_MISMATCH — vessel under known evasion flag state
- *   MULTIPLE_OPERATOR_CHANGES  — vessel changed operator/owner > 2× in 18 months
- *   VESSEL_COMPLIANCE_RISK     — PSC detentions or chronic deficiency rate > 30%
- *   OFFSHORE_HOLDING_STRUCTURE — GLEIF ultimate parent in known offshore jurisdiction
+ *   NO_REGISTRY_MATCH          - seller not found in any registry
+ *   SANCTION_EXPOSURE          - seller or vessel on a trade sanctions list
+ *   LIMITED_BUSINESS_FOOTPRINT - seller has negligible verifiable presence
+ *   GEO_MISMATCH               - high-risk jurisdiction in seller, vessel, or port
+ *   NO_RECENT_ACTIVITY         - vessel AIS dark or stale for more than 72h
+ *   INCONSISTENT_TRADE_STORY   - physical impossibility or AIS contradiction
+ *   NEWLY_INCORPORATED_SELLER  - seller is under 24 months old and trading high-value commodity
+ *   VESSEL_FLAG_ROUTE_MISMATCH - vessel under a known evasion flag state
+ *   MULTIPLE_OPERATOR_CHANGES  - vessel changed operator/owner more than twice in 18 months
+ *   VESSEL_COMPLIANCE_RISK     - PSC detentions or chronic deficiency rate above 30%
+ *   OFFSHORE_HOLDING_STRUCTURE - GLEIF ultimate parent in a known offshore jurisdiction
  *
  * Each flag includes: code, severity, target, reason, evidence[].
- * Rules are deterministic: same input → same flags, always.
+ * Rules are deterministic: the same input always produces the same flags.
  */
 
 import type { RiskLevel, BeneficialOwner } from '@/lib/types'
@@ -23,7 +23,7 @@ import type { SearchResult } from '@/lib/types'
 import type { VesselAisData } from '@/lib/ais-types'
 import type { DraftRiskResult } from '@/lib/server/repository'
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Types 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export type FlagCode =
   | 'NO_REGISTRY_MATCH'
@@ -40,6 +40,7 @@ export type FlagCode =
   | 'PSC_OFFSHORE_CONTROL'
   | 'SPARSE_REGISTRY_DATA'
   | 'OFFSHORE_LOW_SUBSTANCE'
+  | 'KNOWN_FRAUD_ALERT'
 
 export interface TradeFlag {
   code: FlagCode
@@ -74,7 +75,7 @@ export interface TradeRuleInput {
   vesselOperatorChanges?: number | null
   /** PSC detention count across all recorded inspections. Null if no data. */
   vesselPscDetentions?: number | null
-  /** PSC deficiency rate (0–1) across all recorded inspections. Null if no data. */
+/** PSC deficiency rate (0-1) across all recorded inspections. Null if no data. */
   vesselPscDeficiencyRate?: number | null
 
   // Port
@@ -93,12 +94,12 @@ export interface TradeRuleInput {
 
   /**
    * Registry source derived from the seller entity id prefix.
-   * 'local_db' — found in local entity database (UUID id)
-   * 'acra'     — from Singapore ACRA (id starts with 'acra:')
-   * 'ch'       — from UK Companies House (id starts with 'ch:')
-   * 'zefix'    — from Swiss Zefix registry (id starts with 'zefix:')
-   * 'gleif'    — found only in GLEIF LEI register (id starts with 'gleif:')
-   * null       — not found in any registry
+ * 'local_db' - found in the local entity database (UUID id)
+ * 'acra'     - from Singapore ACRA (`id` starts with `acra:`)
+ * 'ch'       - from UK Companies House (`id` starts with `ch:`)
+ * 'zefix'    - from Swiss Zefix registry (`id` starts with `zefix:`)
+ * 'gleif'    - found only in the GLEIF LEI register (`id` starts with `gleif:`)
+ * null       - not found in any registry
    */
   sellerRegistrySource?: 'local_db' | 'acra' | 'ch' | 'zefix' | 'gleif' | 'oc' | null
 
@@ -108,9 +109,19 @@ export interface TradeRuleInput {
    * where AIS data is not fetched to keep latency acceptable.
    */
   skipAisRules?: boolean
+
+  /**
+   * Industry fraud blacklist alerts for the seller, from checkFraudAlerts().
+   * Each alert includes source_name and source_url for traceability.
+   */
+  sellerFraudAlerts?: Array<{
+    source_name: string
+    source_url: string
+    fraud_type: string | null
+  }>
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 const HIGH_RISK_CC = new Set([
   'ir', 'ru', 've', 'cu', 'kp', 'sy', 'sd', 'by', 'mm', 'ye',
@@ -145,12 +156,12 @@ const RISK_ORDER: Record<RiskLevel, number> = {
   critical: 0, high: 1, medium: 2, low: 3,
 }
 
-// ── Rule engine ───────────────────────────────────────────────────────────────
+// 鈹€鈹€ Rule engine 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
   const flags: TradeFlag[] = []
 
-  // ── Rule 1: SANCTION_EXPOSURE ──────────────────────────────────────────────
+  // 鈹€鈹€ Rule 1: SANCTION_EXPOSURE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (input.sellerSanctioned) {
     flags.push({
       code: 'SANCTION_EXPOSURE',
@@ -178,7 +189,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 2: NO_REGISTRY_MATCH ──────────────────────────────────────────────
+  // 鈹€鈹€ Rule 2: NO_REGISTRY_MATCH 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (!input.sellerDbMatch) {
     flags.push({
       code: 'NO_REGISTRY_MATCH',
@@ -189,7 +200,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 3: LIMITED_BUSINESS_FOOTPRINT ────────────────────────────────────
+  // 鈹€鈹€ Rule 3: LIMITED_BUSINESS_FOOTPRINT 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (
     input.sellerDbMatch &&
     input.sellerDbMatch.authenticityScore < 40 &&
@@ -199,12 +210,12 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
       code: 'LIMITED_BUSINESS_FOOTPRINT',
       severity: 'high',
       target: 'seller',
-      reason: `Seller "${input.sellerName}" has a very low authenticity score (${input.sellerDbMatch.authenticityScore}/100) with no verified registration number — consistent with shell company patterns.`,
+      reason: `Seller "${input.sellerName}" has a very low authenticity score (${input.sellerDbMatch.authenticityScore}/100) with no verified registration number - consistent with shell company patterns.`,
       evidence: ['Authenticity Score Engine', 'Company Registry Check'],
     })
   }
 
-  // ── Rule 4: GEO_MISMATCH ──────────────────────────────────────────────────
+  // 鈹€鈹€ Rule 4: GEO_MISMATCH 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   const sellerCC = input.sellerDbMatch?.country ?? ''
   const vesselCC = input.vesselDbMatch?.country ?? input.vesselDbMatch?.jurisdictionFlag ?? ''
   const portCC   = input.loadingPortCountry ?? ''
@@ -239,9 +250,9 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 5: NO_RECENT_ACTIVITY ────────────────────────────────────────────
+  // 鈹€鈹€ Rule 5: NO_RECENT_ACTIVITY 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   if (input.skipAisRules) {
-    // AIS rules suppressed — caller did not fetch AIS (e.g. document screening flow)
+  // AIS rules are suppressed when the caller did not fetch AIS, such as in document screening.
   } else if (!input.vesselAis || !input.vesselAis.position) {
     flags.push({
       code: 'NO_RECENT_ACTIVITY',
@@ -257,13 +268,13 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         code: 'NO_RECENT_ACTIVITY',
         severity: 'medium',
         target: 'vessel',
-        reason: `Vessel "${input.vesselName}" AIS signal last received ${Math.round(ageH)} hours ago — vessel tracking is stale.`,
+      reason: `Vessel "${input.vesselName}" AIS signal last received ${Math.round(ageH)} hours ago - vessel tracking is stale.`,
         evidence: [`Last AIS update: ${input.vesselAis.position.lastUpdate}`],
       })
     }
   }
 
-  // ── Rule 6: INCONSISTENT_TRADE_STORY ──────────────────────────────────────
+  // 鈹€鈹€ Rule 6: INCONSISTENT_TRADE_STORY 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
   // 6a: Loading point is STS anchorage, not a terminal (no AIS needed)
   if (input.draftRisk?.isStsPort) {
@@ -277,14 +288,14 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // 6b: Vessel physically cannot berth — draft exceeds port maximum
+  // 6b: Vessel physically cannot berth because its draft exceeds the port maximum.
   if (input.draftRisk && !input.draftRisk.isStsPort && input.draftRisk.canBerth === false) {
     flags.push({
       code: 'INCONSISTENT_TRADE_STORY',
       severity: 'high',
       target: 'trade',
       reason: input.draftRisk.warning ??
-        `Vessel cannot physically berth at the stated loading port — draft exceeds port maximum.`,
+        `Vessel cannot physically berth at the stated loading port - draft exceeds port maximum.`,
       evidence: [
         `Vessel draft: ${input.draftRisk.vesselDraftM ?? 'unknown'}m`,
         `Port max draft: ${input.draftRisk.portMaxDraftM ?? 'unknown'}m`,
@@ -336,7 +347,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
           return Math.abs(startT - tradeTime) < 14 * 24 * 3_600_000 ||
                  (startT <= tradeTime && endT >= tradeTime)
         })
-      : input.vesselAis.darkPeriods  // no date provided → report all dark periods
+      : input.vesselAis.darkPeriods  // no date provided, so report all dark periods
 
     if (nearDark.length > 0) {
       const longest = nearDark.reduce((a, b) =>
@@ -348,14 +359,14 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         target: 'vessel',
         reason: `Vessel has ${nearDark.length} AIS dark period(s) near the stated trade date. Longest gap: ${longest.durationHours ? Math.round(longest.durationHours) + 'h' : 'ongoing'} at ${longest.location}.`,
         evidence: nearDark.slice(0, 3).map(
-          (dp) => `Dark: ${dp.start} → ${dp.end ?? 'ongoing'} (${dp.location})`
+      (dp) => `Dark: ${dp.start} -> ${dp.end ?? 'ongoing'} (${dp.location})`
         ),
       })
     }
   }
 
-  // ── Rule 7: NEWLY_INCORPORATED_SELLER ─────────────────────────────────────
-  // Young company (< 24 months) handling high-value bulk energy — elevated risk.
+  // 鈹€鈹€ Rule 7: NEWLY_INCORPORATED_SELLER 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // Young company (< 24 months) handling high-value bulk energy is elevated risk.
   if (
     input.sellerIncorporationDate &&
     input.commodity &&
@@ -378,7 +389,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     }
   }
 
-  // ── Rule 8: VESSEL_FLAG_ROUTE_MISMATCH ────────────────────────────────────
+  // 鈹€鈹€ Rule 8: VESSEL_FLAG_ROUTE_MISMATCH 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // Vessel registered under a known sanctions-evasion flag state.
   if (input.loadingPortLocode) {
     const flagCC = (
@@ -395,7 +406,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         code: 'VESSEL_FLAG_ROUTE_MISMATCH',
         severity: 'medium',
         target: 'vessel',
-        reason: `Vessel "${input.vesselName}" is registered under ${FLAG_NAMES[flagCC] ?? flagCC.toUpperCase()} — a flag state associated with sanctions-evasion routing. Use of such flags for energy cargo warrants enhanced scrutiny.`,
+      reason: `Vessel "${input.vesselName}" is registered under ${FLAG_NAMES[flagCC] ?? flagCC.toUpperCase()} - a flag state associated with sanctions-evasion routing. Use of such flags for energy cargo warrants enhanced scrutiny.`,
         evidence: [
           `Vessel flag: ${flagCC.toUpperCase()} (${FLAG_NAMES[flagCC] ?? 'unknown'})`,
           'Known evasion flag states: KM, PW, TG, SL, MD',
@@ -405,8 +416,8 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     }
   }
 
-  // ── Rule 9: MULTIPLE_OPERATOR_CHANGES ─────────────────────────────────────
-  // Rapid ownership/operator turnover — common obfuscation tactic.
+  // 鈹€鈹€ Rule 9: MULTIPLE_OPERATOR_CHANGES 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // Rapid ownership/operator turnover is a common obfuscation tactic.
   if (input.vesselOperatorChanges != null && input.vesselOperatorChanges > 2) {
     flags.push({
       code: 'MULTIPLE_OPERATOR_CHANGES',
@@ -421,8 +432,8 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 10: VESSEL_COMPLIANCE_RISK ───────────────────────────────────────
-  // PSC detention or chronic deficiency — direct evidence of non-compliance.
+  // 鈹€鈹€ Rule 10: VESSEL_COMPLIANCE_RISK 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // PSC detention or chronic deficiency is direct evidence of non-compliance.
   if (input.vesselPscDetentions != null && input.vesselPscDetentions > 0) {
     const defPct = input.vesselPscDeficiencyRate != null
       ? `${Math.round(input.vesselPscDeficiencyRate * 100)}%`
@@ -431,7 +442,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
       code: 'VESSEL_COMPLIANCE_RISK',
       severity: 'high',
       target: 'vessel',
-      reason: `Vessel "${input.vesselName}" has been detained ${input.vesselPscDetentions} time(s) during Port State Control inspections — indicating serious compliance or seaworthiness deficiencies.`,
+      reason: `Vessel "${input.vesselName}" has been detained ${input.vesselPscDetentions} time(s) during Port State Control inspections - indicating serious compliance or seaworthiness deficiencies.`,
       evidence: [
         `PSC detentions: ${input.vesselPscDetentions}`,
         `Deficiency rate: ${defPct}`,
@@ -447,7 +458,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
       code: 'VESSEL_COMPLIANCE_RISK',
       severity: 'medium',
       target: 'vessel',
-      reason: `Vessel "${input.vesselName}" has a PSC deficiency rate of ${Math.round(input.vesselPscDeficiencyRate * 100)}% (threshold: 30%) — indicating recurring maintenance or operational deficiencies across inspections.`,
+      reason: `Vessel "${input.vesselName}" has a PSC deficiency rate of ${Math.round(input.vesselPscDeficiencyRate * 100)}% (threshold: 30%) - indicating recurring maintenance or operational deficiencies across inspections.`,
       evidence: [
         `Deficiency rate: ${Math.round(input.vesselPscDeficiencyRate * 100)}%`,
         'Threshold: > 30%',
@@ -456,7 +467,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 11: OFFSHORE_HOLDING_STRUCTURE ───────────────────────────────────
+  // 鈹€鈹€ Rule 11: OFFSHORE_HOLDING_STRUCTURE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // GLEIF Level-2 ultimate parent registered in a known offshore jurisdiction.
   if (
     input.sellerUltimateParentJurisdiction &&
@@ -467,7 +478,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
       code: 'OFFSHORE_HOLDING_STRUCTURE',
       severity: 'high',
       target: 'seller',
-      reason: `Seller "${input.sellerName}" is ultimately owned through ${OFFSHORE_NAMES[cc] ?? cc} — a jurisdiction commonly used for opaque holding structures that can obscure beneficial ownership.`,
+      reason: `Seller "${input.sellerName}" is ultimately owned through ${OFFSHORE_NAMES[cc] ?? cc} - a jurisdiction commonly used for opaque holding structures that can obscure beneficial ownership.`,
       evidence: [
         `Ultimate parent jurisdiction: ${cc} (${OFFSHORE_NAMES[cc] ?? 'known offshore jurisdiction'})`,
         'Source: GLEIF Level-2 Relationship Data',
@@ -476,7 +487,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 12: PSC_OFFSHORE_CONTROL ─────────────────────────────────────────
+  // 鈹€鈹€ Rule 12: PSC_OFFSHORE_CONTROL 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // UK Companies House PSC with country of residence/address in known offshore set.
   if (input.sellerBeneficialOwners && input.sellerBeneficialOwners.length > 0) {
     for (const psc of input.sellerBeneficialOwners) {
@@ -497,7 +508,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
           code: 'PSC_OFFSHORE_CONTROL',
           severity: 'high',
           target: 'seller',
-          reason: `PSC "${psc.name}" — ${controlType} — resident/incorporated in ${countryLabel}. Beneficial owner in an offshore jurisdiction is a key AML indicator.`,
+      reason: `PSC "${psc.name}" - ${controlType} - resident/incorporated in ${countryLabel}. Beneficial owner in an offshore jurisdiction is a key AML indicator.`,
           evidence: [
             `PSC: ${psc.name} (${psc.kind})`,
             `Country: ${countryLabel} (${offshoreCC})`,
@@ -510,15 +521,15 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     }
   }
 
-  // ── Rule 13: SPARSE_REGISTRY_DATA ─────────────────────────────────────────
-  // Seller found only in GLEIF LEI register — no direct company registry match.
+  // 鈹€鈹€ Rule 13: SPARSE_REGISTRY_DATA 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+  // Seller found only in the GLEIF LEI register, with no direct company registry match.
   if (input.sellerRegistrySource === 'gleif') {
     const sellerJurCC = (input.sellerDbMatch?.country ?? '').toUpperCase().slice(0, 2)
     flags.push({
       code: 'SPARSE_REGISTRY_DATA',
       severity: 'medium',
       target: 'seller',
-      reason: `Seller "${input.sellerName}" was found only in the GLEIF LEI register — no direct company registry data is available${sellerJurCC ? ` for jurisdiction ${sellerJurCC}` : ''}. Data completeness is limited.`,
+      reason: `Seller "${input.sellerName}" was found only in the GLEIF LEI register - no direct company registry data is available${sellerJurCC ? ` for jurisdiction ${sellerJurCC}` : ''}. Data completeness is limited.`,
       evidence: [
         'GLEIF LEI Registry (fallback)',
         'No match in: Local DB, Singapore ACRA, UK Companies House, Swiss Zefix',
@@ -527,7 +538,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     })
   }
 
-  // ── Rule 14: OFFSHORE_LOW_SUBSTANCE ───────────────────────────────────────
+  // 鈹€鈹€ Rule 14: OFFSHORE_LOW_SUBSTANCE 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
   // Seller registered in a Tier-C offshore jurisdiction with no direct registry record.
   {
     const sellerJurCC = (
@@ -546,7 +557,7 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
         code: 'OFFSHORE_LOW_SUBSTANCE',
         severity: 'high',
         target: 'seller',
-        reason: `Seller "${input.sellerName}" is registered in ${jurName} with no verifiable company registry record — consistent with low-substance offshore entity patterns.`,
+      reason: `Seller "${input.sellerName}" is registered in ${jurName} with no verifiable company registry record - consistent with low-substance offshore entity patterns.`,
         evidence: [
           `Jurisdiction: ${jurName} (${sellerJurCC})`,
           isGleifOnly ? 'Registry source: GLEIF LEI only (no direct registry)' : 'No registry match found',
@@ -556,10 +567,28 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     }
   }
 
+  // ── Rule 15: KNOWN_FRAUD_ALERT ─────────────────────────────────────────────────
+  // Seller matches an entry on an industry fraud blacklist (storage spoofing, fuel scam, etc.)
+  if (input.sellerFraudAlerts && input.sellerFraudAlerts.length > 0) {
+    const fraudTypes = [...new Set(
+      input.sellerFraudAlerts.map((a) => a.fraud_type).filter(Boolean)
+    )].join(', ')
+    const sourceNames = [...new Set(input.sellerFraudAlerts.map((a) => a.source_name))]
+    flags.push({
+      code: 'KNOWN_FRAUD_ALERT',
+      severity: 'critical',
+      target: 'seller',
+      reason: `Seller "${input.sellerName}" appears on ${sourceNames.length > 1 ? 'multiple' : 'an'} industry fraud blacklist${sourceNames.length > 1 ? 's' : ''}${fraudTypes ? ` (${fraudTypes})` : ''}.`,
+      evidence: input.sellerFraudAlerts.map(
+        (a) => `${a.source_name}: ${a.source_url}`
+      ),
+    })
+  }
+
   return flags
 }
 
-// ── Aggregation helpers ───────────────────────────────────────────────────────
+// 鈹€鈹€ Aggregation helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export function overallRiskFromFlags(flags: TradeFlag[]): RiskLevel {
   if (flags.length === 0) return 'low'
@@ -569,7 +598,7 @@ export function overallRiskFromFlags(flags: TradeFlag[]): RiskLevel {
   )
 }
 
-// ── Pattern detection ─────────────────────────────────────────────────────────
+// 鈹€鈹€ Pattern detection 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 type RiskPattern =
   | 'SANCTIONS_EVASION'   // active sanction + geo or flag evidence
@@ -646,7 +675,7 @@ export function generateSummary(
   const lead = `${PATTERN_LEADS[pattern]} Overall risk: ${overallRisk.toUpperCase()}.`
 
   // Most critical finding (worst severity flag, already sorted by RISK_ORDER in calling code,
-  // but flags are not sorted here — pick by severity)
+  // Flags are not sorted here, so choose the highest severity explicitly.
   const sorted = [...flags].sort(
     (a, b) => RISK_ORDER[a.severity] - RISK_ORDER[b.severity]
   )
@@ -668,3 +697,4 @@ export function generateSummary(
 
   return parts.join(' ')
 }
+

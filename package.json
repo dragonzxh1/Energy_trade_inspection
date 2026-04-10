@@ -14,6 +14,7 @@
     "@auth/pg-adapter": "^1.11.1",
     "@react-pdf/renderer": "^4.3.3",
     "@types/pg": "^8.20.0",
+    "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.5.10",
     "mammoth": "^1.12.0",
     "next": "15.3.1",
