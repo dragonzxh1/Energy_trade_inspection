@@ -205,6 +205,7 @@ export function buildCompanyJsonLd(params: {
   sanctionStatus: string
   slug: string
   appUrl: string
+  description?: string
 }): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
@@ -213,6 +214,7 @@ export function buildCompanyJsonLd(params: {
     identifier: params.registrationNumber,
     addressCountry: params.country,
     url: `${params.appUrl}/company/${params.slug}`,
+    ...(params.description && { description: params.description }),
     additionalProperty: [
       {
         '@type': 'PropertyValue',
@@ -290,6 +292,7 @@ export function buildTerminalJsonLd(params: {
   sanctionStatus: string
   entityId: string
   appUrl: string
+  description?: string
 }): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
@@ -299,6 +302,7 @@ export function buildTerminalJsonLd(params: {
     url: `${params.appUrl}/terminal/${params.entityId}`,
     ...(params.location && { address: params.location }),
     ...(params.operator && { department: params.operator }),
+    ...(params.description && { description: params.description }),
     additionalProperty: [
       {
         '@type': 'PropertyValue',
@@ -326,6 +330,7 @@ export function buildVesselJsonLd(params: {
   scoreTier: ScoreTier
   sanctionStatus: string
   appUrl: string
+  description?: string
 }): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
@@ -334,6 +339,7 @@ export function buildVesselJsonLd(params: {
     identifier: params.imo,
     vehicleIdentificationNumber: params.imo,
     url: `${params.appUrl}/vessel/${params.imo}`,
+    ...(params.description && { description: params.description }),
     additionalProperty: [
       {
         '@type': 'PropertyValue',

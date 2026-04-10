@@ -379,6 +379,7 @@ export default async function TerminalPage({ params }: PageProps) {
     sanctionStatus: terminal.sanctionStatus,
     entityId:       terminal.id,
     appUrl,
+    description:    buildTerminalNarrative(terminal),
   })
 
   const tabs = [

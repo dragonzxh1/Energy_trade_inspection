@@ -453,6 +453,7 @@ export default async function VesselPage({ params }: PageProps) {
     scoreTier: tier,
     sanctionStatus: vessel.sanctionStatus,
     appUrl,
+    description: buildVesselNarrative(vessel),
   })
 
   const tabs = [

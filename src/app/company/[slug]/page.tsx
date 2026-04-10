@@ -750,6 +750,7 @@ export default async function CompanyPage({ params }: PageProps) {
     sanctionStatus: company.sanctionStatus,
     slug: company.slug,
     appUrl,
+    description: buildCompanyNarrative(company),
   })
 
   const tabs = [
