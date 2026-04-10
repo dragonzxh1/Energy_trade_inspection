@@ -10,5 +10,15 @@ export async function register() {
       // Keep the server booting, but surface the migration failure clearly.
       console.error('[instrumentation] migration startup failed:', err)
     }
+
+    // Sync legitimate domains on every startup so MANUAL_SEED changes
+    // take effect automatically after each deployment.
+    try {
+      const { syncLegitDomains } = await import('./lib/server/sync/legitimate-domains')
+      const result = await syncLegitDomains()
+      console.log(`[instrumentation] legit-domains synced: ${result.total} entries (${result.durationMs}ms)`)
+    } catch (err) {
+      console.error('[instrumentation] legit-domains sync failed:', err)
+    }
   }
 }
