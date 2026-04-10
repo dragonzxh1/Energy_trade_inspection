@@ -163,6 +163,81 @@ const MANUAL_SEED: SeedEntry[] = [
   { domain: 'classnk.or.jp',              company_name: 'ClassNK',                              country_code: 'JP' },
 ]
 
+// ── Wikidata SPARQL import ────────────────────────────────────────────────────
+// Queries Wikidata for energy-sector companies that have an official website URL.
+// Focuses on oil companies, national oil companies, and petroleum-industry firms.
+// Runs as part of syncLegitDomains() with a 30-second timeout.
+
+const WIKIDATA_SPARQL_URL = 'https://query.wikidata.org/sparql'
+
+// SPARQL query: oil companies + NOCs + petroleum-industry companies with websites
+// Uses direct P31 (instance of) and P452 (industry) to avoid expensive path queries.
+const WIKIDATA_ENERGY_QUERY = `
+SELECT DISTINCT ?company ?companyLabel ?website ?countryCode WHERE {
+  {
+    ?company wdt:P31 wd:Q35790 .
+  } UNION {
+    ?company wdt:P31 wd:Q2348054 .
+  } UNION {
+    ?company wdt:P452 wd:Q130901 .
+  } UNION {
+    ?company wdt:P452 wd:Q40858 .
+  }
+  ?company wdt:P856 ?website .
+  OPTIONAL { ?company wdt:P17 ?country . ?country wdt:P297 ?countryCode . }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en" }
+}
+LIMIT 1000
+`.trim()
+
+interface WikidataBinding {
+  companyLabel?: { value: string }
+  website?:      { value: string }
+  countryCode?:  { value: string }
+}
+
+async function syncFromWikidata(): Promise<SeedEntry[]> {
+  const url = new URL(WIKIDATA_SPARQL_URL)
+  url.searchParams.set('query', WIKIDATA_ENERGY_QUERY)
+  url.searchParams.set('format', 'json')
+
+  const res = await fetch(url.toString(), {
+    headers: {
+      'Accept':     'application/sparql-results+json',
+      'User-Agent': 'EnergyTradeInspection/1.0 (https://etiverify.com)',
+    },
+    signal: AbortSignal.timeout(30_000),
+  })
+
+  if (!res.ok) {
+    throw new Error(`Wikidata SPARQL ${res.status}: ${res.statusText}`)
+  }
+
+  const data = await res.json() as { results: { bindings: WikidataBinding[] } }
+  const entries: SeedEntry[] = []
+  const seen = new Set<string>()
+
+  for (const b of data.results.bindings) {
+    const websiteUrl  = b.website?.value
+    const companyName = b.companyLabel?.value
+    if (!websiteUrl || !companyName) continue
+    // Skip Wikidata auto-generated labels like "Q12345"
+    if (/^Q\d+$/.test(companyName)) continue
+
+    const domain = extractDomain(websiteUrl)
+    if (!domain || domain.length < 4) continue
+    if (seen.has(domain)) continue
+    seen.add(domain)
+
+    const rawCode = b.countryCode?.value ?? null
+    const countryCode = rawCode && rawCode.length === 2 ? rawCode.toUpperCase() : null
+
+    entries.push({ domain, company_name: companyName, country_code: countryCode })
+  }
+
+  return entries
+}
+
 // ── Rotterdam whitelist import ────────────────────────────────────────────────
 
 interface WhitelistRow {
@@ -194,17 +269,21 @@ async function loadFromWhitelist(): Promise<SeedEntry[]> {
 
 // ── Database upsert ───────────────────────────────────────────────────────────
 
+// Source precedence: manual (3) > wikidata (2) > whitelist (1)
+const SOURCE_PRIORITY: Record<string, number> = { manual: 3, wikidata: 2, whitelist: 1 }
+
 async function upsertLegitDomains(
-  entries: Array<SeedEntry & { source: 'whitelist' | 'manual'; source_url: string | null }>
+  entries: Array<SeedEntry & { source: 'whitelist' | 'manual' | 'wikidata'; source_url: string | null }>
 ): Promise<number> {
   if (entries.length === 0) return 0
 
-  // Deduplicate by domain — manual seed takes precedence over whitelist
+  // Deduplicate by domain — higher-priority source wins
   const seen = new Map<string, typeof entries[0]>()
   for (const e of entries) {
-    // If domain already seen as 'manual', don't overwrite with 'whitelist'
     const existing = seen.get(e.domain)
-    if (!existing || existing.source !== 'manual') {
+    const priority = SOURCE_PRIORITY[e.source] ?? 0
+    const existingPriority = existing ? (SOURCE_PRIORITY[existing.source] ?? 0) : -1
+    if (priority > existingPriority) {
       seen.set(e.domain, e)
     }
   }
@@ -253,31 +332,40 @@ async function upsertLegitDomains(
 export interface LegitDomainsSyncResult {
   fromWhitelist: number
   fromManual: number
+  fromWikidata: number
   total: number
   durationMs: number
 }
 
 /**
- * Sync legitimate domains from Rotterdam whitelist + manual seed.
+ * Sync legitimate domains from three sources:
+ *   1. Rotterdam whitelist (fraud_alerts WHERE list_type='whitelist')
+ *   2. Wikidata SPARQL — oil companies, NOCs, petroleum-industry firms
+ *   3. Manual seed — curated major energy traders and oil majors
+ *
+ * Precedence on conflict: manual > wikidata > whitelist.
  * Safe to call repeatedly — uses ON CONFLICT upsert.
  */
 export async function syncLegitDomains(): Promise<LegitDomainsSyncResult> {
   const start = Date.now()
 
-  const [whitelistEntries] = await Promise.all([
+  const [whitelistEntries, wikidataEntries] = await Promise.all([
     loadFromWhitelist().catch(() => [] as SeedEntry[]),
+    syncFromWikidata().catch(() => [] as SeedEntry[]),
   ])
 
   const tagged = [
     ...whitelistEntries.map((e) => ({ ...e, source: 'whitelist' as const, source_url: null })),
-    ...MANUAL_SEED.map((e) => ({ ...e, source: 'manual' as const, source_url: null })),
+    ...wikidataEntries.map((e) => ({ ...e, source: 'wikidata'  as const, source_url: null })),
+    ...MANUAL_SEED.map((e)     => ({ ...e, source: 'manual'    as const, source_url: null })),
   ]
 
   const total = await upsertLegitDomains(tagged)
 
   return {
     fromWhitelist: whitelistEntries.length,
-    fromManual: MANUAL_SEED.length,
+    fromManual:    MANUAL_SEED.length,
+    fromWikidata:  wikidataEntries.length,
     total,
     durationMs: Date.now() - start,
   }
