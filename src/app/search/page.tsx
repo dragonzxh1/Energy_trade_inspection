@@ -1,18 +1,17 @@
-import type { Metadata } from 'next'
+﻿import type { Metadata } from 'next'
 import Link from 'next/link'
 import Header from '@/components/layout/Header'
 import SearchBox from '@/components/search/SearchBox'
 import SearchFiltersPanel from '@/components/search/SearchFiltersPanel'
 import type { SearchResult } from '@/lib/types'
-import { applyMigrations } from '@/lib/server/migrations'
-import { searchEntities } from '@/lib/server/repository'
-import { db } from '@/lib/server/db'
+import { searchEntities, getBrowseEntities, type BrowseRow } from '@/lib/server/repository'
+import { checkDomain, type DomainCheckResult } from '@/lib/server/domain-check'
 
 interface PageProps {
   searchParams: Promise<{ q?: string; type?: string; sort?: string }>
 }
 
-// Search results are dynamic — no ISR caching
+// Search results are dynamic, so ISR is disabled.
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
@@ -26,51 +25,140 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   }
 }
 
+// ── Domain detection ──────────────────────────────────────────────────────────
+
+const DOMAIN_TLDS =
+  /\.(com|net|org|io|co|biz|info|us|uk|eu|de|nl|fr|ae|sg|hk|cn|ru|az|kz|mx|br|au|no|ch|it|za|qa|ng|ca|jp|in|id|my|th|vn|pk|ly|me|ai|app|dev|tech|trade|energy)$/i
+
+/**
+ * Returns the domain string if the query looks like a domain name or email.
+ * Returns null for ordinary company/person/vessel names.
+ */
+function detectDomainQuery(query: string): string | null {
+  const q = query.trim()
+  if (!q || q.includes(' ') || q.length < 4) return null
+
+  // Email address: extract the domain part
+  const emailMatch = q.match(/^[\w.+\-]+@([\w\-]+(?:\.[\w\-]+)+)$/i)
+  if (emailMatch) return emailMatch[1].toLowerCase()
+
+  // Domain name: no spaces, contains a dot, has a recognized TLD
+  if (/^[\w\-.]+$/.test(q) && q.includes('.') && DOMAIN_TLDS.test(q)) {
+    return q.toLowerCase()
+  }
+  return null
+}
+
+/**
+ * Run domain check with a 3-second timeout.
+ * WHOIS results are cached (48h TTL), so hits are fast after the first query.
+ * If slow or error, returns null (card is simply not shown).
+ */
+async function runDomainCheck(domain: string): Promise<DomainCheckResult | null> {
+  try {
+    return await Promise.race([
+      checkDomain(domain),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_000)),
+    ])
+  } catch {
+    return null
+  }
+}
+
+// ── Domain risk card ──────────────────────────────────────────────────────────
+
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: '#ef4444',
+  high:     '#f97316',
+  medium:   '#eab308',
+  low:      '#22c55e',
+}
+
+function DomainCheckCard({ result }: { result: DomainCheckResult }) {
+  const color = SEVERITY_COLOR[result.severity] ?? '#22c55e'
+  const hasSpoofing = result.spoofingMatches.length > 0
+  const best = result.spoofingMatches[0]
+
+  return (
+    <div
+      style={{
+        padding: 'var(--space-4) var(--space-5)',
+        backgroundColor: result.flagged ? `${color}12` : '#22c55e10',
+        border: `1px solid ${result.flagged ? `${color}50` : '#22c55e40'}`,
+        borderRadius: '8px',
+        marginBottom: 'var(--space-5)',
+      }}
+      role="alert"
+      aria-label={`Domain risk assessment: ${result.severity}`}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: result.flagged ? 'var(--space-3)' : 0 }}>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>
+          Domain check
+        </span>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono, monospace)' }}>
+          {result.domain}
+        </span>
+        <span style={{
+          fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+          backgroundColor: color, color: '#fff', borderRadius: '4px', padding: '2px 7px',
+        }}>
+          {result.severity}
+        </span>
+      </div>
+
+      {/* Findings */}
+      {result.flagged && (
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {/* Spoofing match shown first */}
+          {hasSpoofing && best && (
+            <li style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+              <span style={{ color, flexShrink: 0, fontWeight: 700, fontSize: '13px' }}>!</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '18px' }}>
+                Resembles{' '}
+                <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono, monospace)' }}>
+                  {best.legitimateDomain}
+                </strong>
+                {' '}({best.legitimateCompany}) — {Math.round(best.similarityScore * 100)}% similarity
+              </span>
+            </li>
+          )}
+          {/* WHOIS signals */}
+          {result.evidence
+            .filter((e) => !hasSpoofing || !e.startsWith('Domain'))
+            .map((e, i) => (
+              <li key={i} style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
+                <span style={{ color, flexShrink: 0, fontSize: '13px' }}>•</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '18px' }}>{e}</span>
+              </li>
+            ))
+          }
+        </ul>
+      )}
+
+      {!result.flagged && (
+        <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+          No spoofing matches or WHOIS risk signals detected.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── Data fetchers ─────────────────────────────────────────────────────────────
+
 async function search(query: string, type?: string): Promise<SearchResult[]> {
   if (!query || query.length < 2) return []
   try {
-    await applyMigrations()
     return await searchEntities(query, type)
   } catch {
     return []
   }
 }
 
-interface BrowseRow {
-  id: string
-  entity_type: 'company' | 'vessel'
-  name: string
-  slug: string | null
-  imo: string | null
-  jurisdiction_flag: string
-  country: string
-  sanction_status: string
-  authenticity_score: number
-  risk_level: string
-  registration_number: string | null
-  vessel_type: string | null
-}
-
-async function getBrowseEntities(type?: string): Promise<BrowseRow[]> {
+async function getBrowseList(type?: string): Promise<BrowseRow[]> {
   try {
-    await applyMigrations()
-    const browseType = type === 'company' || type === 'vessel' || type === 'terminal'
-      ? type
-      : null
-    const { rows } = await db.query<BrowseRow>(`
-      SELECT id, entity_type, name, slug, imo, jurisdiction_flag,
-             country, sanction_status, authenticity_score, risk_level,
-             registration_number,
-             metadata_json->>'vesselType' AS vessel_type
-      FROM entities
-      WHERE ($1::text IS NULL OR entity_type = $1)
-      ORDER BY
-        CASE sanction_status WHEN 'listed' THEN 0 WHEN 'unknown' THEN 1 ELSE 2 END,
-        CASE risk_level WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
-        authenticity_score ASC
-      LIMIT 30
-    `, [browseType])
-    return rows
+    return await getBrowseEntities(type)
   } catch {
     return []
   }
@@ -152,9 +240,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const query  = q?.trim() ?? ''
   const filter = type ?? 'all'
 
-  const [searchResults, browseRows] = await Promise.all([
+  const detectedDomain = detectDomainQuery(query)
+
+  const [searchResults, browseRows, domainResult] = await Promise.all([
     query ? search(query, type === 'all' ? undefined : type) : Promise.resolve([]),
-    query ? Promise.resolve([]) : getBrowseEntities(type === 'all' ? undefined : type),
+    query ? Promise.resolve([]) : getBrowseList(type === 'all' ? undefined : type),
+    detectedDomain ? runDomainCheck(detectedDomain) : Promise.resolve(null),
   ])
 
   const hasQuery   = query.length >= 2
@@ -179,6 +270,9 @@ export default async function SearchPage({ searchParams }: PageProps) {
         {/* Type filter tabs */}
         <TypeFilterTabs current={filter} query={query} />
 
+        {/* Domain check card — shown when query looks like a domain or email */}
+        {domainResult && <DomainCheckCard result={domainResult} />}
+
         {hasQuery ? (
           /* ── Search results ── */
           items.length === 0 ? (
@@ -202,7 +296,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
                   href={`/search?q=${encodeURIComponent(query)}`}
                   style={{ display: 'inline-block', marginTop: 'var(--space-4)', color: 'var(--accent-primary)', fontSize: '13px' }}
                 >
-                  Search all entity types →
+                Search all entity types →
                 </Link>
               )}
             </div>
@@ -210,12 +304,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
             <SearchFiltersPanel results={items} query={query} entityType={filter} />
           )
         ) : (
-          /* ── Browse mode (no query) ── */
+          /* 鈹€鈹€ Browse mode (no query) 鈹€鈹€ */
           <>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: 'var(--space-5)' }}>
               {browseList.length} entities in database
-              {type && type !== 'all' && ` · ${TYPE_LABELS[type]}`}
-              {' '}— sorted by risk level
+                {type && type !== 'all' && ` · ${TYPE_LABELS[type]}`}
+                {' '}— sorted by risk level
             </p>
             <SearchFiltersPanel results={browseList.map(normalizeToSearchResult)} query="" entityType={filter} />
           </>
@@ -224,3 +318,5 @@ export default async function SearchPage({ searchParams }: PageProps) {
     </>
   )
 }
+
+
