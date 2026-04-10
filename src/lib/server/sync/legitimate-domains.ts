@@ -305,6 +305,20 @@ const MANUAL_SEED: SeedEntry[] = [
   { domain: 'valero.com',             company_name: 'Valero Energy',                        country_code: 'US' },
   { domain: 'nabors.com',             company_name: 'Nabors Industries',                    country_code: 'US' },
   { domain: 'xtoenergy.com',          company_name: 'XTO Energy',                           country_code: 'US' },
+  // ── Australia infrastructure ──────────────────────────────────────────────────
+  { domain: 'apa.com.au',             company_name: 'APA Group',                            country_code: 'AU' },
+  // ── Czech & Israel ───────────────────────────────────────────────────────────
+  { domain: 'mnd.eu',                 company_name: 'MND',                                  country_code: 'CZ' },
+  { domain: 'paz.co.il',              company_name: 'Paz Energy',                           country_code: 'IL' },
+  // ── Canada additions ─────────────────────────────────────────────────────────
+  { domain: 'petro-canada.ca',        company_name: 'Petro-Canada',                         country_code: 'CA' },
+  { domain: 'wcap.ca',               company_name: 'Whitecap Resources',                   country_code: 'CA' },
+  // ── Russia addition ───────────────────────────────────────────────────────────
+  { domain: 'rusneftegaz.com',        company_name: 'Russneftegaz',                         country_code: 'RU' },
+  { domain: 'dea-group.com',          company_name: 'DEA AG',                               country_code: 'DE' },
+  // ── US additions ─────────────────────────────────────────────────────────────
+  { domain: 'pbfenergy.com',          company_name: 'PBF Energy',                           country_code: 'US' },
+  { domain: 'sm-energy.com',          company_name: 'SM Energy',                            country_code: 'US' },
   // ── Offshore & drilling contractors ─────────────────────────────────────────
   { domain: 'sbmoffshore.com',        company_name: 'SBM Offshore',                         country_code: 'NL' },
   { domain: 'valaris.com',            company_name: 'Valaris',                              country_code: 'GB' },
