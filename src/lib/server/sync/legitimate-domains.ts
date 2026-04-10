@@ -265,6 +265,50 @@ const MANUAL_SEED: SeedEntry[] = [
   { domain: 'enerplus.com',           company_name: 'Enerplus',                             country_code: 'CA' },
   { domain: 'dana-petroleum.com',     company_name: 'Dana Petroleum',                       country_code: 'GB' },
   { domain: 'bluenord.com',           company_name: 'BlueNord',                             country_code: 'NO' },
+  { domain: 'lundin-energy.com',      company_name: 'Lundin Energy',                        country_code: 'SE' },
+  { domain: 'tullowoil.com',          company_name: 'Tullow Oil',                           country_code: 'GB' },
+  { domain: 'orsted.com',             company_name: 'Ørsted',                               country_code: 'DK' },
+  { domain: 'moeveglobal.com',        company_name: 'Moeve',                                country_code: 'ES' },
+  { domain: 'tupras.com.tr',          company_name: 'Tüpraş',                               country_code: 'TR' },
+  { domain: 'makpetrol.com.mk',       company_name: 'Makpetrol',                            country_code: 'MK' },
+  // ── Central Asia & Caucasus ──────────────────────────────────────────────────
+  { domain: 'ung.uz',                 company_name: 'Uzbekneftegaz',                        country_code: 'UZ' },
+  { domain: 'sakhalinenergy.com',     company_name: 'Sakhalin Energy',                      country_code: 'RU' },
+  { domain: 'eng.russneft.ru',        company_name: 'Russneft',                             country_code: 'RU' },
+  { domain: 'naftiran.com',           company_name: 'Naftiran Intertrade',                  country_code: 'CH' },
+  { domain: 'nisoc.ir',               company_name: 'National Iranian South Oil Company',   country_code: 'IR' },
+  // ── South & Southeast Asia NOCs ─────────────────────────────────────────────
+  { domain: 'japex.co.jp',            company_name: 'JAPEX',                                country_code: 'JP' },
+  { domain: 'oilindia.nic.in',        company_name: 'Oil India',                            country_code: 'IN' },
+  { domain: 'petrobangla.org.bd',     company_name: 'Petrobangla',                          country_code: 'BD' },
+  { domain: 'ppl.com.pk',             company_name: 'Pakistan Petroleum',                   country_code: 'PK' },
+  { domain: 'psopk.com',              company_name: 'Pakistan State Oil',                   country_code: 'PK' },
+  { domain: 'petron.com',             company_name: 'Petron Corporation',                   country_code: 'PH' },
+  { domain: 'pnoc.com.ph',            company_name: 'Philippine National Oil Company',      country_code: 'PH' },
+  { domain: 'vietsov.com.vn',         company_name: 'Vietsovpetro',                         country_code: 'VN' },
+  { domain: 'spc.com.sg',             company_name: 'Singapore Petroleum Company',          country_code: 'SG' },
+  { domain: 'towngas.com',            company_name: 'HK & China Gas Company',               country_code: 'HK' },
+  // ── Asia-Pacific additions ───────────────────────────────────────────────────
+  { domain: 'originenergy.com.au',    company_name: 'Origin Energy',                        country_code: 'AU' },
+  { domain: 'oilsearch.com',          company_name: 'Oil Search',                           country_code: 'PG' },
+  // ── Latin America additions ──────────────────────────────────────────────────
+  { domain: 'petroperu.com.pe',       company_name: 'Petroperú',                            country_code: 'PE' },
+  { domain: 'fronteraenergy.ca',      company_name: 'Frontera Energy',                      country_code: 'CA' },
+  // ── Africa additions ─────────────────────────────────────────────────────────
+  { domain: 'petrosa.co.za',          company_name: 'PetroSA',                              country_code: 'ZA' },
+  { domain: 'tpdc-tz.com',            company_name: 'Tanzania Petroleum Development Corp',  country_code: 'TZ' },
+  // ── Canada additions ─────────────────────────────────────────────────────────
+  { domain: 'pembina.com',            company_name: 'Pembina Pipeline',                     country_code: 'CA' },
+  { domain: 'syncrude.ca',            company_name: 'Syncrude',                             country_code: 'CA' },
+  // ── US additions ─────────────────────────────────────────────────────────────
+  { domain: 'murphyoilcorp.com',      company_name: 'Murphy Oil',                           country_code: 'US' },
+  { domain: 'valero.com',             company_name: 'Valero Energy',                        country_code: 'US' },
+  { domain: 'nabors.com',             company_name: 'Nabors Industries',                    country_code: 'US' },
+  { domain: 'xtoenergy.com',          company_name: 'XTO Energy',                           country_code: 'US' },
+  // ── Offshore & drilling contractors ─────────────────────────────────────────
+  { domain: 'sbmoffshore.com',        company_name: 'SBM Offshore',                         country_code: 'NL' },
+  { domain: 'valaris.com',            company_name: 'Valaris',                              country_code: 'GB' },
+  { domain: 'weatherford.com',        company_name: 'Weatherford International',            country_code: 'CH' },
   // ── More NOCs & regional producers ──────────────────────────────────────────
   { domain: 'ancap.com.uy',           company_name: 'ANCAP',                                country_code: 'UY' },
   { domain: 'eppetroecuador.ec',      company_name: 'EP Petroecuador',                      country_code: 'EC' },
