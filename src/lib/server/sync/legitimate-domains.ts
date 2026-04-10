@@ -152,6 +152,16 @@ const MANUAL_SEED: SeedEntry[] = [
   { domain: 'teekay.com',                  company_name: 'Teekay',                               country_code: 'BM' },
   { domain: 'aframax.com',                 company_name: 'Aframax International',                country_code: 'CY' },
   { domain: 'navig8group.com',             company_name: 'Navig8 Group',                         country_code: 'GB' },
+  // ── NOCs & producers (Wikidata-verified, manually curated) ──────────────────
+  { domain: 'yamalspg.ru',               company_name: 'Yamal LNG',                            country_code: 'RU' },
+  { domain: 'sonelgaz.dz',               company_name: 'Sonelgaz',                             country_code: 'DZ' },
+  { domain: 'chinagasholdings.com.hk',   company_name: 'China Gas Holdings',                   country_code: 'HK' },
+  { domain: 'cegh.at',                   company_name: 'Central European Gas Hub',              country_code: 'AT' },
+  { domain: 'depa.gr',                   company_name: 'DEPA',                                 country_code: 'GR' },
+  { domain: 'petroreconcavo.com.br',     company_name: 'PetroReconcavo',                       country_code: 'BR' },
+  { domain: 'ingl.co.il',               company_name: 'Israel Natural Gas Lines',              country_code: 'IL' },
+  { domain: 'naturalgaschina.com',       company_name: 'China Natural Gas',                    country_code: 'CN' },
+  { domain: 'gasstorage.dk',             company_name: 'Gas Storage Denmark',                  country_code: 'DK' },
   // ── Inspection & certification bodies ───────────────────────────────────
   { domain: 'bureauveritas.com',           company_name: 'Bureau Veritas',                       country_code: 'FR' },
   { domain: 'lr.org',                      company_name: "Lloyd's Register",                     country_code: 'GB' },
