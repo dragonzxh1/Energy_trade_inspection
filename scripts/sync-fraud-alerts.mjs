@@ -181,20 +181,68 @@ function makeEntry(source, sourceName, sourceUrl, companyName, listType, fraudTy
 // ── Scrapers ──────────────────────────────────────────────────────────────────
 
 async function scrapeStorageSpoofing() {
-  const pages = [
-    { url: 'https://storagespoofing.nl/en/blacklist/', listType: 'blacklist', sourceName: 'Rotterdam Port Blacklist', fraudType: 'storage-spoofing' },
-    { url: 'https://storagespoofing.nl/en/whitelist/', listType: 'whitelist', sourceName: 'Rotterdam Port Whitelist', fraudType: null },
-  ]
   const entries = []
-  for (const p of pages) {
-    const html = await fetchHtml(p.url)
+
+  // ── Blacklist: table rows with company name in first column ───────────────
+  {
+    const url = 'https://storagespoofing.nl/en/blacklist/'
+    const html = await fetchHtml(url)
     const names = extractNames(html)
     for (const name of names) {
-      const e = makeEntry('storagespoofing', p.sourceName, p.url, name, p.listType, p.fraudType)
+      const e = makeEntry('storagespoofing', 'Rotterdam Port Blacklist', url, name, 'blacklist', 'storage-spoofing')
       if (e) entries.push(e)
     }
-    console.log(`  storagespoofing ${p.listType}: ${names.length} candidates`)
+    console.log(`  storagespoofing blacklist: ${names.length} candidates`)
   }
+
+  // ── Whitelist: <p> tags containing company name(s) + <a href> ─────────────
+  // Structure: <p>NAME<br />[ALIAS<br />...]<a href="URL">www.site.com</a></p>
+  {
+    const url = 'https://storagespoofing.nl/en/whitelist/'
+    const html = await fetchHtml(url)
+    const seen = new Set()
+
+    // Extract each <p> block
+    const pRe = /<p[^>]*>([\s\S]*?)<\/p>/gi
+    let pm
+    let whitelistCount = 0
+    while ((pm = pRe.exec(html)) !== null) {
+      const inner = pm[1]
+      // Only process <p> tags that contain an external <a href>
+      const aMatch = inner.match(/href=[\"'](https?:\/\/[^\"']+)[\"']/i)
+      if (!aMatch) continue
+      const officialUrl = aMatch[1]
+
+      // Remove the <a>...</a> tag, then split the remaining text on <br> or newlines
+      const withoutLink = inner.replace(/<a[^>]*>[\s\S]*?<\/a>/gi, '')
+      const lines = withoutLink
+        .replace(/<[^>]+>/g, '\n')  // convert all tags to newlines
+        .split(/\n/)
+        .map(l => l.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#\d+;/g, ' ').replace(/\s+/g, ' ').trim())
+        .filter(l => l.length >= 3)
+
+      if (lines.length === 0) continue
+
+      // Primary name: first line
+      const primaryName = lines[0]
+      if (!seen.has(primaryName)) {
+        seen.add(primaryName)
+        const e = makeEntry('storagespoofing', 'Rotterdam Port Whitelist', url, primaryName, 'whitelist', null, officialUrl)
+        if (e) { entries.push(e); whitelistCount++ }
+      }
+
+      // Aliases: strip "(was: ...)" / "(formerly: ...)" annotations
+      for (let i = 1; i < lines.length; i++) {
+        const alias = lines[i].replace(/\s*\((?:was|formerly|formerly:|was:)[^)]*\)/gi, '').trim()
+        if (alias.length < 4 || seen.has(alias)) continue
+        seen.add(alias)
+        const e = makeEntry('storagespoofing', 'Rotterdam Port Whitelist', url, alias, 'whitelist', null, officialUrl)
+        if (e) { entries.push(e); whitelistCount++ }
+      }
+    }
+    console.log(`  storagespoofing whitelist: ${whitelistCount} candidates`)
+  }
+
   return entries
 }
 

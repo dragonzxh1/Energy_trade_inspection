@@ -62,33 +62,22 @@ function slugify(text: string): string {
 
 // ── storagespoofing.nl ────────────────────────────────────────────────────────
 // Rotterdam Port Blacklist & Whitelist.
-// Page structure: list of company cards or table rows with company names.
-// Each <li> or <tr> contains the company name as visible text.
+//
+// Blacklist page structure: table rows with company name + broken URL.
+//   Each <tr> first cell is the organisation name.
+//
+// Whitelist page structure: <p> tags, each containing one company (possibly
+//   with multiple name aliases separated by <br>) and a trailing <a href>.
+//   E.g. <p>AGLOBIS<br /><a href="http://www.aglobis.com/">www.aglobis.com</a></p>
 
 async function scrapeStorageSpoofing(): Promise<FraudEntry[]> {
-  const sources = [
-    {
-      url: 'https://storagespoofing.nl/en/blacklist/',
-      list_type: 'blacklist' as const,
-      source_name: 'Rotterdam Port Blacklist',
-      fraud_type: 'storage-spoofing',
-    },
-    {
-      url: 'https://storagespoofing.nl/en/whitelist/',
-      list_type: 'whitelist' as const,
-      source_name: 'Rotterdam Port Whitelist',
-      fraud_type: null,
-    },
-  ]
-
   const entries: FraudEntry[] = []
 
-  for (const src of sources) {
-    const html = await fetchHtml(src.url)
+  // ── Blacklist ────────────────────────────────────────────────────────────────
+  {
+    const url = 'https://storagespoofing.nl/en/blacklist/'
+    const html = await fetchHtml(url)
     const $ = cheerioLoad(html)
-
-    // Common patterns: table rows, list items, article/card titles.
-    // Try table cells first, then list items, then headings.
     const candidates: string[] = []
 
     $('table tr td:first-child, table tr th:first-child').each((_, el) => {
@@ -113,7 +102,6 @@ async function scrapeStorageSpoofing(): Promise<FraudEntry[]> {
       )
     }
 
-    // Filter out header rows and very short strings
     const companyNames = candidates.filter(
       (t) => t.length >= 3 && t.length <= 200 && !/^(company|naam|name|#|no\.?)$/i.test(t)
     )
@@ -121,21 +109,97 @@ async function scrapeStorageSpoofing(): Promise<FraudEntry[]> {
     for (const name of companyNames) {
       const normalized = normalizeEntityName(name, true)
       if (!normalized || normalized.length < 2) continue
-
-      const slug = slugify(name)
       entries.push({
-        id: `storagespoofing:${src.list_type}:${slug}`,
+        id: `storagespoofing:blacklist:${slugify(name)}`,
         source: 'storagespoofing',
-        source_name: src.source_name,
-        source_url: src.url,
+        source_name: 'Rotterdam Port Blacklist',
+        source_url: url,
         company_name: name,
         normalized_name: normalized,
-        list_type: src.list_type,
-        fraud_type: src.fraud_type,
+        list_type: 'blacklist',
+        fraud_type: 'storage-spoofing',
         description: null,
         scam_url: null,
       })
     }
+  }
+
+  // ── Whitelist ────────────────────────────────────────────────────────────────
+  // Each company occupies one <p> tag. Structure:
+  //   <p>PRIMARY NAME<br />[ALIAS1<br />...]<a href="URL">www.site.com</a></p>
+  // We extract the first non-empty text node (primary name) from each <p> that
+  // contains an external <a> link.
+  {
+    const url = 'https://storagespoofing.nl/en/whitelist/'
+    const html = await fetchHtml(url)
+    const $ = cheerioLoad(html)
+    const seen = new Set<string>()
+
+    $('p').each((_, el) => {
+      const $p = $(el)
+      const externalLink = $p.find('a[href^="http"]').first()
+      if (!externalLink.length) return  // no external link — not a company paragraph
+
+      const officialUrl = externalLink.attr('href') ?? null
+
+      // Extract name lines: clone the <p>, remove the <a> link, split on <br>
+      const $clone = $p.clone()
+      $clone.find('a').remove()
+
+      // cheerio renders <br> as newlines in .text(); also handle &amp; etc.
+      const rawText = $clone.text()
+      const lines = rawText
+        .split(/\n|<br\s*\/?>/)
+        .map((l) => l.replace(/\s+/g, ' ').trim())
+        .filter((l) => l.length >= 3)
+
+      if (lines.length === 0) return
+
+      // Primary name is the first line
+      const primaryName = lines[0]
+      if (seen.has(primaryName)) return
+      seen.add(primaryName)
+
+      const normalized = normalizeEntityName(primaryName, true)
+      if (!normalized || normalized.length < 2) return
+
+      entries.push({
+        id: `storagespoofing:whitelist:${slugify(primaryName)}`,
+        source: 'storagespoofing',
+        source_name: 'Rotterdam Port Whitelist',
+        source_url: url,
+        company_name: primaryName,
+        normalized_name: normalized,
+        list_type: 'whitelist',
+        fraud_type: null,
+        description: null,
+        scam_url: officialUrl,
+      })
+
+      // Also add aliases (additional lines) as separate whitelist entries so
+      // fuzzy matching can find them by old names like "KOOLE TANKSTORAGE BOTLEK".
+      for (let i = 1; i < lines.length; i++) {
+        const alias = lines[i]
+        // Strip "(was: ...)" or "(formerly: ...)" annotations — keep the name part.
+        const cleanAlias = alias.replace(/\s*\((?:was|formerly|formerly:|was:)[^)]*\)/gi, '').trim()
+        if (cleanAlias.length < 4 || seen.has(cleanAlias)) continue
+        seen.add(cleanAlias)
+        const aliasNormalized = normalizeEntityName(cleanAlias, true)
+        if (!aliasNormalized || aliasNormalized.length < 2) continue
+        entries.push({
+          id: `storagespoofing:whitelist:${slugify(cleanAlias)}`,
+          source: 'storagespoofing',
+          source_name: 'Rotterdam Port Whitelist',
+          source_url: url,
+          company_name: cleanAlias,
+          normalized_name: aliasNormalized,
+          list_type: 'whitelist',
+          fraud_type: null,
+          description: null,
+          scam_url: officialUrl,
+        })
+      }
+    })
   }
 
   return entries
