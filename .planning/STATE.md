@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Network Intelligence Graph
-status: Defining requirements
-stopped_at: ~
+status: Ready for planning
+stopped_at: Phase 9
 last_updated: "2026-04-16T00:00:00.000Z"
 last_activity: 2026-04-16
 progress:
@@ -17,14 +17,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16 for v1.1 milestone)
 
 **Core value:** Give energy traders instant, defensible answers on whether a counterparty is safe to trade with
-**Current focus:** v1.1 — Network Intelligence Graph
+**Current focus:** v1.1 — Network Intelligence Graph, Phase 9: Data Enrichment Foundations
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9 — Data Enrichment Foundations
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-16 — Milestone v1.1 started
+Status: Not started (roadmap created, awaiting /gsd-plan-phase 9)
+Last activity: 2026-04-16 — v1.1 roadmap created (Phases 9–11)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,20 @@ Key decisions from v1.0:
 
 CEO Plan saved at: ~/.gstack/projects/dragonzxh1-Energy_trade_inspection/ceo-plans/2026-04-16-network-graph.md
 
+### v1.1 Roadmap (created 2026-04-16)
+
+3 phases, 11 requirements:
+- Phase 9: Data Enrichment Foundations — NETDATA-01–04 (ICIJ↔sanctions sync marking + FraudAlertsPanel on company/vessel)
+- Phase 10: Network Graph Core — GRAPH-01–04 (React Flow visualization, 3-hop WITH RECURSIVE CTE, color-coded nodes)
+- Phase 11: Coverage Expansion + PDF Export — NETCOV-01–02 + REPORT-01 (ICIJ on vessel/port pages, graph SVG in PDF)
+
+Dependencies: Phase 10 depends on Phase 9 (is_sanctioned flag needed for red node coloring). Phase 11 depends on Phase 10 (graph must exist before SVG export).
+
+Key implementation notes:
+- Phase 9 requires migration 036: add `is_sanctioned BOOLEAN` and `sanctions_match TEXT` to icij_entities
+- Phase 10 requires installing `reactflow` package; new NetworkGraph client component; getNetworkGraph() with WITH RECURSIVE CTE (depth ≤3, nodes ≤100)
+- Phase 11 PDF export: capture graph SVG client-side, send to server, embed in pdf-lib/PDFKit render
+
 ### Pending Todos
 
 None.
@@ -71,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-16T00:00:00.000Z
-Stopped at: v1.1 milestone initialized, creating REQUIREMENTS.md + ROADMAP.md
+Stopped at: v1.1 roadmap created — ready to plan Phase 9
 Resume file: None

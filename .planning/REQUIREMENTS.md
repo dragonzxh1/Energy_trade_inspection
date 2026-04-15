@@ -56,14 +56,14 @@ Milestone: v1.1
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| GRAPH-01 | — | — | Pending |
-| GRAPH-02 | — | — | Pending |
-| GRAPH-03 | — | — | Pending |
-| GRAPH-04 | — | — | Pending |
-| NETDATA-01 | — | — | Pending |
-| NETDATA-02 | — | — | Pending |
-| NETDATA-03 | — | — | Pending |
-| NETDATA-04 | — | — | Pending |
-| NETCOV-01 | — | — | Pending |
-| NETCOV-02 | — | — | Pending |
-| REPORT-01 | — | — | Pending |
+| NETDATA-01 | Phase 9 | — | Pending |
+| NETDATA-02 | Phase 9 | — | Pending |
+| NETDATA-03 | Phase 9 | — | Pending |
+| NETDATA-04 | Phase 9 | — | Pending |
+| GRAPH-01 | Phase 10 | — | Pending |
+| GRAPH-02 | Phase 10 | — | Pending |
+| GRAPH-03 | Phase 10 | — | Pending |
+| GRAPH-04 | Phase 10 | — | Pending |
+| NETCOV-01 | Phase 11 | — | Pending |
+| NETCOV-02 | Phase 11 | — | Pending |
+| REPORT-01 | Phase 11 | — | Pending |
