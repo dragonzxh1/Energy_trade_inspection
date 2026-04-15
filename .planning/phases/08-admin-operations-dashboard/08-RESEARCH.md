@@ -509,20 +509,23 @@ None — no test infrastructure to create. TypeScript and ESLint are already con
 
 ## Open Questions
 
-1. **GET `/api/admin/sync` modification vs. page-level server fetch**
+1. **GET `/api/admin/sync` modification vs. page-level server fetch** (RESOLVED)
    - What we know: The existing GET route is also used by the "Refresh Sync Log" client button.
    - What's unclear: Should the initial page load data come from the API route (adding latency) or a direct server-side DB call inside the page component?
    - Recommendation: Use direct DB call in page component for initial load (faster, no HTTP overhead in SSR). Keep the GET route for the client "Refresh" button — it's already authorized and works.
+   - Resolution: Implemented as recommended — `getAdminSyncLogs()` repository function called directly in the Server Component; existing GET route retained for the Refresh button.
 
-2. **How many sync log rows to display**
+2. **How many sync log rows to display** (RESOLVED)
    - What we know: UI-SPEC doesn't specify a row limit for SyncJobTable. The existing GET route uses LIMIT 10.
    - What's unclear: Whether "all sync job runs" means unlimited or a practical cap.
    - Recommendation: LIMIT 200 (union of both tables) — large enough to show meaningful history, small enough to be fast.
+   - Resolution: LIMIT 200 implemented in `getAdminSyncLogs()` via UNION ALL of both log tables.
 
-3. **"Top entity types screened" stat (ADMIN-04)**
+3. **"Top entity types screened" stat (ADMIN-04)** (RESOLVED)
    - What we know: `query_log` has `entity_id` and `result_type` but not entity_type directly.
    - What's unclear: Whether to join `query_log` → `entities` to get `entity_type`, or whether to skip this specific sub-stat.
    - Recommendation: JOIN `query_log` to `entities` on `entity_id` — trivial query. If `entity_id` is null (text queries), exclude from count.
+   - Resolution: Implemented as recommended — `getAdminStats()` runs a 6th parallel query: `SELECT e.entity_type AS type, COUNT(*)::int AS count FROM query_log ql JOIN entities e ON e.id = ql.entity_id WHERE ql.entity_id IS NOT NULL GROUP BY e.entity_type`. Result exposed as `AdminStats.topEntityTypes` and rendered in a fifth "Entity Breakdown" StatCard showing "Companies: N · Vessels: N · Terminals: N".
 
 ---
 
