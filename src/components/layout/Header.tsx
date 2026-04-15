@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { auth, signOut } from '@/auth'
 import type { SanctionStatus } from '@/lib/types'
+import UserAvatar from './UserAvatar'
 
 interface HeaderProps {
   entityName?: string
@@ -19,11 +20,6 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
   const user    = session?.user
   const plan    = user?.plan ?? 'free'
   const isSanctioned = sanctionStatus === 'listed'
-
-  // Initials avatar fallback
-  const initials = user?.name
-    ? user.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()
-    : '?'
 
   return (
     <>
@@ -176,33 +172,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
 
                 {/* Avatar — links to account */}
                 <Link href="/account" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 0 }}>
-                  {user.image ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={user.image}
-                      alt={user.name ?? 'User avatar'}
-                      width={28}
-                      height={28}
-                      style={{ borderRadius: '50%', display: 'block' }}
-                    />
-                  ) : (
-                    <span
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--accent-primary)',
-                        color: '#fff',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {initials}
-                    </span>
-                  )}
+                  <UserAvatar src={user.image} name={user.name} />
                 </Link>
 
                 {/* Sign out */}

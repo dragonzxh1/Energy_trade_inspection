@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TradeCheckResult, TradePartyResult, TradeVesselResult, TradePortResult } from '@/app/api/trade/route'
@@ -782,7 +782,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
 
 type ViewState = 'form' | 'loading' | 'results' | 'error'
 
-export default function TradeClient() {
+export default function TradeClient({ initialSessionId }: { initialSessionId?: string }) {
   const searchParams  = useSearchParams()
   const initSeller    = searchParams.get('seller') ?? ''
   const initVessel    = searchParams.get('vessel') ?? ''
@@ -791,6 +791,17 @@ export default function TradeClient() {
   const [result, setResult]   = useState<TradeCheckResult | null>(null)
   const [error, setError]     = useState('')
   const [lastInput, setInput] = useState<FormValues | null>(null)
+
+  // Restore a previous session when navigating from Reports
+  useEffect(() => {
+    if (!initialSessionId) return
+    setView('loading')
+    setInput({ seller: '', vessel: '', imo: '', date: '', loadingPort: '', commodity: '', sellerDomain: '' })
+    fetch(`/api/trade/${encodeURIComponent(initialSessionId)}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => { setResult(data as TradeCheckResult); setView('results') })
+      .catch(() => { setError('Could not load report.'); setView('error') })
+  }, [initialSessionId])
 
   async function submit(values: FormValues) {
     setInput(values)

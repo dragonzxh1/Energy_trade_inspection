@@ -38,6 +38,8 @@ export default async function TradePage({
   }
 
   const plan = session.user.plan ?? 'free'
+  const params = await searchParams
+  const sessionId = typeof params.sessionId === 'string' ? params.sessionId : undefined
 
   return (
     <>
@@ -53,7 +55,7 @@ export default async function TradePage({
           <UpgradePrompt />
         ) : (
           <Suspense>
-            <TradeClient />
+            <TradeClient initialSessionId={sessionId} />
           </Suspense>
         )}
       </main>
