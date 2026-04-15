@@ -1373,3 +1373,125 @@ export async function searchSanctionsEntries(query: string): Promise<SanctionHit
   }))
 }
 
+// ─── Admin Dashboard Types ──────────────────────────────────────────────────
+
+export interface UserAdminRow {
+  id: string
+  email: string
+  plan: string
+  created_at: string
+  last_active_at: string | null
+  quota_used: number
+  quota_limit: number
+}
+
+export interface AdminSyncLogRow {
+  source: string
+  status: string
+  record_count: number | null
+  duration_ms: number | null
+  synced_at: string
+  error_message: string | null
+}
+
+export interface AdminStats {
+  totalUsers: number
+  planDistribution: { free: number; starter: number; enterprise: number; professional: number }
+  newToday: number
+  new30Days: number
+  dailyRegistrations: Array<{ date: string; count: number }>
+  topEntityTypes: Array<{ type: 'company' | 'vessel' | 'terminal'; count: number }>
+}
+
+// ─── Admin Dashboard Queries ─────────────────────────────────────────────────
+
+/**
+ * Returns merged sync log from both sanctions_sync_log and fraud_sync_log,
+ * sorted by synced_at DESC, limited to 200 rows.
+ */
+export async function getAdminSyncLogs(): Promise<AdminSyncLogRow[]> {
+  const { rows } = await db.query<AdminSyncLogRow>(`
+    SELECT source, status, record_count, duration_ms, synced_at, error_message
+    FROM sanctions_sync_log
+    UNION ALL
+    SELECT source, status, record_count, duration_ms, synced_at, error_message
+    FROM fraud_sync_log
+    ORDER BY synced_at DESC
+    LIMIT 200
+  `)
+  return rows
+}
+
+/**
+ * Returns all users joined with current billing-period quota usage.
+ * quota_limit = -1 for unlimited plans.
+ */
+export async function getAdminUsers(): Promise<UserAdminRow[]> {
+  const { rows } = await db.query<UserAdminRow>(`
+    SELECT
+      u.id,
+      u.email,
+      u.plan,
+      u.created_at,
+      u.last_active_at,
+      COALESCE(uqu.query_count, 0) AS quota_used,
+      COALESCE(uqu.quota_limit, 5) AS quota_limit
+    FROM users u
+    LEFT JOIN user_query_usage uqu
+      ON uqu.user_id = u.id
+      AND uqu.period_start = date_trunc('month', NOW())::date
+    ORDER BY u.created_at DESC
+  `)
+  return rows
+}
+
+/**
+ * Returns platform usage statistics for the admin dashboard.
+ * topEntityTypes: counts from query_log JOIN entities, grouped by entity_type.
+ */
+export async function getAdminStats(): Promise<AdminStats> {
+  const [totalRow, planRows, todayRow, thirtyDayRow, dailyRows, entityTypeRows] = await Promise.all([
+    db.query<{ total: string }>('SELECT COUNT(*)::text AS total FROM users'),
+    db.query<{ plan: string; count: string }>('SELECT plan, COUNT(*)::text AS count FROM users GROUP BY plan'),
+    db.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM users WHERE created_at >= NOW() - INTERVAL '1 day'`),
+    db.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM users WHERE created_at >= NOW() - INTERVAL '30 days'`),
+    db.query<{ day: string; count: number }>(`
+      SELECT
+        date_trunc('day', created_at AT TIME ZONE 'UTC')::date AS day,
+        COUNT(*)::int AS count
+      FROM users
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY 1
+      ORDER BY 1
+    `),
+    db.query<{ type: 'company' | 'vessel' | 'terminal'; count: number }>(`
+      SELECT
+        e.entity_type AS type,
+        COUNT(*)::int AS count
+      FROM query_log ql
+      JOIN entities e ON e.id = ql.entity_id
+      WHERE ql.entity_id IS NOT NULL
+      GROUP BY e.entity_type
+      ORDER BY count DESC
+    `),
+  ])
+
+  const planDistribution = { free: 0, starter: 0, enterprise: 0, professional: 0 }
+  for (const row of planRows.rows) {
+    const key = row.plan as keyof typeof planDistribution
+    if (key in planDistribution) planDistribution[key] = parseInt(row.count, 10)
+  }
+
+  return {
+    totalUsers: parseInt(totalRow.rows[0]?.total ?? '0', 10),
+    planDistribution,
+    newToday: parseInt(todayRow.rows[0]?.count ?? '0', 10),
+    new30Days: parseInt(thirtyDayRow.rows[0]?.count ?? '0', 10),
+    dailyRegistrations: dailyRows.rows.map((r) => ({
+      date: String(r.day),
+      count: r.count,
+    })),
+    topEntityTypes: entityTypeRows.rows,
+  }
+}
+

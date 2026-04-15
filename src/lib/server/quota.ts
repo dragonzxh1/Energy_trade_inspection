@@ -91,6 +91,11 @@ export async function consumeQuota(
   )
 
   const used = rows[0]?.query_count ?? 1
+  // Update last_active_at on the users table (non-blocking — failure does not affect quota)
+  await db.query(
+    'UPDATE users SET last_active_at = NOW() WHERE id = $1',
+    [userId]
+  ).catch(() => {})
   const remaining = Math.max(0, limit - used)
   const blocked = used > limit  // Over limit after increment
 
