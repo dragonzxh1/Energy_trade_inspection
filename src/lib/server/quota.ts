@@ -62,7 +62,7 @@ export async function getQuotaStatus(
 /**
  * Consume one query from the user's quota.
  * Returns the updated QuotaStatus.
- * Throws if the user is already at the limit.
+ * Throws if the user is already at the limit or email is unverified.
  */
 export async function consumeQuota(
   userId: string,
@@ -70,6 +70,19 @@ export async function consumeQuota(
   entityId?: string,
   queryText?: string
 ): Promise<QuotaStatus> {
+  // Block email/password users who have not yet verified their address
+  const { rows: userRows } = await db.query<{
+    password_hash: string | null
+    emailVerified: Date | null
+  }>(
+    `SELECT password_hash, "emailVerified" FROM users WHERE id = $1`,
+    [userId]
+  )
+  const u = userRows[0]
+  if (u?.password_hash && !u?.emailVerified) {
+    throw new Error('EMAIL_NOT_VERIFIED')
+  }
+
   const { start, end } = getPeriodBounds()
   const limit = PLAN_LIMITS[plan] ?? PLAN_LIMITS.free
 

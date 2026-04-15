@@ -14,6 +14,7 @@
     "@auth/pg-adapter": "^1.11.1",
     "@react-pdf/renderer": "^4.3.3",
     "@types/pg": "^8.20.0",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "exceljs": "^4.4.0",
     "fast-xml-parser": "^5.5.10",
@@ -26,10 +27,12 @@
     "pinyin-pro": "^3.28.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "resend": "^6.11.0",
     "stripe": "^22.0.0",
     "ws": "^8.20.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
