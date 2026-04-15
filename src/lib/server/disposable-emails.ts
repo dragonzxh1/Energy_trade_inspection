@@ -194,7 +194,6 @@ export const DISPOSABLE_DOMAINS = new Set([
   'proxymail.eu',
   'prtnx.com',
   'punkass.com',
-  'qq.com',
   'quickinbox.com',
   'r9.ly',
   'recode.me',
