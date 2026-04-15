@@ -520,7 +520,7 @@ export default async function VesselPage({ params }: PageProps) {
               showBreakdown={f3Unlocked}
             />
             <div style={{ marginTop: 'var(--space-4)' }}>
-              <SanctionBadge status={vessel.sanctionStatus} />
+              <SanctionBadge status={vessel.sanctionStatus} sources={vessel.sanctionSources} />
             </div>
             <div style={{ marginTop: 'var(--space-3)' }}>
               <RiskBadge level={vessel.riskLevel} />

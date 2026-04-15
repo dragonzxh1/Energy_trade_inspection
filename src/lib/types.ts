@@ -45,6 +45,7 @@ export interface BaseEntity {
   country: string
   jurisdictionFlag: string // emoji flag or ISO code
   sanctionStatus: SanctionStatus
+  sanctionSources?: string[] // e.g. ['OFAC SDN', 'EU FSF'] — only present when status === 'listed'
   authenticityScore: number // 0-100
   scoreBreakdown: ScoreBreakdown
   riskLevel: RiskLevel

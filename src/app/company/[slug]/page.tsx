@@ -832,7 +832,7 @@ export default async function CompanyPage({ params }: PageProps) {
               showBreakdown={f3Unlocked}
             />
             <div style={{ marginTop: 'var(--space-4)' }}>
-              <SanctionBadge status={company.sanctionStatus} />
+              <SanctionBadge status={company.sanctionStatus} sources={company.sanctionSources} />
             </div>
             <div style={{ marginTop: 'var(--space-3)' }}>
               <RiskBadge level={company.riskLevel} />

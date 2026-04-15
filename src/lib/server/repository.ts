@@ -857,6 +857,14 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     }
   }
 
+  // Fetch sanction list sources for listed entities so the UI can show tooltip details.
+  if (entity.sanctionStatus === 'listed') {
+    const result = await checkSanctions(entity.name).catch(() => ({ listed: true, sources: [] as string[] }))
+    if (result.sources.length > 0) {
+      entity.sanctionSources = result.sources
+    }
+  }
+
   return entity
 }
 

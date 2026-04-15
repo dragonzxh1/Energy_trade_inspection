@@ -430,7 +430,7 @@ export default async function TerminalPage({ params }: PageProps) {
               showBreakdown={f3Unlocked}
             />
             <div style={{ marginTop: 'var(--space-4)' }}>
-              <SanctionBadge status={terminal.sanctionStatus} />
+              <SanctionBadge status={terminal.sanctionStatus} sources={terminal.sanctionSources} />
             </div>
             <div style={{ marginTop: 'var(--space-3)' }}>
               <RiskBadge level={terminal.riskLevel} />
