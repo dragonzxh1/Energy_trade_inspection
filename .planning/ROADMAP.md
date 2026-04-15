@@ -134,6 +134,10 @@ Plans:
   3. `npm run type-check` exits 0 after all changes
 **Plans**: 2 plans
 
+Plans:
+- [ ] 07-01-PLAN.md — SanctionBadge sources prop wiring on entity pages + Stripe API version fix (DECISION-01)
+- [ ] 07-02-PLAN.md — Admin sync warninglists isolation before legacy fallback (DECISION-01)
+
 ### Phase 8: Admin Operations Dashboard
 **Goal**: Administrators have a dedicated dashboard to monitor data sync health, manage user accounts, and view platform usage statistics
 **Depends on**: Phase 7
