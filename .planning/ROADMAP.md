@@ -150,6 +150,11 @@ Plans:
   5. All admin dashboard pages are protected by admin-role middleware check (non-admins receive 403)
 **Plans**: 3 plans
 
+Plans:
+- [ ] 08-01-PLAN.md — DB migration 033 + admin-auth.ts shared helper + repository admin query functions + quota.ts last_active_at update (ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04)
+- [ ] 08-02-PLAN.md — GET /api/admin/users + PATCH /api/admin/users/[id]/plan + GET /api/admin/stats routes (ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04)
+- [ ] 08-03-PLAN.md — /admin page + SyncJobTable + UserTable + PlanSelector + StatCards + DailyRegistrationChart (ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04)
+
 ## Progress
 
 **Execution Order:**
