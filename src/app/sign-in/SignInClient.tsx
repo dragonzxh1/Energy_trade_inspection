@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 interface Props {
@@ -24,6 +25,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 export default function SignInClient({ callbackUrl, verified, errorCode }: Props) {
+  const router = useRouter()
   const [tab,       setTab]       = useState<'google' | 'email'>('google')
   const [email,     setEmail]     = useState('')
   const [password,  setPassword]  = useState('')
@@ -50,8 +52,10 @@ export default function SignInClient({ callbackUrl, verified, errorCode }: Props
     setLoading(false)
     if (result?.error) {
       setFormError(ERROR_MESSAGES[result.error] ?? 'Invalid email or password.')
-    } else if (result?.url) {
-      window.location.href = result.url
+    } else {
+      // Force server components to re-read session, then navigate
+      router.refresh()
+      router.push(callbackUrl)
     }
   }
 
