@@ -1,32 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: v1.0 Milestone Shipped
-stopped_at: context exhaustion at 93% (2026-04-15)
-last_updated: "2026-04-15T17:12:24.671Z"
-last_activity: 2026-04-15
+milestone: v1.1
+milestone_name: Network Intelligence Graph
+status: Defining requirements
+stopped_at: ~
+last_updated: "2026-04-16T00:00:00.000Z"
+last_activity: 2026-04-16
 progress:
-  percent: 100
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-15 after v1.0 milestone)
+See: .planning/PROJECT.md (updated 2026-04-16 for v1.1 milestone)
 
 **Core value:** Give energy traders instant, defensible answers on whether a counterparty is safe to trade with
-**Current focus:** v1.0 shipped — planning next milestone
+**Current focus:** v1.1 — Network Intelligence Graph
 
 ## Current Position
 
-Phase: 8 (complete)
-Plan: All 21 plans complete
-Status: v1.0 Milestone Shipped
-Last activity: 2026-04-15
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-16 — Milestone v1.1 started
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestone Archive
 
@@ -40,7 +40,7 @@ Progress: [██████████] 100%
 
 ### Decisions
 
-All decisions logged in PROJECT.md Key Decisions table (updated after v1.0).
+All decisions logged in PROJECT.md Key Decisions table.
 
 Key decisions from v1.0:
 
@@ -50,18 +50,26 @@ Key decisions from v1.0:
 - warninglists isolated as separate sync source in admin API
 - Admin dashboard as Server Component with isAdminAuthorized() shared helper
 
+### v1.1 Scope (from CEO Plan review 2026-04-16)
+
+6 features accepted, 1 deferred:
+- ACCEPTED: React Flow visualization, sanctions↔ICIJ linkage, fraud alerts on detail pages, ICIJ on vessel/port, 3-hop recursive query, graph→PDF export
+- DEFERRED: Watchlist cross-entity connections
+
+CEO Plan saved at: ~/.gstack/projects/dragonzxh1-Energy_trade_inspection/ceo-plans/2026-04-16-network-graph.md
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-- No automated tests (Vitest recommended for v1.1 — explicit tech debt)
+- No automated tests (Vitest recommended — explicit tech debt)
 - Missing migration 025 — schema state inconsistency risk (pre-existing, non-blocking)
 - next-auth v5 beta — revisit when stable release ships
 
 ## Session Continuity
 
-Last session: 2026-04-15T17:12:24.670Z
-Stopped at: context exhaustion at 93% (2026-04-15)
+Last session: 2026-04-16T00:00:00.000Z
+Stopped at: v1.1 milestone initialized, creating REQUIREMENTS.md + ROADMAP.md
 Resume file: None

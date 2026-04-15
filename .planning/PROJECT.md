@@ -8,6 +8,18 @@ ETI is a B2B compliance and risk screening platform built for energy traders. It
 
 **Give energy traders instant, defensible answers on whether a counterparty is safe to trade with** — replacing manual spreadsheet lookups and slow compliance reviews with a sub-second verdict backed by verifiable data trails.
 
+## Current Milestone: v1.1 Network Intelligence Graph
+
+**Goal:** 将 ETI 的文字列表升级为交互式情报图谱，让用户追踪控制网络而非仅比对名单。
+
+**Target features:**
+- React Flow 交互式节点图（颜色编码：红=制裁，橙=欺诈预警，灰=ICIJ离岸，蓝=正常）
+- 制裁 ↔ ICIJ 数据联动标记（同步时自动打 is_sanctioned 标签）
+- Fraud Alerts 并入公司/船舶详情页（数据已有，未展示）
+- ICIJ 图谱延伸至船舶/港口页（通过运营商名称匹配）
+- 3跳递归网络查询（PostgreSQL WITH RECURSIVE，深度上限3，节点上限100）
+- 图谱 SVG 导出 → 嵌入 PDF 报告
+
 ## Requirements
 
 ### Validated
@@ -47,13 +59,22 @@ ETI is a B2B compliance and risk screening platform built for energy traders. It
 
 ### Active
 
-<!-- Next milestone scope -->
+<!-- v1.1 milestone scope -->
+
+- [ ] **Network intelligence graph visualization** — React Flow interactive node graph on company/vessel/port pages — v1.1 (GRAPH-01–03)
+- [ ] **Sanctions ↔ ICIJ data linkage** — icij_entities.is_sanctioned sync marking + graph red-node UI — v1.1 (NETDATA-01–02)
+- [ ] **Fraud alerts on entity detail pages** — company + vessel pages show FraudAlertsPanel — v1.1 (NETDATA-03–04)
+- [ ] **ICIJ coverage: vessel + port pages** — match via operator/manager name — v1.1 (NETCOV-01–02)
+- [ ] **3-hop network recursive query** — PostgreSQL WITH RECURSIVE CTE, depth ≤3, nodes ≤100 — v1.1 (GRAPH-02)
+- [ ] **Graph SVG export → PDF report** — static graph snapshot embedded in entity PDF — v1.1 (REPORT-01)
+
+<!-- Future milestones -->
 
 - [ ] **Export controls integration**: BIS Entity List / Denied Persons List — new data source tier
 - [ ] **Adverse media monitoring**: news/press signal per entity (requires content pipeline)
-- [ ] **Corporate UBO graph**: beneficial ownership tracing across jurisdictions
 - [ ] **API access tier**: developer API key for programmatic integration
 - [ ] **Webhook notifications**: alert when watched entity status changes
+- [ ] **Watchlist cross-entity connections**: shared directors/ICIJ shells across watched entities
 
 ### Out of Scope
 
@@ -131,4 +152,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 after v1.0 milestone — decision engine, warning lists, domain intelligence, admin dashboard all shipped*
+*Last updated: 2026-04-16 — v1.1 milestone started: Network Intelligence Graph*
