@@ -201,20 +201,36 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
               </div>
             ) : (
               /* ── Guest state ── */
-              <Link
-                href="/sign-in"
-                style={{
-                  backgroundColor: 'var(--accent-primary)',
-                  color: '#fff',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  textDecoration: 'none',
-                  padding: '5px 12px',
-                  borderRadius: '6px',
-                }}
-              >
-                Sign in
-              </Link>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <Link
+                  href="/sign-up"
+                  style={{
+                    color: 'var(--text-muted)',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    padding: '5px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  Sign up
+                </Link>
+                <Link
+                  href="/sign-in"
+                  style={{
+                    backgroundColor: 'var(--accent-primary)',
+                    color: '#fff',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    padding: '5px 12px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  Sign in
+                </Link>
+              </div>
             )}
           </nav>
         </div>
