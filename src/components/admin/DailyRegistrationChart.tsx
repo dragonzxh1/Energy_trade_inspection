@@ -1,3 +1,5 @@
+'use client'
+
 interface DailyRegistrationChartProps {
   data: Array<{ date: string; count: number }>
 }
