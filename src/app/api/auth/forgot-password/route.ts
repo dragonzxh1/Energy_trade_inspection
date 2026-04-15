@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { email } = (await req.json()) as { email?: string }
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return NextResponse.json({ error: '请输入有效的邮箱地址' }, { status: 400 })
+      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
     }
 
     const rawEmail = email.trim().toLowerCase()
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip, 'forgot-password')
     if (!allowed) {
       return NextResponse.json(
-        { error: '请求过于频繁，请1小时后再试' },
+        { error: 'Too many requests. Please try again in an hour.' },
         { status: 429 }
       )
     }
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // Always return success to avoid user enumeration
     if (!user || !user.password_hash) {
-      return NextResponse.json({ message: '如果该邮箱存在，重置邮件已发送' })
+      return NextResponse.json({ message: 'If that email is registered, a reset link has been sent.' })
     }
 
     // ── Generate reset token (1 hour expiry) ────────────────────────────────────
@@ -58,9 +58,9 @@ export async function POST(req: NextRequest) {
 
     await sendPasswordResetEmail(rawEmail, token)
 
-    return NextResponse.json({ message: '如果该邮箱存在，重置邮件已发送' })
+    return NextResponse.json({ message: 'If that email is registered, a reset link has been sent.' })
   } catch (err) {
     console.error('[forgot-password]', err)
-    return NextResponse.json({ error: '请求失败，请稍后重试' }, { status: 500 })
+    return NextResponse.json({ error: 'Request failed. Please try again.' }, { status: 500 })
   }
 }

@@ -23,11 +23,11 @@ export async function POST(req: NextRequest) {
 
     // ── Input validation ────────────────────────────────────────────────────────
     if (!email || typeof email !== 'string' || !email.includes('@')) {
-      return NextResponse.json({ error: '请输入有效的邮箱地址' }, { status: 400 })
+      return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
     }
     if (!password || typeof password !== 'string' || !isStrongPassword(password)) {
       return NextResponse.json(
-        { error: '密码至少8位，且包含数字或特殊字符' },
+        { error: 'Password must be at least 8 characters and include a number or symbol' },
         { status: 400 }
       )
     }
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     // ── Disposable email check ──────────────────────────────────────────────────
     if (isDisposableEmail(rawEmail)) {
-      return NextResponse.json({ error: '不支持一次性邮箱注册' }, { status: 400 })
+      return NextResponse.json({ error: 'Disposable email addresses are not allowed' }, { status: 400 })
     }
 
     // ── IP rate limit ───────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const allowed = await checkRateLimit(ip, 'register')
     if (!allowed) {
       return NextResponse.json(
-        { error: '注册尝试过于频繁，请1小时后再试' },
+        { error: 'Too many registration attempts. Please try again in an hour.' },
         { status: 429 }
       )
     }
@@ -68,11 +68,11 @@ export async function POST(req: NextRequest) {
       if (!existingUser.password_hash) {
         // User exists via Google OAuth
         return NextResponse.json(
-          { error: '该邮箱已通过 Google 账号注册，请使用 Google 登录' },
+          { error: 'This email is linked to a Google account. Please sign in with Google.' },
           { status: 409 }
         )
       }
-      return NextResponse.json({ error: '该邮箱已注册，请直接登录' }, { status: 409 })
+      return NextResponse.json({ error: 'This email is already registered. Please sign in.' }, { status: 409 })
     }
 
     // ── Create user ─────────────────────────────────────────────────────────────
@@ -100,9 +100,9 @@ export async function POST(req: NextRequest) {
 
     await sendVerificationEmail(rawEmail, token)
 
-    return NextResponse.json({ userId, message: '注册成功，请查收验证邮件' }, { status: 201 })
+    return NextResponse.json({ userId, message: 'Registration successful. Please check your email to verify your account.' }, { status: 201 })
   } catch (err) {
     console.error('[register]', err)
-    return NextResponse.json({ error: '注册失败，请稍后重试' }, { status: 500 })
+    return NextResponse.json({ error: 'Registration failed. Please try again.' }, { status: 500 })
   }
 }

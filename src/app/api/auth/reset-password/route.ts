@@ -15,11 +15,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (!email || !token || !password) {
-      return NextResponse.json({ error: '参数缺失' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
     }
     if (!isStrongPassword(password)) {
       return NextResponse.json(
-        { error: '密码至少8位，且包含数字或特殊字符' },
+        { error: 'Password must be at least 8 characters and include a number or symbol' },
         { status: 400 }
       )
     }
@@ -36,14 +36,14 @@ export async function POST(req: NextRequest) {
     const row = rows[0]
 
     if (!row) {
-      return NextResponse.json({ error: '重置链接无效' }, { status: 400 })
+      return NextResponse.json({ error: 'Reset link is invalid' }, { status: 400 })
     }
     if (new Date() > row.expires) {
       await db.query(
         `DELETE FROM verification_token WHERE identifier = $1 AND token = $2`,
         [identifier, token]
       )
-      return NextResponse.json({ error: '重置链接已过期，请重新申请' }, { status: 400 })
+      return NextResponse.json({ error: 'Reset link has expired. Please request a new one.' }, { status: 400 })
     }
 
     // ── Update password ─────────────────────────────────────────────────────────
@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
       [identifier]
     )
 
-    return NextResponse.json({ message: '密码已重置，请登录' })
+    return NextResponse.json({ message: 'Password updated successfully. You can now sign in.' })
   } catch (err) {
     console.error('[reset-password]', err)
-    return NextResponse.json({ error: '重置失败，请稍后重试' }, { status: 500 })
+    return NextResponse.json({ error: 'Reset failed. Please try again.' }, { status: 500 })
   }
 }
