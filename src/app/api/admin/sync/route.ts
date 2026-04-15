@@ -155,6 +155,17 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (source === 'warninglists') {
+    try {
+      const results = await runSync('warninglists')
+      const hasError = results.some((r) => !r.success)
+      return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   const legacySource = (['ofac', 'all'] as SyncSource[]).includes(source as SyncSource)
     ? (source as SyncSource)
     : 'all'
