@@ -270,16 +270,18 @@ This confirms: `runSync('warninglists')` calls only `syncRegulatoryWarnings()`. 
 
 **All other claims verified via Read tool or git diff.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should Phase 7 also fix the Stripe `type-check` error?**
    - What we know: The error is `Type '"2025-03-31.basil"' is not assignable to type '"2026-03-25.dahlia"'` in `src/lib/stripe.ts`. A one-line fix (update the API version string) would make `type-check` exit 0.
    - What's unclear: Whether this falls within Phase 7's intended scope or should be a standalone fix.
    - Recommendation: Fix it in Plan 1 of Phase 7 as a housekeeping task; it is trivial and unblocks the SC-3 success criterion.
+   - **RESOLVED: Fixed in Plan 07-01 Task 2 — `apiVersion` updated to `'2026-03-25.dahlia'` in `src/lib/stripe.ts`.**
 
 2. **Should `'unknown'` → `'listed'` re-screening path also attach `sanctionSources`?**
    - What we know: Lines 848-858 update `sanctionStatus` but do not call `checkSanctions()` for sources — they use `screenSanctions()` which drops the `sources` return value.
    - Recommendation: Out of scope for Phase 7. Flag as a future improvement.
+   - **RESOLVED: Out of scope for Phase 7 — deferred as a known limitation documented in 07-01-PLAN.md.**
 
 ## Environment Availability
 
