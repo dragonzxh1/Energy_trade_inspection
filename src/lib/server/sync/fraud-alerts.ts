@@ -385,14 +385,23 @@ async function upsertEntries(
 ): Promise<number> {
   if (entries.length === 0) return 0
 
+  // Deduplicate by id — two different company names can produce the same slug.
+  // Keep the first occurrence (earlier in the list = higher priority scraper path).
+  const seen = new Set<string>()
+  const deduped = entries.filter((e) => {
+    if (seen.has(e.id)) return false
+    seen.add(e.id)
+    return true
+  })
+
   // Delete stale entries for this source, then insert fresh data.
   await client.query(`DELETE FROM fraud_alerts WHERE source = $1`, [source])
 
   const BATCH_SIZE = 200
   let inserted = 0
 
-  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
-    const batch = entries.slice(i, i + BATCH_SIZE)
+  for (let i = 0; i < deduped.length; i += BATCH_SIZE) {
+    const batch = deduped.slice(i, i + BATCH_SIZE)
     const placeholders = batch
       .map((_, j) => {
         const b = j * 11
