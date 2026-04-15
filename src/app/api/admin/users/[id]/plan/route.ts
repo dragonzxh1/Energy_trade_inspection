@@ -5,7 +5,7 @@ import { isAdminAuthorized } from '@/lib/server/admin-auth'
 
 export const runtime = 'nodejs'
 
-const ALLOWED_PLANS = ['free', 'starter', 'professional', 'enterprise'] as const
+const ALLOWED_PLANS = ['free', 'starter', 'enterprise'] as const
 type AllowedPlan = typeof ALLOWED_PLANS[number]
 
 export async function PATCH(
