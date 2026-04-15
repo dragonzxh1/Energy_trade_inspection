@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 07 ready to start
-last_updated: "2026-04-15T00:00:00.000Z"
-last_activity: 2026-04-15 -- Phase 06 completed (UAT passed, CR-01 + CR-02 security fixes applied)
+status: completed
+stopped_at: Phase 07 complete — both plans committed
+last_updated: "2026-04-15T11:30:00.000Z"
+last_activity: 2026-04-15 -- Phase 07 complete; SanctionBadge tooltip wired (sanctionSources), Stripe API version fixed, warninglists sync isolated
 progress:
   total_phases: 8
   completed_phases: 6
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ## Current Position
 
-Phase: 06 (trade-service-integration-hardening) — COMPLETE
+Phase: 07 (entity-sanction-wiring-admin-sync-fix) — COMPLETE
 Plan: 2 of 2
-Status: Phase 06 complete, ready for Phase 07
-Last activity: 2026-04-15 -- Phase 06 UAT passed; fixed CR-01 (auth bypass → 401) and CR-02 (sellerDomain SSRF validation)
+Status: Phase 07 complete, ready for Phase 08
+Last activity: 2026-04-15 -- Phase 07 complete; SanctionBadge tooltip wired (sanctionSources), Stripe API version fixed (dahlia), warninglists sync isolated
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -91,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T07:13:17.445Z
-Stopped at: Phase 6 UI-SPEC approved
-Resume file: .planning/phases/06-trade-service-integration-hardening/06-UI-SPEC.md
+Last session: 2026-04-15T10:45:52.586Z
+Stopped at: Phase 8 UI-SPEC approved (force)
+Resume file: .planning/phases/08-admin-operations-dashboard/08-UI-SPEC.md
