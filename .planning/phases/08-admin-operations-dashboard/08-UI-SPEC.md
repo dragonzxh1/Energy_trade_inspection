@@ -43,9 +43,9 @@ Declared values — all from existing `--space-*` CSS variables in `src/styles/g
 | 3xl | 64px (`var(--space-16)`) | Not used in this phase — admin is data-dense, not marketing |
 
 Exceptions:
-- Table row height: `padding: var(--space-3) var(--space-5)` — matches watchlist page pattern exactly (12px/20px)
+- Table row height: `padding: var(--space-3) var(--space-4)` — 12px/16px row padding for data-dense table rows
 - Plan change dropdown: minimum touch target 36px tall (accessibility minimum for admin-only desktop tool)
-- Stat card internal layout: `var(--space-5)` padding (20px) — matches account page card pattern
+- Stat card internal layout: `var(--space-4)` padding (16px)
 
 ---
 
@@ -56,12 +56,10 @@ Source: `src/styles/globals.css` declared globals — do not deviate.
 | Role | Size | Weight | Line Height | Notes |
 |------|------|--------|-------------|-------|
 | Body / table cell | 13px | 400 | 20px (1.54) | Primary data text in rows — matches watchlist pattern |
-| Label / column header | 11px | 600 | 16px (1.45) | Uppercase, `letter-spacing: 0.06em` — matches all existing table headers |
-| Section heading | 20px | 600 (`590`) | 28px (1.4) | Page-level `<h1>` — matches account/watchlist pages |
-| Subsection heading | 16px | 600 | 22px (1.375) | Section `<h2>` inside dashboard — matches watchlist "Watched Trades" heading |
+| Label / column header / chart X-axis labels | 11px | 600 | 16px (1.45) | Uppercase, `letter-spacing: 0.06em` — matches all existing table headers |
+| Section heading AND subsection heading | 20px | 600 (`590`) | 28px (1.4) | Page-level `<h1>` and section `<h2>` inside dashboard — matches account/watchlist pages |
 | Stat number | 28px | 600 (`590`) | 36px (1.29) | Large numeric displays in stat cards (user count, etc.) |
-| Monospace data | 13px (`var(--font-mono)`) | 400 | 20px | Log error messages, sync timestamps, sync duration ms |
-| Metadata / timestamps | 12px | 400 | 16px | Secondary metadata, "last active", "registered date" |
+| Monospace data / metadata / timestamps | 13px (`var(--font-mono)`) | 400 | 20px | Log error messages, sync timestamps, sync duration ms, secondary metadata, "last active", "registered date" |
 
 All body text uses `font-feature-settings: "cv01", "ss03"` — inherited from `body` in globals.css; do not override.
 
@@ -87,6 +85,7 @@ Source: CSS variables in `src/styles/globals.css`. No new color values introduce
 - Active tab underline in dashboard tab nav
 - Plan badge border + text in user list (matches header plan badge pattern)
 - Links to external data (sync source documentation links, if any)
+- Chart bar fill (DailyRegistrationChart) — `var(--accent-primary)` at `opacity: 0.7`, `opacity: 1` on hover
 
 **No new semantic colors may be introduced.** Use existing `--status-*`, `--risk-*`, `--accent-*` tokens only.
 
@@ -96,6 +95,8 @@ Source: CSS variables in `src/styles/globals.css`. No new color values introduce
 
 The admin dashboard lives at `/admin`. It uses the same `<Header>` component as all other pages.
 The dashboard uses a tab-nav pattern (matching `TabNav` component) to switch between three sections.
+
+**Primary visual focal point:** SyncJobTable in the Sync History tab (default tab on page load). This is the first content the admin sees and the highest-frequency interaction surface.
 
 ### Route: `/admin`
 
@@ -125,8 +126,8 @@ Displays the log of all sync job runs. Columns:
 | Status | `80px` | Badge: "SUCCESS" in `var(--status-clear)` / "FAILED" in `var(--status-listed)` / "RUNNING" in `var(--risk-medium)` |
 | Records | `90px` | Record count — mono font, right-aligned |
 | Duration | `80px` | Duration in ms or seconds — mono font, right-aligned |
-| Time | `140px` | UTC timestamp — mono font, 12px |
-| Error | `1fr` | Error message if failed — `var(--text-muted)`, italic, 12px, truncated at 1 line with `title=` tooltip |
+| Time | `140px` | UTC timestamp — mono font, 13px (`var(--font-mono)`) |
+| Error | `1fr` | Error message if failed — `var(--text-muted)`, italic, 13px, truncated at 1 line with `title=` tooltip |
 
 Container: `var(--bg-surface)` card, `border-radius: 12px`, `overflow: hidden`.
 Column headers: `var(--bg-elevated)` background, `var(--text-muted)` text, 11px, uppercase, 0.06em tracking — matches watchlist table header exactly.
@@ -142,10 +143,10 @@ Displays the full user list. Columns:
 | Column | Width | Content |
 |--------|-------|---------|
 | Email | `1fr` | Email address — primary text, 13px, 500 weight |
-| Plan | `100px` | Plan badge — border style matching header plan badge: `var(--accent-primary)` border + text, 10px, uppercase, 0.06em; free plan shows plain `var(--text-muted)` text "Free" |
-| Registered | `110px` | Registration date — 12px, `var(--text-muted)`, "12 Apr 2026" format |
+| Plan | `100px` | Plan badge — border style matching header plan badge: `var(--accent-primary)` border + text, 11px, uppercase, 0.06em; free plan shows plain `var(--text-muted)` text "Free" |
+| Registered | `110px` | Registration date — 13px (`var(--font-mono)`), `var(--text-muted)`, "12 Apr 2026" format |
 | Last Active | `110px` | Last active date — same format; "Never" if null |
-| Quota Used | `90px` | "42 / 100" or "Unlimited" — mono font, 12px |
+| Quota Used | `90px` | "42 / 100" or "Unlimited" — mono font, 13px |
 | Action | `120px` | Plan change control — see PlanSelector below |
 
 Search: a plain `<input>` above the table. `placeholder="Search users by email"`. Width: 280px. Style: `var(--bg-elevated)` background, `var(--border-subtle)` border, `var(--text-primary)` text, `border-radius: 6px`, `padding: var(--space-2) var(--space-3)`, 13px. Client-side filter on email field. No debounce required (list is small).
@@ -162,13 +163,13 @@ Inline plan change control rendered in the Action column of UserTable.
 - On success: row plan badge updates without full page reload (optimistic update via client state)
 - On failure: show inline error text "Failed. Try again." in `var(--status-listed)`, 11px, same cell
 
-Style: `var(--bg-elevated)` background, `var(--border-subtle)` border, `var(--text-secondary)` text, `border-radius: 4px`, `padding: 3px 6px`, 12px, `font-family: inherit`, `cursor: pointer`.
+Style: `var(--bg-elevated)` background, `var(--border-subtle)` border, `var(--text-secondary)` text, `border-radius: 4px`, `padding: var(--space-1) var(--space-2)`, 13px, `font-family: inherit`, `cursor: pointer`.
 
 No modal confirmation is required — this is an admin-only tool. The plan change is immediate and logged server-side.
 
 ### 4. StatCards (ADMIN-04)
 
-Four stat cards in a 2x2 grid on the Stats tab. Grid: `display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5)`.
+Four stat cards in a 2x2 grid on the Stats tab. Grid: `display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4)`.
 
 | Card | Metric | Detail |
 |------|--------|--------|
@@ -177,10 +178,10 @@ Four stat cards in a 2x2 grid on the Stats tab. Grid: `display: grid; grid-templ
 | New Today | Count | Subtext: "registrations in the last 24h" |
 | New (30 days) | Count | Subtext: "registrations in the past 30 days" |
 
-Card style: `var(--bg-surface)` background, `var(--border-subtle)` border, `border-radius: 12px`, `padding: var(--space-5)`.
+Card style: `var(--bg-surface)` background, `var(--border-subtle)` border, `border-radius: 12px`, `padding: var(--space-4)`.
 Stat number: 28px, weight 590, `var(--text-primary)`.
 Stat label: 11px, weight 600, uppercase, `var(--text-muted)`, `letter-spacing: 0.06em`.
-Subtext: 12px, weight 400, `var(--text-muted)`.
+Subtext: 13px, weight 400, `var(--text-muted)`.
 
 ### 5. DailyRegistrationChart (ADMIN-04)
 
@@ -191,7 +192,7 @@ Implementation constraint: No external charting library. Use CSS bars rendered f
 Layout: `display: flex; align-items: flex-end; gap: 4px; height: 80px`.
 Each bar: `flex: 1; background-color: var(--accent-primary); opacity: 0.7; border-radius: 2px 2px 0 0; min-height: 2px`.
 Bar height: proportional to max count in the 30-day window. If max is 0, all bars at `min-height: 2px` with `opacity: 0.3`.
-X-axis labels: show only first day of each week — "1 Apr", "8 Apr" — 10px, `var(--text-faint)`.
+X-axis labels: show only first day of each week — "1 Apr", "8 Apr" — 11px, `var(--text-faint)`.
 Hover: `opacity: 1` on hover + native `title="{date}: {count} registrations"` tooltip.
 
 ---
@@ -212,11 +213,11 @@ Uses existing `TabNav` component (`src/components/entity/TabNav.tsx`) with the t
 
 ### Sync job refresh
 
-A "Refresh" button above the SyncJobTable. Label: "Refresh". On click: re-fetches `/api/admin/sync` and re-renders the table. Button style: `border: 1px solid var(--border-subtle)`, `var(--text-muted)` text, same as "Sign out" button in Header. During fetch: button disabled + label changes to "Refreshing…". No spinner.
+A "Refresh Sync Log" button above the SyncJobTable. Label: "Refresh Sync Log". On click: re-fetches `/api/admin/sync` and re-renders the table. Button style: `border: 1px solid var(--border-subtle)`, `var(--text-muted)` text, same as "Sign out" button in Header. During fetch: button disabled + label changes to "Refreshing…". No spinner.
 
 ### 403 gate
 
-If user is not admin: the full tab nav and all content is replaced by a centered message panel (no tabs visible). Message panel: `var(--bg-surface)` card, `border-radius: 12px`, `padding: var(--space-12)`, centered in the page. Text: "Access denied" as heading (16px, 600), subtext as described above (14px, `var(--text-muted)`).
+If user is not admin: the full tab nav and all content is replaced by a centered message panel (no tabs visible). Message panel: `var(--bg-surface)` card, `border-radius: 12px`, `padding: var(--space-12)`, centered in the page. Text: "Access denied" as heading (20px, 600), subtext as described above (13px, `var(--text-muted)`).
 
 ---
 
@@ -239,7 +240,7 @@ If user is not admin: the full tab nav and all content is replaced by a centered
 | Sync status badge — failed | "FAILED" |
 | Sync status badge — running | "RUNNING" |
 | Plan selector option labels | "Free", "Starter", "Enterprise" (title case — not uppercase) |
-| Refresh button default | "Refresh" |
+| Refresh button default | "Refresh Sync Log" |
 | Refresh button loading | "Refreshing..." |
 | Stat card — total users | "Total Users" (label), "registered users" (subtext) |
 | Stat card — plan distribution | "Plan Distribution" (label) |
