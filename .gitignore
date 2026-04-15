@@ -1,0 +1,50 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+
+# Production
+build
+
+# Env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.gstack/
+.claude/
+.venv/
+*.csv
+__pycache__/
+*.pyc
+
+# ICIJ / external dataset CSVs (large files, not committed)
+database/
+tmp/
+/tmp/
+
+# One-off deployment/setup scripts (may contain credentials)
+_remote_*.sh
+
+# Database backups (large binary files, never commit)
+*.dump
+*.sql.gz
