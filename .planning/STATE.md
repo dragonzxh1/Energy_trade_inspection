@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
-status: executing
-stopped_at: Phase 8 UI-SPEC approved (force)
-last_updated: "2026-04-15T14:59:18.668Z"
+milestone_name: MVP
+status: shipped
+stopped_at: milestone complete (2026-04-15)
+last_updated: "2026-04-15T23:00:00.000Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 8
@@ -18,80 +18,53 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-13)
+See: .planning/PROJECT.md (updated 2026-04-15 after v1.0 milestone)
 
 **Core value:** Give energy traders instant, defensible answers on whether a counterparty is safe to trade with
-**Current focus:** Phase 08 — admin-operations-dashboard
+**Current focus:** v1.0 shipped — planning next milestone
 
 ## Current Position
 
-Phase: 08
-Plan: Not started
-Status: Executing Phase 08
+Phase: 8 (complete)
+Plan: All 21 plans complete
+Status: v1.0 Milestone Shipped
 Last activity: 2026-04-15
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
-## Performance Metrics
+## Milestone Archive
 
-**Velocity:**
-
-- Total plans completed: 17
-- Average duration: —
-- Total execution time: —
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01 | 3 | - | - |
-| 02 | 2 | - | - |
-| 3 | 2 | - | - |
-| 04 | 3 | - | - |
-| 05 | 4 | - | - |
-| 08 | 3 | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
-
-*Updated after each plan completion*
-| Phase 02 P02 | 5 | 3 tasks | 4 files |
-| Phase 03 P01 | 12 | 2 tasks | 4 files |
-| Phase 03 P02 | 15 | 3 tasks | 5 files |
+- **v1.0 MVP** — shipped 2026-04-15
+  - 8 phases, 21 plans
+  - Archived: `.planning/milestones/v1.0-ROADMAP.md`
+  - Requirements archived: `.planning/milestones/v1.0-REQUIREMENTS.md`
+  - Tag: `v1.0`
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+All decisions logged in PROJECT.md Key Decisions table (updated after v1.0).
 
-- [Init]: next-auth v5 beta accepted as auth solution — avoid deep API coupling until stable release
-- [Init]: Raw SQL only — no ORM allowed, established pattern throughout codebase
-- [Init]: Linear design system (dark mode, indigo accent) — committed direction
-- [Phase 02]: WarningBadge uses native title= tooltip (no JS library) — consistent with existing Badge primitive pattern
-- [Phase 02]: No className on Badge in WarningBadge — intentional absence of glow/pulse animation per UI-SPEC D-02
-- [Phase 03]: ESERVFAIL/ETIMEOUT treated as unknown (not absent) in DNS checks — error stored in cache error field, not misreported as definitive absence
-- [Phase 03]: DKIM detection reported via 8-selector probe as dkimDetected boolean; never confirmed absent due to unknown selector variability
-- [Phase 03]: website field stored in metadata_json JSONB for 3 seed entities — no new column in entities table
-- [Phase 03]: DomainRiskBadge placed inside DomainIntelPanel (WhoisSection header) rather than sidebar — avoids SSR DB query latency for sidebar hydration
-- [Phase 03]: website field added to Company type and extracted in parseEntity() — clean data flow avoids type assertions in page component
+Key decisions from v1.0:
+- Centralized middleware.ts auth guard — established as default security pattern
+- WarningBadge uses native title= tooltip — consistent with Badge primitive
+- SanctionBadge sources prop wired from repository layer, not page-level query
+- warninglists isolated as separate sync source in admin API
+- Admin dashboard as Server Component with isAdminAuthorized() shared helper
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-- [Init]: `tradingTrackRecord` scoring dimension always returns 0 — placeholder blocker, addressed in Phase 4
-- [Init]: No `middleware.ts` exists — security risk on new routes, addressed first in Phase 1
-- [Init]: Migration 025 missing — schema state inconsistency risk, pre-existing, not in scope
-- [Init]: OpenSanctions API has no circuit breaker — silent failure risk, addressed in Phase 1
+- No automated tests (Vitest recommended for v1.1 — explicit tech debt)
+- Missing migration 025 — schema state inconsistency risk (pre-existing, non-blocking)
+- next-auth v5 beta — revisit when stable release ships
 
 ## Session Continuity
 
-Last session: 2026-04-15T10:45:52.586Z
-Stopped at: Phase 8 UI-SPEC approved (force)
-Resume file: .planning/phases/08-admin-operations-dashboard/08-UI-SPEC.md
+Last session: 2026-04-15
+Stopped at: milestone complete
+Resume file: None — start fresh with /gsd-new-milestone
