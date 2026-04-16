@@ -27,7 +27,7 @@ export interface GleifLeiRecord {
   initialRegistrationDate: string | null
   /**
    * GLEIF Registration Authority code, e.g. "RA000585" = UK Companies House,
-   * "RA000258" = Singapore ACRA. See GLEIF RA list for full mapping.
+   * "RA000523" = Singapore ACRA. See GLEIF RA list for full mapping.
    */
   registrationAuthorityId: string | null
   /**

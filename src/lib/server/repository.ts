@@ -589,14 +589,30 @@ export async function getFeaturedEntities(): Promise<FeaturedRow[]> {
  */
 const RA_COMPANIES_HOUSE = 'RA000585' // UK Companies House
 const RA_ACRA            = 'RA000523' // Singapore ACRA (confirmed from live GLEIF API)
+const RA_ZEFIX           = 'RA000674' // Swiss EHRA / Zefix (federal commercial register)
+
+/**
+ * Normalize a Swiss UID to the CHE-xxx.xxx.xxx format expected by Zefix.
+ * GLEIF may return "CHE123456789" or "CHE-123.456.789" or bare digits.
+ */
+function normalizeSwissUid(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, '')
+  if (digits.length === 9) {
+    return `CHE-${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}`
+  }
+  // Already correctly formatted or unrecognised — pass through
+  return raw.startsWith('CHE') ? raw : `CHE-${raw}`
+}
 
 /**
  * Given a GLEIF LEI record, attempt to fetch a richer Company object from the
  * underlying national registry identified by registrationAuthorityId.
  *
  * - RA000585 (Companies House): fetches officers + PSC → full directors/beneficialOwners
- * - RA000258 (ACRA): fetches UEN entity → proper ACRA Company object
- * - Anything else: falls back to buildGleifCompany (minimal object from LEI data only)
+ * - RA000523 (ACRA): fetches UEN entity → proper ACRA Company object
+ * - RA000674 (Zefix): fetches Swiss UID entity → proper Zefix Company object
+ * - Anything else: tries OpenCorporates by jurisdiction + reg number, then falls back
+ *   to buildGleifCompany (minimal object from LEI data only)
  */
 async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifRecordByLei>>): Promise<Company | null> {
   if (!record) return null
@@ -608,8 +624,9 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
   if (raId === RA_COMPANIES_HOUSE && regNum) {
     const chCompany = await getCHCompanyByNumber(regNum).catch(() => null)
     if (chCompany) {
+      const companyName = chCompany.title ?? chCompany.company_name ?? ''
       const [sanctionStatus, officers, psc] = await Promise.all([
-        screenSanctions(chCompany.title).catch(() => 'unknown' as SanctionStatus),
+        screenSanctions(companyName).catch(() => 'unknown' as SanctionStatus),
         getCHOfficers(chCompany.company_number).catch(() => []),
         getCHPSC(chCompany.company_number).catch(() => []),
       ])
@@ -664,7 +681,31 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
     }
   }
 
-  // Fallback: build minimal Company from GLEIF data only
+  // Route to Zefix (Switzerland)
+  if (raId === RA_ZEFIX && regNum) {
+    const uid = normalizeSwissUid(regNum)
+    const zefixCompany = await getZefixByUid(uid).catch(() => null)
+    if (zefixCompany) {
+      const sanctionStatus = await screenSanctions(zefixCompany.name).catch(
+        () => 'unknown' as SanctionStatus
+      )
+      return buildZefixCompany(zefixCompany, sanctionStatus) as unknown as Company
+    }
+  }
+
+  // Fallback: try OpenCorporates by jurisdiction + registration number
+  const jurisdiction = record.jurisdiction?.toLowerCase()
+  if (jurisdiction && regNum) {
+    const ocCompany = await getOCCompanyByNumber(jurisdiction, regNum).catch(() => null)
+    if (ocCompany) {
+      const sanctionStatus = await screenSanctions(ocCompany.name).catch(
+        () => 'unknown' as SanctionStatus
+      )
+      return buildOCCompany(ocCompany, sanctionStatus) as unknown as Company
+    }
+  }
+
+  // Last resort: build minimal Company from GLEIF data only
   const sanctionStatus = await screenSanctions(record.legalName).catch(
     () => 'unknown' as SanctionStatus
   )
@@ -729,8 +770,9 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     if (mightBeUKNumber(idOrSlugOrImo)) {
       const chCompany = await getCHCompanyByNumber(idOrSlugOrImo).catch(() => null)
       if (chCompany) {
+        const companyName = chCompany.title ?? chCompany.company_name ?? ''
         const [sanctionStatus, officers, psc] = await Promise.all([
-          screenSanctions(chCompany.title).catch(() => 'unknown' as SanctionStatus),
+          screenSanctions(companyName).catch(() => 'unknown' as SanctionStatus),
           getCHOfficers(chCompany.company_number).catch(() => []),
           getCHPSC(chCompany.company_number).catch(() => []),
         ])

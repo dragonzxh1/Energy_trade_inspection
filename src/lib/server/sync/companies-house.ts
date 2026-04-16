@@ -28,7 +28,8 @@ function buildHeaders(): HeadersInit {
 
 export interface CHCompany {
   company_number: string
-  title: string                       // Company name
+  title?: string                      // Company name — search endpoint only
+  company_name?: string               // Company name — profile endpoint only
   company_type: string                // e.g. "ltd", "plc", "llp"
   company_status: string              // "active" | "dissolved" | "liquidation"
   date_of_creation?: string           // ISO date YYYY-MM-DD
@@ -97,7 +98,9 @@ export async function getCHCompanyByNumber(number: string): Promise<CHCompany | 
     })
 
     if (!response.ok) return null
-    return response.json() as Promise<CHCompany>
+    // Profile endpoint returns company_name; normalize to title for consistency
+    const data = await response.json() as CHCompany & { company_name?: string }
+    return { ...data, title: data.title ?? data.company_name }
   } catch {
     return null
   }
@@ -150,7 +153,7 @@ export function chToSearchResult(company: CHCompany) {
   const { authenticityScore } = computeCHScore(company)  // no sanctions in search path
   return {
     id: `ch:${company.company_number}`,
-    name: company.title,
+    name: company.title ?? company.company_name ?? '',
     type: 'company' as const,
     country: 'United Kingdom',
     jurisdictionFlag: '🇬🇧',
@@ -294,7 +297,7 @@ export function buildCHCompany(
   const base = {
     id: `ch:${company.company_number}`,
     type: 'company' as const,
-    name: company.title,
+    name: company.title ?? company.company_name ?? '',
     slug: company.company_number.toLowerCase(),
     registrationNumber: company.company_number,
     incorporationDate: company.date_of_creation,
