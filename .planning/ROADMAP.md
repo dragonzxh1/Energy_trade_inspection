@@ -26,7 +26,7 @@ See full details: `.planning/milestones/v1.0-ROADMAP.md`
 ### v1.1 Network Intelligence Graph (Phases 9–11)
 
 - [ ] **Phase 9: Data Enrichment Foundations** — ICIJ↔sanctions linkage + fraud alert panels on company and vessel pages
-- [ ] **Phase 10: Network Graph Core** — React Flow interactive node graph with 3-hop recursive query on company pages
+- [x] **Phase 10: Network Graph Core** — React Flow interactive node graph with 3-hop recursive query on company pages (completed 2026-04-16)
 - [ ] **Phase 11: Coverage Expansion + PDF Export** — ICIJ panels on vessel/port pages + graph SVG embedded in PDF reports
 
 ## Phase Details
@@ -61,7 +61,7 @@ Plans:
 - [x] 10-01-PLAN.md — npm 安装 @xyflow/react + @dagrejs/dagre + NetworkNode/NetworkEdge/NetworkGraphResult 接口定义 (GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04)
 - [x] 10-02-PLAN.md — getNetworkGraph() WITH RECURSIVE CTE 数据层实现 (GRAPH-03, GRAPH-04)
 - [x] 10-03-PLAN.md — NetworkGraph.tsx React Flow 客户端组件 + company page.tsx Network tab 集成 (GRAPH-01, GRAPH-02, GRAPH-04)
-- [ ] 10-04-PLAN.md — 手动视觉验证 checkpoint (GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04)
+- [x] 10-04-PLAN.md — 手动视觉验证 checkpoint (GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04)
 **UI hint**: yes
 
 ### Phase 11: Coverage Expansion + PDF Export
@@ -88,5 +88,5 @@ Plans:
 | 7. Entity Sanction Wiring & Admin Sync Fix | v1.0 | 2/2 | Complete | 2026-04-15 |
 | 8. Admin Operations Dashboard | v1.0 | 3/3 | Complete | 2026-04-15 |
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
-| 10. Network Graph Core | v1.1 | 3/4 | In Progress|  |
+| 10. Network Graph Core | v1.1 | 4/4 | Complete   | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
