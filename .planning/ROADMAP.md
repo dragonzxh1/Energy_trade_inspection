@@ -59,7 +59,7 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 10-01-PLAN.md — npm 安装 @xyflow/react + @dagrejs/dagre + NetworkNode/NetworkEdge/NetworkGraphResult 接口定义 (GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04)
-- [ ] 10-02-PLAN.md — getNetworkGraph() WITH RECURSIVE CTE 数据层实现 (GRAPH-03, GRAPH-04)
+- [x] 10-02-PLAN.md — getNetworkGraph() WITH RECURSIVE CTE 数据层实现 (GRAPH-03, GRAPH-04)
 - [ ] 10-03-PLAN.md — NetworkGraph.tsx React Flow 客户端组件 + company page.tsx Network tab 集成 (GRAPH-01, GRAPH-02, GRAPH-04)
 - [ ] 10-04-PLAN.md — 手动视觉验证 checkpoint (GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04)
 **UI hint**: yes
@@ -88,5 +88,5 @@ Plans:
 | 7. Entity Sanction Wiring & Admin Sync Fix | v1.0 | 2/2 | Complete | 2026-04-15 |
 | 8. Admin Operations Dashboard | v1.0 | 3/3 | Complete | 2026-04-15 |
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
-| 10. Network Graph Core | v1.1 | 1/4 | In Progress|  |
+| 10. Network Graph Core | v1.1 | 2/4 | In Progress|  |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |

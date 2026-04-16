@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Network Intelligence Graph
 status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-04-16T17:07:58.234Z"
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-04-16T17:15:58.012Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 for v1.1 milestone)
 ## Current Position
 
 Phase: 10 (network-graph-core) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-16
 
@@ -56,6 +56,7 @@ Key decisions from v1.0:
 - [Phase 10-network-graph-core]: CSS import of @xyflow/react/dist/style.css deferred to Wave 2 NetworkGraph.tsx (scoped, not global)
 - [Phase 10-network-graph-core]: nodeColor computed server-side; etlKey carries only public slug/IMO (no internal DB row IDs)
 - [Phase 10-network-graph-core]: Wave 0 type contract pattern: interfaces defined before parallel Wave 1/2 implementation to prevent type incompatibility
+- [Phase 10]: Three independent db.query() calls in getNetworkGraph() for maintainability; 100-node cap applies only to ICIJ CTE, not ETI first-layer nodes
 
 ### v1.1 Scope (from CEO Plan review 2026-04-16)
 
@@ -94,6 +95,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16T17:07:58.231Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-04-16T17:15:58.009Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None
