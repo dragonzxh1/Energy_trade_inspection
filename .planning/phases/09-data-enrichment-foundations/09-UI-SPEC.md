@@ -41,18 +41,18 @@ All values from existing globals.css `--space-*` tokens. No new tokens required.
 | --space-6 | 24px | Page section spacing |
 | --space-8 | 32px | Empty state vertical padding |
 
-Exceptions: 44px minimum touch target for mobile tap areas on alert rows (achieved via min-height, not a spacing token).
+Exceptions: 44px minimum touch target for mobile tap areas on alert rows (achieved via min-height, not a spacing token). --space-3 (12px) and --space-5 (20px) are existing globals.css tokens, not in standard set but aligned to 4px grid.
 
 ---
 
 ## Typography
 
-Inherits the existing three-tier system from globals.css. No new type roles needed.
+Inherits the existing three-tier system from globals.css. No new type roles needed. Two weights only: 400 (Regular) and 600 (Semi-bold).
 
 | Role | Size | Weight | Line Height | CSS var |
 |------|------|--------|-------------|---------|
 | Panel section title | 11px | 600 | 1.45 | matches `sectionTitle` pattern |
-| Alert entity name | 14px | 500 | 20px | var(--text-primary) |
+| Alert entity name | 14px | 600 | 20px | var(--text-primary) |
 | Alert metadata line | 12px | 400 | 18px | var(--text-muted) |
 | Source badge label | 10px | 600 | auto | uppercase, letter-spacing 0.06em |
 | Description text | 12px | 400 | 18px | var(--text-muted), italic |
@@ -153,7 +153,7 @@ borderBottom: 1px solid var(--border-subtle)
 
 Left column (flex: 1):
 - Row 1: Entity name + source badge (flex row, gap var(--space-2), flex-wrap wrap)
-  - Entity name: `company_name` from DB — 14px, weight 500, color var(--text-primary)
+  - Entity name: `company_name` from DB — 14px, weight 600, color var(--text-primary)
   - Source badge: see Source Badge spec below
 - Row 2: Metadata line — `fraud_type` (if available) + `synced_at` date
   - 12px, color var(--text-muted), marginTop 2px
