@@ -43,27 +43,30 @@ export interface GleifLeiRecord {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseRecord(record: any): GleifLeiRecord | null {
   if (!record?.id || !record?.attributes) return null
+  // GLEIF v1 API field names (confirmed against live API 2026-04):
+  //   entity.jurisdiction          — ISO 3166-1 alpha-2 (not legalJurisdiction)
+  //   entity.registeredAt.id       — RA code e.g. "RA000585"
+  //   entity.registeredAs          — local registry number e.g. "10399850"
   const { entity, registration } = record.attributes as {
     entity?: {
       legalName?: { name?: string }
-      legalJurisdiction?: string
+      jurisdiction?: string
       legalAddress?: { country?: string }
-      registrationAuthority?: {
-        registrationAuthorityID?: string
-        registrationAuthorityEntityID?: string
-      }
+      registeredAt?: { id?: string }
+      registeredAs?: string | number
     }
     registration?: { initialRegistrationDate?: string }
   }
-  const jur = entity?.legalJurisdiction ?? null
+  const jur = entity?.jurisdiction ?? null
+  const regAs = entity?.registeredAs
   return {
     lei:                          record.id as string,
     legalName:                    entity?.legalName?.name ?? '',
     jurisdiction:                 jur ? jur.slice(0, 2).toUpperCase() : null,
     country:                      entity?.legalAddress?.country ?? null,
     initialRegistrationDate:      registration?.initialRegistrationDate ?? null,
-    registrationAuthorityId:      entity?.registrationAuthority?.registrationAuthorityID ?? null,
-    registrationAuthorityEntityId: entity?.registrationAuthority?.registrationAuthorityEntityID ?? null,
+    registrationAuthorityId:      entity?.registeredAt?.id ?? null,
+    registrationAuthorityEntityId: regAs != null ? String(regAs) : null,
   }
 }
 

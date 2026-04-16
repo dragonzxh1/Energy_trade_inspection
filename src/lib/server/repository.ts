@@ -583,6 +583,94 @@ export async function getFeaturedEntities(): Promise<FeaturedRow[]> {
   return rows
 }
 
+/**
+ * GLEIF Registration Authority codes for registries we can route to directly.
+ * Source: https://www.gleif.org/en/about-lei/code-lists/gleif-registration-authorities-list
+ */
+const RA_COMPANIES_HOUSE = 'RA000585' // UK Companies House
+const RA_ACRA            = 'RA000523' // Singapore ACRA (confirmed from live GLEIF API)
+
+/**
+ * Given a GLEIF LEI record, attempt to fetch a richer Company object from the
+ * underlying national registry identified by registrationAuthorityId.
+ *
+ * - RA000585 (Companies House): fetches officers + PSC → full directors/beneficialOwners
+ * - RA000258 (ACRA): fetches UEN entity → proper ACRA Company object
+ * - Anything else: falls back to buildGleifCompany (minimal object from LEI data only)
+ */
+async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifRecordByLei>>): Promise<Company | null> {
+  if (!record) return null
+
+  const raId     = record.registrationAuthorityId?.toUpperCase()
+  const regNum   = record.registrationAuthorityEntityId
+
+  // Route to Companies House
+  if (raId === RA_COMPANIES_HOUSE && regNum) {
+    const chCompany = await getCHCompanyByNumber(regNum).catch(() => null)
+    if (chCompany) {
+      const [sanctionStatus, officers, psc] = await Promise.all([
+        screenSanctions(chCompany.title).catch(() => 'unknown' as SanctionStatus),
+        getCHOfficers(chCompany.company_number).catch(() => []),
+        getCHPSC(chCompany.company_number).catch(() => []),
+      ])
+      const directors: Company['directors'] = officers.map((o, i) => ({
+        id:           `ch-officer-${i}`,
+        name:         o.name,
+        role:         o.role,
+        nationality:  o.nationality,
+        appointedDate: o.appointedOn,
+      }))
+      return {
+        ...buildCHCompany(chCompany, sanctionStatus),
+        directors:        directors.length > 0 ? directors : undefined,
+        beneficialOwners: psc.length > 0 ? psc : undefined,
+      }
+    }
+  }
+
+  // Route to ACRA
+  if (raId === RA_ACRA && regNum) {
+    const acraEntity = await getACRAByUEN(regNum).catch(() => null)
+    if (acraEntity) {
+      const sanctionStatus = await screenSanctions(acraEntity.entity_name).catch(
+        () => 'unknown' as SanctionStatus
+      )
+      const { authenticityScore: acraScore, scoreBreakdown: acraBreakdown } =
+        computeACRAScore(acraEntity, sanctionStatus)
+      const finalScore     = sanctionStatus === 'listed' ? 7 : acraScore
+      const finalBreakdown = sanctionStatus === 'listed' ? {
+        entityExistence:     { score: 3, maxScore: 25 },
+        assetReality:        { score: 3, maxScore: 30 },
+        tradingTrackRecord:  { score: 0, maxScore: 25 },
+        documentConsistency: { score: 1, maxScore: 10 },
+        communityReputation: { score: 0, maxScore: 10 },
+      } : acraBreakdown
+      return {
+        id:               `acra:${acraEntity.uen}`,
+        type:             'company',
+        name:             acraEntity.entity_name,
+        slug:             acraEntity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        registrationNumber: acraEntity.uen,
+        country:          'Singapore',
+        jurisdictionFlag: '🇸🇬',
+        sanctionStatus,
+        authenticityScore: finalScore,
+        scoreBreakdown:   finalBreakdown,
+        riskLevel:        sanctionStatus === 'listed' ? 'critical' : 'medium',
+        riskFlags:        [],
+        lastVerified:     new Date().toISOString(),
+        dataSource:       ['ACRA Singapore'],
+      }
+    }
+  }
+
+  // Fallback: build minimal Company from GLEIF data only
+  const sanctionStatus = await screenSanctions(record.legalName).catch(
+    () => 'unknown' as SanctionStatus
+  )
+  return buildGleifCompany(record, sanctionStatus) as unknown as Company
+}
+
 export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | Terminal | null> {
   const { rows } = await db.query<EntityRow>(
     `
@@ -696,34 +784,23 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
     if (idOrSlugOrImo.startsWith('lei-')) {
       const lei = idOrSlugOrImo.slice(4).toUpperCase()
       const record = await getGleifRecordByLei(lei).catch(() => null)
-      if (record) {
-        const sanctionStatus = await screenSanctions(record.legalName).catch(
-          () => 'unknown' as SanctionStatus
-        )
-        return buildGleifCompany(record, sanctionStatus) as unknown as Company
-      }
+      const resolved = await resolveGleifRecord(record)
+      if (resolved) return resolved
     }
 
     // 5b. Try GLEIF by `gleif:{lei}`.
     if (idOrSlugOrImo.startsWith('gleif:')) {
       const lei = idOrSlugOrImo.slice(6)
       const record = await getGleifRecordByLei(lei).catch(() => null)
-      if (record) {
-        const sanctionStatus = await screenSanctions(record.legalName).catch(
-          () => 'unknown' as SanctionStatus
-        )
-        return buildGleifCompany(record, sanctionStatus) as unknown as Company
-      }
+      const resolved = await resolveGleifRecord(record)
+      if (resolved) return resolved
     }
 
-    // 6. GLEIF 鍚嶇О鎼滅储锛堟渶鍚庡厹搴曪級
+    // 6. GLEIF name search (last resort fallback).
     const gleifResults = await searchGleifMultiple(idOrSlugOrImo, 1).catch(() => [])
     if (gleifResults[0]) {
-      const record = gleifResults[0]
-      const sanctionStatus = await screenSanctions(record.legalName).catch(
-        () => 'unknown' as SanctionStatus
-      )
-      return buildGleifCompany(record, sanctionStatus) as unknown as Company
+      const resolved = await resolveGleifRecord(gleifResults[0])
+      if (resolved) return resolved
     }
 
     return null
