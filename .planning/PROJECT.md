@@ -56,16 +56,17 @@ ETI is a B2B compliance and risk screening platform built for energy traders. It
 - ✓ **Domain intelligence in trade checks** — DOMAIN_WHOIS_RISK + DOMAIN_SPOOFING_RISK flags from /api/trade — v1.0
 - ✓ **Admin operations dashboard** — sync job history, user management, plan editor, platform stats — v1.0 (ADMIN-01–04)
 - ✓ **warninglists admin sync isolation** — `{ "source": "warninglists" }` runs only syncRegulatoryWarnings() — v1.0
+- ✓ **Network intelligence graph visualization** — React Flow interactive node graph on company page (Network tab, index 7), F3 content-gated — v1.1 Phase 10 (GRAPH-01, GRAPH-03)
+- ✓ **3-hop network recursive query** — PostgreSQL WITH RECURSIVE CTE, depth ≤3, nodes ≤100, anti-cycle via visited[] — v1.1 Phase 10 (GRAPH-02)
+- ✓ **NetworkGraph client component** — @xyflow/react + @dagrejs/dagre auto-layout, color-coded nodes (red=sanctions, orange=fraud, gray=ICIJ, blue=normal) — v1.1 Phase 10 (GRAPH-04)
 
 ### Active
 
 <!-- v1.1 milestone scope -->
 
-- [ ] **Network intelligence graph visualization** — React Flow interactive node graph on company/vessel/port pages — v1.1 (GRAPH-01–03)
 - [ ] **Sanctions ↔ ICIJ data linkage** — icij_entities.is_sanctioned sync marking + graph red-node UI — v1.1 (NETDATA-01–02)
 - [ ] **Fraud alerts on entity detail pages** — company + vessel pages show FraudAlertsPanel — v1.1 (NETDATA-03–04)
 - [ ] **ICIJ coverage: vessel + port pages** — match via operator/manager name — v1.1 (NETCOV-01–02)
-- [ ] **3-hop network recursive query** — PostgreSQL WITH RECURSIVE CTE, depth ≤3, nodes ≤100 — v1.1 (GRAPH-02)
 - [ ] **Graph SVG export → PDF report** — static graph snapshot embedded in entity PDF — v1.1 (REPORT-01)
 
 <!-- Future milestones -->
@@ -152,4 +153,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 — v1.1 milestone started: Network Intelligence Graph*
+*Last updated: 2026-04-17 — Phase 10 (Network Graph Core) complete: React Flow graph + 3-hop recursive query live*
