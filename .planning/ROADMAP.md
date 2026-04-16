@@ -88,5 +88,5 @@ Plans:
 | 7. Entity Sanction Wiring & Admin Sync Fix | v1.0 | 2/2 | Complete | 2026-04-15 |
 | 8. Admin Operations Dashboard | v1.0 | 3/3 | Complete | 2026-04-15 |
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
-| 10. Network Graph Core | v1.1 | 4/4 | Complete   | 2026-04-16 |
+| 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
