@@ -1,7 +1,7 @@
 ---
 phase: 10
 slug: network-graph-core
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-04-16
@@ -45,7 +45,12 @@ Source: `globals.css` — all values confirmed from `:root` block.
 | `--space-6` | 24px | Canvas top/bottom margin from tab panel edge |
 | `--space-8` | 32px | Empty state vertical padding |
 
-Exceptions:
+**Exceptions:**
+- `--space-3: 12px` — project-approved existing token (from `globals.css :root`); used for panel row internal padding
+- `--space-5: 20px` — project-approved existing token (from `globals.css :root`); used for card padding
+These values are multiples of 4 and pre-exist this phase.
+
+Additional exceptions:
 - Graph canvas touch target: React Flow built-in zoom controls use 32px button height (matches `--space-8`).
 - Node minimum touch target: 44px diameter (WCAG 2.5.5 AAA), takes precedence over design scale for small nodes.
 
@@ -220,7 +225,7 @@ Triggered when: company has no directors, no vessels, no ICIJ matches (`nodes.le
 |---------|-------|
 | Heading | "No network connections found" |
 | Body | "This entity has no director records, vessel associations, or ICIJ offshore matches on file." |
-| Typography | Heading: 14px, `--text-primary`, weight 500. Body: 13px, `--text-muted`, line-height 20px. |
+| Typography | Heading: 14px, `--text-primary`, weight 600. Body: 13px, `--text-muted`, line-height 20px. |
 | Layout | Centered vertically and horizontally in the 640px canvas area |
 | Padding | `var(--space-8)` top and bottom |
 
