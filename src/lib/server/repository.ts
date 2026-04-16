@@ -1347,8 +1347,9 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
   }
 
   // ── 4. ICIJ Offshore Entities (WITH RECURSIVE CTE, depth ≤3, limit 100) ─
-  // Step 4a: Get total count (without LIMIT) to detect truncation
-  const { rows: countRows } = await db.query(
+  // Single query: deduplicate by shallowest path, carry COUNT(*) OVER() to derive
+  // truncation flag without a second CTE execution (avoids double-run inconsistency).
+  const { rows: icijRows } = await db.query(
     `WITH RECURSIVE icij_cte AS (
        -- Base case: ICIJ entities directly linked to this ETI company
        SELECT
@@ -1389,65 +1390,24 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
             END
        WHERE cte.depth < 3
          AND NOT (next_e.node_id = ANY(cte.visited))
+     ),
+     deduped AS (
+       -- Deduplicate: keep shallowest path to each node
+       SELECT DISTINCT ON (node_id)
+         node_id, name, dataset, entity_type,
+         is_sanctioned, sanctions_match,
+         depth, parent_node_id, rel_link
+       FROM icij_cte
+       ORDER BY node_id, depth
      )
-     SELECT COUNT(DISTINCT node_id)::INT AS total
-     FROM icij_cte`,
-    [entityId]
-  )
-  const totalNodeCount: number = (countRows[0]?.total as number) ?? 0
-  const truncated = totalNodeCount > 100
-
-  // Step 4b: Fetch actual nodes (with LIMIT 100, deduplicated by shallowest depth)
-  const { rows: icijRows } = await db.query(
-    `WITH RECURSIVE icij_cte AS (
-       SELECT
-         ie.node_id,
-         ie.name,
-         ie.dataset,
-         ie.entity_type,
-         ie.is_sanctioned,
-         ie.sanctions_match,
-         0 AS depth,
-         ARRAY[ie.node_id] AS visited,
-         NULL::TEXT AS parent_node_id,
-         NULL::TEXT AS rel_link
-       FROM icij_entities ie
-       WHERE ie.linked_entity_id = $1
-
-       UNION ALL
-
-       SELECT
-         next_e.node_id,
-         next_e.name,
-         next_e.dataset,
-         next_e.entity_type,
-         next_e.is_sanctioned,
-         next_e.sanctions_match,
-         cte.depth + 1,
-         cte.visited || next_e.node_id,
-         cte.node_id AS parent_node_id,
-         rel.link    AS rel_link
-       FROM icij_cte cte
-       JOIN icij_relationships rel
-         ON rel.from_node_id = cte.node_id OR rel.to_node_id = cte.node_id
-       JOIN icij_entities next_e
-         ON next_e.node_id = CASE
-              WHEN rel.from_node_id = cte.node_id THEN rel.to_node_id
-              ELSE rel.from_node_id
-            END
-       WHERE cte.depth < 3
-         AND NOT (next_e.node_id = ANY(cte.visited))
-     )
-     -- Deduplicate: keep shallowest path to each node
-     SELECT DISTINCT ON (node_id)
-       node_id, name, dataset, entity_type,
-       is_sanctioned, sanctions_match,
-       depth, parent_node_id, rel_link
-     FROM icij_cte
-     ORDER BY node_id, depth
+     SELECT *, COUNT(*) OVER ()::INT AS total_count
+     FROM deduped
      LIMIT 100`,
     [entityId]
   )
+  // total_count reflects distinct-node count before LIMIT; derive truncation from first row
+  const totalNodeCount: number = (icijRows[0]?.total_count as number) ?? 0
+  const truncated = totalNodeCount > 100
 
   for (const r of icijRows) {
     const nodeId = r.node_id as string
