@@ -44,7 +44,7 @@ See full details: `.planning/milestones/v1.0-ROADMAP.md`
 Plans:
 - [x] 09-01-PLAN.md — Migration 036 + ICIJ sync sanctions matching + IcijMatch 扩展 + OffshoreLeaksPanel badge (NETDATA-01, NETDATA-02)
 - [x] 09-02-PLAN.md — repository.ts FraudAlertRow 接口 + getCompanyFraudAlerts() + getVesselFraudAlerts() (NETDATA-03, NETDATA-04)
-- [ ] 09-03-PLAN.md — FraudAlertsPanel 组件 + company/vessel 页面 tab 插入 (NETDATA-03, NETDATA-04)
+- [x] 09-03-PLAN.md — FraudAlertsPanel 组件 + company/vessel 页面 tab 插入 (NETDATA-03, NETDATA-04)
 **UI hint**: yes
 
 ### Phase 10: Network Graph Core
