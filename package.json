@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.1",
+    "@dagrejs/dagre": "^3.0.0",
     "@react-pdf/renderer": "^4.3.3",
     "@types/pg": "^8.20.0",
+    "@xyflow/react": "^12.10.2",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "exceljs": "^4.4.0",
