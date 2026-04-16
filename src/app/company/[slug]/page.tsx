@@ -9,9 +9,10 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company, BeneficialOwner } from '@/lib/types'
-import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork, getCompanyFraudAlerts } from '@/lib/server/repository'
+import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork, getCompanyFraudAlerts, getNetworkGraph } from '@/lib/server/repository'
 import type { IcijMatch, IcijOfficerLink } from '@/lib/server/repository'
 import FraudAlertsPanel from '@/components/entity/FraudAlertsPanel'
+import NetworkGraph from '@/components/entity/NetworkGraph'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { getEntityWatchState } from '@/lib/server/watchlist'
@@ -769,6 +770,12 @@ export default async function CompanyPage({ params }: PageProps) {
   ])
   isWatching = watchlistRows
 
+  // Network graph data (WITH RECURSIVE CTE — called separately to avoid blocking faster queries)
+  // Per T-10-F3-SKIP-01: skip expensive CTE when user lacks F3 access
+  const networkGraph = f3Unlocked
+    ? await getNetworkGraph(company.id)
+    : { nodes: [], edges: [], truncated: false as const, totalNodeCount: 0 }
+
   const warningHits: WarningHit[] = await getWarningHits(company.name, 'company')
 
   // Extract domain from entity metadata_json.website for domain intelligence panel.
@@ -796,6 +803,7 @@ export default async function CompanyPage({ params }: PageProps) {
     { id: 'flags',              label: 'Risk Flags' },
     { id: 'fraud-alerts',       label: 'Fraud Alerts' },
     { id: 'offshore',           label: 'Offshore Leaks' },
+    { id: 'network',            label: 'Network' },
     { id: 'intelligence',       label: 'Intelligence' },
     { id: 'domain',             label: 'Domain' },
     { id: 'sources',            label: 'Sources' },
@@ -823,6 +831,14 @@ export default async function CompanyPage({ params }: PageProps) {
         <OffshoreLeaksPanel matches={icijMatches} />
         <IcijOfficerNetworkPanel links={icijOfficerLinks} />
       </div>
+    </ContentLock>,
+    <ContentLock key="network" unlocked={f3Unlocked} reason={lockReason}>
+      <NetworkGraph
+        nodes={networkGraph.nodes}
+        edges={networkGraph.edges}
+        truncated={networkGraph.truncated}
+        totalNodeCount={networkGraph.totalNodeCount}
+      />
     </ContentLock>,
     <ContentLock key="intelligence" unlocked={f3Unlocked} reason={lockReason}>
       <IntelligencePanel entityType="company" entityKey={company.slug} />
