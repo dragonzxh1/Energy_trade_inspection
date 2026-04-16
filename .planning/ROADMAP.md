@@ -90,3 +90,149 @@ Plans:
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
+
+## Backlog
+
+### Phase 999.1: U.S. CSL + BIS Entity List — export_restricted 独立标签 (BACKLOG)
+
+**Goal:** 为出口管制实体打独立的 `export_restricted` 风险标签，区别于 `sanctioned`
+**Priority:** P0 缺口（当前仅靠 sanctions.network 聚合数据覆盖，无独立模块）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- 直接拉取 trade.gov Consolidated Screening List (CSL) API
+- 直接拉取 BIS Entity List
+- 在 scoring/intelligence 层增加 `export_restricted` 独立标签输出
+- 区别现有 `sanctioned` 标签，为能源设备、工业品交易提供更精细风险分类
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.2: SC Malaysia Investor Alert List — 监管警告补全 (BACKLOG)
+
+**Goal:** 接入马来西亚证监会 (SC Malaysia) 投资者警告名单，补全东南亚监管覆盖缺口
+**Priority:** P0 缺口（现有 regulatory-warnings.ts 实现的是 MAS 新加坡，非 SC Malaysia）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- 目标：sc.com.my 投资者警告列表（涵盖非法计划、克隆公司、未授权资本市场活动）
+- 捕获字段：entity name, urls/app links/social links, year, remark, category
+- 融入现有 `regulatory_warning` 标签体系
+- 马来西亚是能源贸易高频地区，与 ACRA/SSM 注册数据联动价值高
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.3: Malaysia SSM 公司注册局接入 (BACKLOG)
+
+**Goal:** 接入马来西亚 SSM (Suruhanjaya Syarikat Malaysia) 公司注册数据
+**Priority:** P1（马来西亚是能源贸易高频司法管辖区，当前无注册局覆盖）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- 评估 SSM API 可用性及访问方式（官方 API / data.gov.my）
+- 捕获：公司名、注册号、董事、股东、注册日期、状态
+- 与 SC Malaysia 警告名单联动：注册数据 + 警告列表交叉验证
+- 参考 ACRA 实现模式（acra.ts）
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.4: 香港公司注册处 (Hong Kong CR) 接入 (BACKLOG)
+
+**Goal:** 接入香港公司注册处 (Companies Registry) 注册数据
+**Priority:** P1（香港是能源贸易高频司法管辖区，当前仅有 SFC 警告，无注册局数据）
+**Requirements:** TBD
+**Plans:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- 评估香港 CR 开放 API 可用性（cr.gov.hk）
+- 捕获：公司名、注册号、董事、公司秘书、注册日期、状态
+- 与 SFC Alert List 联动：注册实体 + 监管警告交叉验证
+- 可用 OpenCorporates hk 司法管辖区作为 fallback
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.5: IMO GISIS 船舶身份验证 (BACKLOG)
+
+**Goal:** 接入 IMO GISIS 公开数据，实现船舶身份和船务公司官方验证
+**Priority:** P2（能源贸易核心场景，当前 AIS 层没有官方船舶注册交叉验证）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- GISIS 公开区域：按 IMO 号查询船舶详情、公司 IMO 号
+- 捕获：IMO 号、船旗国、船东公司 IMO、船级社、管理公司
+- 核心价值：验证 AIS 报告的船舶身份与 IMO 官方登记是否一致
+- 检测：船名/IMO/管理公司变更历史异常
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.6: Equasis 船舶安全与管理数据 (BACKLOG)
+
+**Goal:** 接入 Equasis 船舶安全记录，检测船东/管理人/运营人结构异常
+**Priority:** P2（补充 AIS 行为数据，提供 PSC 检查/扣押记录）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- Equasis：免费（需注册），整合 MarineTraffic/VesselTracker/P&I 来源
+- 捕获：船东/管理人/运营人、PSC 检查记录、扣押记录、P&I 保险
+- 关键先决条件：确认服务条款是否允许自动化访问
+- 高风险信号：同一管理公司频繁关联高风险船舶
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.7: Global Fishing Watch API — 海事行为异常检测 (BACKLOG)
+
+**Goal:** 接入 Global Fishing Watch 公开 API，为船舶构建行为异常评分层
+**Priority:** P2（方法论可迁移至油轮：路线缺口、异常停靠、STS 风险区域）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- GFW 公开 API：vessel identity, port visits, loitering, encounters, events
+- 核心用途：路线 vs 申报贸易路径不符、高风险港口暴露、船对船转货检测
+- 注意：GFW 以渔船为主，油轮/散货轮覆盖不完整，需验证覆盖范围
+- 与现有 AIS dark period 检测互补，不替代
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
+
+---
+
+### Phase 999.8: Open Ownership — 受益所有权 (UBO) 穿透 (BACKLOG)
+
+**Goal:** 接入 Open Ownership 数据，实现 PSC/UBO 层级穿透和壳公司网络发现
+**Priority:** P3（当前阶段优先级较低，2026 年各国 UBO 登记公开访问不一致）
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Implementation notes:
+- Open Ownership 采用 BODS 标准，被英国政府采纳为官方开放标准
+- 捕获：实际受益人、控制类型、持股比例、来源登记、声明日期
+- 现实约束：2026 年全球 UBO 登记公开访问法律基础不统一
+- 建议策略：先作为"有数据时的增强层"，而非主动抓取目标
+- 与 Phase 10 网络图直接整合：UBO 关系可作为图节点
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
