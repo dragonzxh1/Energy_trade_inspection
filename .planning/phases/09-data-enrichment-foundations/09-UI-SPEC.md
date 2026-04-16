@@ -156,7 +156,7 @@ Left column (flex: 1):
   - Entity name: `company_name` from DB — 14px, weight 600, color var(--text-primary)
   - Source badge: see Source Badge spec below
 - Row 2: Metadata line — `fraud_type` (if available) + `synced_at` date
-  - 12px, color var(--text-muted), marginTop 2px
+  - 12px, color var(--text-muted), marginTop 4px (--space-1)
   - Format: `{fraud_type label} · Reported {date}` — or just `Reported {date}` if no fraud_type
   - Date format: `Jan 15, 2025` (en-US, year + short month + day)
 - Row 3 (conditional): description — only if `description` is non-null and non-empty
