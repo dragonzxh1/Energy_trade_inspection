@@ -1293,13 +1293,13 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
     ? (meta.vessels as Array<{ imo?: string; name?: string; flag?: string }>)
     : []
 
-  for (const v of vessels) {
-    if (!v.imo) continue
-    const vesselNodeId = `eti-vessel-${v.imo}`
-
-    // Look up vessel sanction and fraud status
-    const { rows: vesselRows } = await db.query(
-      `SELECT e.sanction_status,
+  // Batch-fetch vessel sanction/fraud status in a single query to avoid N+1 DB round-trips
+  const imoList = vessels.map((v) => v.imo).filter(Boolean) as string[]
+  const vesselStatusMap = new Map<string, { sanctioned: boolean; hasFraud: boolean }>()
+  if (imoList.length > 0) {
+    const { rows: vesselStatRows } = await db.query(
+      `SELECT e.metadata_json->>'imo' AS imo,
+              e.sanction_status,
               EXISTS(
                 SELECT 1 FROM fraud_alerts fa
                 WHERE lower(fa.company_name) = lower(e.name)
@@ -1307,16 +1307,25 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
               ) AS has_fraud
        FROM entities e
        WHERE e.type = 'vessel'
-         AND e.metadata_json->>'imo' = $1
-       LIMIT 1`,
-      [v.imo]
+         AND e.metadata_json->>'imo' = ANY($1::text[])`,
+      [imoList]
     )
-
-    let vesselColor: NetworkNode['nodeColor'] = 'normal'
-    if (vesselRows.length > 0) {
-      if (vesselRows[0].sanction_status === 'listed') vesselColor = 'sanctioned'
-      else if (vesselRows[0].has_fraud) vesselColor = 'fraud'
+    for (const row of vesselStatRows) {
+      vesselStatusMap.set(row.imo as string, {
+        sanctioned: row.sanction_status === 'listed',
+        hasFraud:   row.has_fraud === true,
+      })
     }
+  }
+
+  for (const v of vessels) {
+    if (!v.imo) continue
+    const vesselNodeId = `eti-vessel-${v.imo}`
+
+    const stat = vesselStatusMap.get(v.imo)
+    let vesselColor: NetworkNode['nodeColor'] = 'normal'
+    if (stat?.sanctioned) vesselColor = 'sanctioned'
+    else if (stat?.hasFraud) vesselColor = 'fraud'
 
     const fullName = v.name ?? `Vessel ${v.imo}`
     nodes.push({
