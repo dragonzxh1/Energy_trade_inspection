@@ -40,7 +40,11 @@ See full details: `.planning/milestones/v1.0-ROADMAP.md`
   2. A company detail page shows a FraudAlertsPanel listing matched fraud alert records (Rotterdam, FuelScamAlert, etc.) when matches exist
   3. A vessel detail page shows a FraudAlertsPanel with fraud alerts matched via operator/manager name
   4. In the network graph (Phase 10 dependency), ICIJ nodes marked `is_sanctioned=true` render as red rather than grey
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 09-01-PLAN.md — Migration 036 + ICIJ sync sanctions matching + IcijMatch 扩展 + OffshoreLeaksPanel badge (NETDATA-01, NETDATA-02)
+- [ ] 09-02-PLAN.md — repository.ts FraudAlertRow 接口 + getCompanyFraudAlerts() + getVesselFraudAlerts() (NETDATA-03, NETDATA-04)
+- [ ] 09-03-PLAN.md — FraudAlertsPanel 组件 + company/vessel 页面 tab 插入 (NETDATA-03, NETDATA-04)
 **UI hint**: yes
 
 ### Phase 10: Network Graph Core
@@ -78,6 +82,6 @@ See full details: `.planning/milestones/v1.0-ROADMAP.md`
 | 6. Trade Service Integration Hardening | v1.0 | 2/2 | Complete | 2026-04-15 |
 | 7. Entity Sanction Wiring & Admin Sync Fix | v1.0 | 2/2 | Complete | 2026-04-15 |
 | 8. Admin Operations Dashboard | v1.0 | 3/3 | Complete | 2026-04-15 |
-| 9. Data Enrichment Foundations | v1.1 | 0/? | Not started | - |
+| 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
 | 10. Network Graph Core | v1.1 | 0/? | Not started | - |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
