@@ -266,6 +266,14 @@ export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }
   useEffect(() => { setNodes(layoutedNodes) }, [layoutedNodes, setNodes])
   useEffect(() => { setEdges(rfEdges) }, [rfEdges, setEdges])
 
+  // When ICIJ nodes are present, fitView only over ETI-layer nodes so they stay visible
+  // (100+ ICIJ nodes create a huge canvas that would otherwise zoom ETI nodes to near-invisible)
+  const hasIcijNodes = nodes.some((n) => n.type === 'icij')
+  const etiNodeIds   = useMemo(
+    () => nodes.filter((n) => n.type !== 'icij').map((n) => ({ id: n.id })),
+    [nodes],
+  )
+
   // Screen-reader summary (accessibility fallback)
   const directorCount = nodes.filter((n) => n.type === 'person').length
   const vesselCount   = nodes.filter((n) => n.type === 'vessel').length
@@ -356,7 +364,10 @@ export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
           fitView
-          fitViewOptions={{ padding: 0.15 }}
+          fitViewOptions={{
+            padding: 0.2,
+            ...(hasIcijNodes && etiNodeIds.length > 0 ? { nodes: etiNodeIds } : {}),
+          }}
           minZoom={0.3}
           maxZoom={2.0}
           proOptions={{ hideAttribution: false }}

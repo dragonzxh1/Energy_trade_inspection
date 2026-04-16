@@ -1347,9 +1347,18 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
   }
 
   // ── 4. ICIJ Offshore Entities (WITH RECURSIVE CTE, depth ≤3, limit 100) ─
-  // Single query: deduplicate by shallowest path, carry COUNT(*) OVER() to derive
-  // truncation flag without a second CTE execution (avoids double-run inconsistency).
-  const { rows: icijRows } = await db.query(
+  // Only traverse ICIJ network when at least one linked ICIJ entity has
+  // match_confidence = 1.0 (exact name match). Lower-confidence matches are
+  // name-similarity only — without a registration number to pin the identity,
+  // the resulting offshore network has no verified connection to this entity.
+  const { rows: icijConfRows } = await db.query(
+    `SELECT 1 FROM icij_entities WHERE linked_entity_id = $1 AND match_confidence = 1.0 LIMIT 1`,
+    [entityId],
+  )
+  const hasVerifiedIcijMatch = icijConfRows.length > 0
+
+  const icijRows = hasVerifiedIcijMatch
+    ? (await db.query(
     `WITH RECURSIVE icij_cte AS (
        -- Base case: ICIJ entities directly linked to this ETI company
        SELECT
@@ -1403,8 +1412,10 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
      SELECT *, COUNT(*) OVER ()::INT AS total_count
      FROM deduped
      LIMIT 100`,
-    [entityId]
-  )
+      [entityId],
+    )).rows
+    : []
+
   // total_count reflects distinct-node count before LIMIT; derive truncation from first row
   const totalNodeCount: number = (icijRows[0]?.total_count as number) ?? 0
   const truncated = totalNodeCount > 100
