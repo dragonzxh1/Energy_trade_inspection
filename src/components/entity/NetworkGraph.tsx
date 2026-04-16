@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ReactFlow,
@@ -217,43 +217,10 @@ const nodeTypes = {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }: Props) {
-  // Empty state: only root node (or no nodes at all)
-  if (nodes.length <= 1) {
-    return (
-      <div style={card}>
-        <p style={sectionTitle}>Network Graph</p>
-        <div
-          style={{
-            height:         640,
-            display:        'flex',
-            alignItems:     'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ textAlign: 'center', padding: 'var(--space-8) 0' }}>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-              No network connections found
-            </p>
-            <p
-              style={{
-                fontSize:   '13px',
-                color:      'var(--text-muted)',
-                lineHeight: '20px',
-                marginTop:  '8px',
-                maxWidth:   360,
-              }}
-            >
-              This entity has no director records, vessel associations, or ICIJ offshore matches on file.
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Convert NetworkNode[] + NetworkEdge[] to React Flow format and apply Dagre layout
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // All hooks must be called unconditionally before any early return (Rules of Hooks)
   const { layoutedNodes, rfEdges } = useMemo(() => {
+    if (nodes.length <= 1) return { layoutedNodes: [], rfEdges: [] }
+
     const rfNodes: Node[] = nodes.map((n) => ({
       id:       n.id,
       type:     n.type,
@@ -292,16 +259,52 @@ export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }
     return { layoutedNodes: layouted, rfEdges: rfEdgesBuilt }
   }, [nodes, edges])
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [rfNodes, , onNodesChange] = useNodesState(layoutedNodes)
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const [rfEdgesState, , onEdgesChange] = useEdgesState(rfEdges)
+  const [rfNodes, setNodes, onNodesChange] = useNodesState(layoutedNodes)
+  const [rfEdgesState, setEdges, onEdgesChange] = useEdgesState(rfEdges)
+
+  // Sync React Flow internal state when layoutedNodes/rfEdges change (e.g. after soft navigation)
+  useEffect(() => { setNodes(layoutedNodes) }, [layoutedNodes, setNodes])
+  useEffect(() => { setEdges(rfEdges) }, [rfEdges, setEdges])
 
   // Screen-reader summary (accessibility fallback)
   const directorCount = nodes.filter((n) => n.type === 'person').length
   const vesselCount   = nodes.filter((n) => n.type === 'vessel').length
   const icijCount     = nodes.filter((n) => n.type === 'icij').length
   const rootName      = nodes.find((n) => n.type === 'root')?.fullName ?? 'this entity'
+
+  // Early return AFTER all hooks have been called
+  if (nodes.length <= 1) {
+    return (
+      <div style={card}>
+        <p style={sectionTitle}>Network Graph</p>
+        <div
+          style={{
+            height:         640,
+            display:        'flex',
+            alignItems:     'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ textAlign: 'center', padding: 'var(--space-8) 0' }}>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              No network connections found
+            </p>
+            <p
+              style={{
+                fontSize:   '13px',
+                color:      'var(--text-muted)',
+                lineHeight: '20px',
+                marginTop:  '8px',
+                maxWidth:   360,
+              }}
+            >
+              This entity has no director records, vessel associations, or ICIJ offshore matches on file.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={card}>
