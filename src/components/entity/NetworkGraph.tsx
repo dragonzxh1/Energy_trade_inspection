@@ -9,6 +9,8 @@ import {
   BackgroundVariant,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  useStore,
   Handle,
   Position,
   type Node,
@@ -214,6 +216,38 @@ const nodeTypes = {
   icij:    ETINode,
 }
 
+// ── Auto-fit helper (must be a child of <ReactFlow> to access its context) ────
+// fitView prop fires on mount — if the tab is hidden at mount time, the container
+// has zero dimensions and fitView has no effect. This component calls fitView()
+// imperatively after the layout actually settles, guaranteeing correct centering.
+
+interface AutoFitProps {
+  layoutedNodes: Node[]
+  hasIcijNodes: boolean
+  etiNodeIds: { id: string }[]
+}
+
+function AutoFitView({ layoutedNodes, hasIcijNodes, etiNodeIds }: AutoFitProps) {
+  const { fitView } = useReactFlow()
+  // Subscribe to the RF store's container dimensions. When the Network tab panel
+  // transitions from hidden (display:none → 0×0) to visible, ReactFlow's internal
+  // ResizeObserver updates width/height in the store, re-triggering this effect
+  // with correct dimensions so fitView can calculate the viewport accurately.
+  const width  = useStore((s) => s.width)
+  const height = useStore((s) => s.height)
+  useEffect(() => {
+    if (layoutedNodes.length > 1 && width > 0 && height > 0) {
+      fitView({
+        padding:  0.2,
+        duration: 200,
+        ...(hasIcijNodes && etiNodeIds.length > 0 ? { nodes: etiNodeIds } : {}),
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutedNodes, width, height])
+  return null
+}
+
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }: Props) {
@@ -363,15 +397,18 @@ export default function NetworkGraph({ nodes, edges, truncated, totalNodeCount }
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          fitView
-          fitViewOptions={{
-            padding: 0.2,
-            ...(hasIcijNodes && etiNodeIds.length > 0 ? { nodes: etiNodeIds } : {}),
-          }}
           minZoom={0.3}
           maxZoom={2.0}
           proOptions={{ hideAttribution: false }}
         >
+          {/* AutoFitView calls fitView() after layout settles — more reliable than
+              the fitView prop, which fires at mount when the tab may be hidden
+              (container height = 0) and therefore has no effect. */}
+          <AutoFitView
+            layoutedNodes={layoutedNodes}
+            hasIcijNodes={hasIcijNodes}
+            etiNodeIds={etiNodeIds}
+          />
           <Background
             variant={BackgroundVariant.Dots}
             color="rgba(255,255,255,0.04)"
