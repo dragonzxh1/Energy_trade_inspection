@@ -1007,12 +1007,15 @@ export interface IcijMatch {
   address: string | null
   sourceUrl: string | null
   matchConfidence: number
+  isSanctioned?: boolean          // Phase 9: populated from icij_entities.is_sanctioned
+  sanctionsMatch?: string | null  // Phase 9: matched sanctions entry name (for tooltip)
 }
 
 export async function getIcijMatches(entityId: string): Promise<IcijMatch[]> {
   const { rows } = await db.query(
     `SELECT node_id, name, dataset, entity_type, countries, jurisdiction,
-            status, incorporation_date, address, source_url, match_confidence
+            status, incorporation_date, address, source_url, match_confidence,
+            is_sanctioned, sanctions_match
      FROM icij_entities
      WHERE linked_entity_id = $1
      ORDER BY match_confidence DESC
@@ -1031,6 +1034,8 @@ export async function getIcijMatches(entityId: string): Promise<IcijMatch[]> {
     address: r.address,
     sourceUrl: r.source_url,
     matchConfidence: parseFloat(r.match_confidence ?? '0'),
+    isSanctioned: r.is_sanctioned ?? false,
+    sanctionsMatch: r.sanctions_match ?? null,
   }))
 }
 

@@ -509,6 +509,26 @@ function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
                 }}>
                   {Math.round(m.matchConfidence * 100)}% match
                 </p>
+                {m.isSanctioned && (
+                  <span
+                    title={m.sanctionsMatch ? `Matched: ${m.sanctionsMatch}` : undefined}
+                    style={{
+                      display: 'inline-block',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: 'var(--status-listed)',
+                      backgroundColor: 'rgba(239,68,68,0.12)',
+                      border: '1px solid rgba(239,68,68,0.2)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      marginLeft: 'var(--space-2)',
+                    }}
+                  >
+                    Sanctioned Entity
+                  </span>
+                )}
                 {m.sourceUrl && (
                   <a
                     href={m.sourceUrl}

@@ -388,6 +388,38 @@ async function linkToEntities() {
   }
 }
 
+// ── Match ICIJ entities against sanctions ─────────────────────────────────────
+
+async function matchSanctions() {
+  console.log('\nMatching ICIJ entities against sanctions database…')
+  const client = await pool.connect()
+  try {
+    const { rowCount } = await client.query(`
+      UPDATE icij_entities ie
+      SET
+        is_sanctioned  = (m.matched_name IS NOT NULL),
+        sanctions_match = m.matched_name
+      FROM (
+        SELECT
+          ie2.node_id,
+          (
+            SELECT se.name
+            FROM sanctions_entries se
+            WHERE se.sanctions IS NOT NULL
+              AND word_similarity(lower(ie2.name), se.search_text) > 0.72
+            ORDER BY word_similarity(lower(ie2.name), se.search_text) DESC
+            LIMIT 1
+          ) AS matched_name
+        FROM icij_entities ie2
+      ) m
+      WHERE ie.node_id = m.node_id
+    `)
+    console.log(`Sanctions re-match complete. ${rowCount} rows updated.`)
+  } finally {
+    client.release()
+  }
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -428,6 +460,7 @@ async function main() {
 
   if (!DRY_RUN && total > 0) {
     await linkToEntities()
+    await matchSanctions()   // 新增：全量制裁重匹配 (D-01, D-02)
   }
 
   console.log(`\nDone. Total node rows imported: ${total}`)
