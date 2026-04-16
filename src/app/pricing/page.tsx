@@ -237,9 +237,7 @@ function PlanCard({
         </p>
       </div>
 
-      {children}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', flexGrow: 1 }}>
         {features.map((f) => (
           <div key={f.label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             <span style={{ flexShrink: 0 }}>{f.included ? check : dash}</span>
@@ -249,6 +247,8 @@ function PlanCard({
           </div>
         ))}
       </div>
+
+      {children}
     </div>
   )
 }

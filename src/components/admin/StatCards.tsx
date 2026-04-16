@@ -46,7 +46,7 @@ function StatCard({ label, value, subtext }: StatCardProps) {
 
 export default function StatCards({ stats }: StatCardsProps) {
   const { planDistribution, topEntityTypes } = stats
-  const planSubtext = `${planDistribution.free} free · ${planDistribution.starter} starter · ${planDistribution.enterprise} enterprise`
+  const planSubtext = `${planDistribution.free} free · ${planDistribution.starter} starter · ${planDistribution.professional} pro · ${planDistribution.enterprise} enterprise`
 
   // Build entity breakdown inline text from topEntityTypes array
   const entityCounts = { company: 0, vessel: 0, terminal: 0 }
@@ -78,7 +78,7 @@ export default function StatCards({ stats }: StatCardsProps) {
         />
         <StatCard
           label="Plan Distribution"
-          value={`${planDistribution.starter + planDistribution.enterprise} paid`}
+          value={`${planDistribution.starter + planDistribution.professional + planDistribution.enterprise} paid`}
           subtext={planSubtext}
         />
         <StatCard
