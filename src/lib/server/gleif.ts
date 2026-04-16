@@ -14,7 +14,7 @@ export interface GleifLeiRecord {
   legalName: string
   /**
    * ISO 3166-1 alpha-2 jurisdiction code, e.g. "GB", "VG", "KY".
- * GLEIF may return subdivisions like "GB-ENG"; normalize them to the first 2 chars.
+   * GLEIF may return subdivisions like "GB-ENG"; normalize them to the first 2 chars.
    */
   jurisdiction: string | null
   /** Country code from the legal address (may differ from jurisdiction). */
@@ -25,6 +25,17 @@ export interface GleifLeiRecord {
    * before it is legally incorporated.
    */
   initialRegistrationDate: string | null
+  /**
+   * GLEIF Registration Authority code, e.g. "RA000585" = UK Companies House,
+   * "RA000258" = Singapore ACRA. See GLEIF RA list for full mapping.
+   */
+  registrationAuthorityId: string | null
+  /**
+   * The entity's registration number within the national registry identified by
+   * registrationAuthorityId. This is the actual company number, e.g. "02525200"
+   * for a UK company — not the LEI.
+   */
+  registrationAuthorityEntityId: string | null
 }
 
 // 鈹€鈹€ Internal helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
@@ -37,16 +48,22 @@ function parseRecord(record: any): GleifLeiRecord | null {
       legalName?: { name?: string }
       legalJurisdiction?: string
       legalAddress?: { country?: string }
+      registrationAuthority?: {
+        registrationAuthorityID?: string
+        registrationAuthorityEntityID?: string
+      }
     }
     registration?: { initialRegistrationDate?: string }
   }
   const jur = entity?.legalJurisdiction ?? null
   return {
-    lei:                     record.id as string,
-    legalName:               entity?.legalName?.name ?? '',
-    jurisdiction:            jur ? jur.slice(0, 2).toUpperCase() : null,
-    country:                 entity?.legalAddress?.country ?? null,
-    initialRegistrationDate: registration?.initialRegistrationDate ?? null,
+    lei:                          record.id as string,
+    legalName:                    entity?.legalName?.name ?? '',
+    jurisdiction:                 jur ? jur.slice(0, 2).toUpperCase() : null,
+    country:                      entity?.legalAddress?.country ?? null,
+    initialRegistrationDate:      registration?.initialRegistrationDate ?? null,
+    registrationAuthorityId:      entity?.registrationAuthority?.registrationAuthorityID ?? null,
+    registrationAuthorityEntityId: entity?.registrationAuthority?.registrationAuthorityEntityID ?? null,
   }
 }
 
@@ -181,7 +198,7 @@ export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: Sancti
     type: 'company' as const,
     name: record.legalName,
     slug: `lei-${record.lei.toLowerCase()}`,
-    registrationNumber: record.lei,
+    registrationNumber: record.registrationAuthorityEntityId ?? record.lei,
     incorporationDate: record.initialRegistrationDate ?? undefined,
     country,
     jurisdictionFlag: cc ?? '',
