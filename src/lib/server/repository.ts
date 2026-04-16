@@ -1306,7 +1306,7 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
                   AND fa.list_type = 'blacklist'
               ) AS has_fraud
        FROM entities e
-       WHERE e.type = 'vessel'
+       WHERE e.entity_type = 'vessel'
          AND e.metadata_json->>'imo' = ANY($1::text[])`,
       [imoList]
     )
