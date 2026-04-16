@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Network Intelligence Graph
 status: executing
-stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-04-16T17:15:58.012Z"
+stopped_at: Completed 10-03-PLAN.md
+last_updated: "2026-04-16T17:26:20.253Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-16 for v1.1 milestone)
 ## Current Position
 
 Phase: 10 (network-graph-core) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-16
 
@@ -57,6 +57,9 @@ Key decisions from v1.0:
 - [Phase 10-network-graph-core]: nodeColor computed server-side; etlKey carries only public slug/IMO (no internal DB row IDs)
 - [Phase 10-network-graph-core]: Wave 0 type contract pattern: interfaces defined before parallel Wave 1/2 implementation to prevent type incompatibility
 - [Phase 10]: Three independent db.query() calls in getNetworkGraph() for maintainability; 100-node cap applies only to ICIJ CTE, not ETI first-layer nodes
+- [Phase 10]: eslint-disable-next-line react-hooks/rules-of-hooks used in NetworkGraph.tsx for hooks called after empty-state early return — same branch always executes, safe but ESLint cannot statically verify
+- [Phase 10]: NetworkGraph.tsx: ETINode data typed as (data as unknown as ETINodeData) to bridge React Flow's generic NodeProps with specific ETINodeData shape
+- [Phase 10]: networkGraph fetch placed after Promise.all in page.tsx to avoid blocking faster ICIJ/fraud queries with the potentially-slow WITH RECURSIVE CTE
 
 ### v1.1 Scope (from CEO Plan review 2026-04-16)
 
@@ -95,6 +98,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16T17:15:58.009Z
-Stopped at: Completed 10-02-PLAN.md
+Last session: 2026-04-16T17:26:20.251Z
+Stopped at: Completed 10-03-PLAN.md
 Resume file: None
