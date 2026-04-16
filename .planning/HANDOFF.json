@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-16T19:38:30.376Z",
+  "phase": "10",
+  "phase_name": "network-graph-core",
+  "phase_dir": ".planning/phases/10-network-graph-core",
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "10-01 deps + interfaces", "status": "done"},
+    {"id": 2, "name": "10-02 getNetworkGraph() CTE", "status": "done"},
+    {"id": 3, "name": "10-03 NetworkGraph.tsx + page integration", "status": "done"},
+    {"id": 4, "name": "10-04 manual verification checkpoint", "status": "done"},
+    {"id": 5, "name": "fitView ETI-layer scoping fix", "status": "done", "progress": "uncommitted"},
+    {"id": 6, "name": "ICIJ confidence gate (match_confidence=1.0)", "status": "done", "progress": "uncommitted"}
+  ],
+  "remaining_tasks": [
+    {"id": 7, "name": "commit NetworkGraph.tsx + repository.ts changes", "status": "not_started"},
+    {"id": 8, "name": "UAT re-test tests 4/5/6", "status": "not_started"},
+    {"id": 9, "name": "VERIFICATION.md update + phase complete", "status": "not_started"}
+  ],
+  "decisions": [
+    {"decision": "ICIJ network gated on match_confidence=1.0", "rationale": "name-similarity matches without registration number produce misleading offshore networks", "phase": "10"},
+    {"decision": "fitViewOptions.nodes scoped to ETI layer", "rationale": "100+ ICIJ nodes caused fitView to zoom out so far ETI nodes became invisible", "phase": "10"}
+  ],
+  "uncommitted_files": [
+    "src/components/entity/NetworkGraph.tsx",
+    "src/lib/server/repository.ts"
+  ],
+  "next_action": "git add src/components/entity/NetworkGraph.tsx src/lib/server/repository.ts && commit, then re-run UAT tests 4/5/6",
+  "context_notes": "Phase 10 execution complete. Two post-UAT fixes applied this session but not committed. Fraud alerts false-positive issue identified (name normalization strips 'energy' leaving 'petrovest' which matches all Petro- companies) but deferred to backlog."
+}
