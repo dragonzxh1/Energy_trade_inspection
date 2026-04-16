@@ -1424,7 +1424,14 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
       subtype: 'Offshore Entity',
     })
 
-    // Add edge from parent to this node
+    // Add edge from parent to this node.
+    // parent_node_id is NULL for depth=0 rows (base case sets NULL::TEXT).
+    // After DISTINCT ON (node_id) ORDER BY node_id, depth, a node reachable both
+    // directly (depth=0) and via an intermediate (depth=1+) keeps its depth=0 row,
+    // so parent_node_id stays NULL and the edge is drawn from the root. This is
+    // intentional: we always show the shortest path. Any intermediate nodes that
+    // are reachable only via longer paths will still have their own parent edges
+    // emitted correctly because they appear as separate rows with non-NULL parent_node_id.
     const parentId = r.parent_node_id as string | null
     if (parentId) {
       edges.push({
@@ -1435,7 +1442,7 @@ export async function getNetworkGraph(entityId: string): Promise<NetworkGraphRes
         label: (r.rel_link as string | null) ?? undefined,
       })
     } else {
-      // depth=0: direct link from root ETI company
+      // depth=0: direct link from root ETI company (parent_node_id is NULL in base case)
       edges.push({
         id: `edge-icij-root-${nodeId}`,
         source: rootNodeId,
