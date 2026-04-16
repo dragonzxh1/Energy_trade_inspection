@@ -9,8 +9,9 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Company, BeneficialOwner } from '@/lib/types'
-import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork } from '@/lib/server/repository'
+import { getEntityByKey, getIcijMatches, getIcijOfficerNetwork, getCompanyFraudAlerts } from '@/lib/server/repository'
 import type { IcijMatch, IcijOfficerLink } from '@/lib/server/repository'
+import FraudAlertsPanel from '@/components/entity/FraudAlertsPanel'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { getEntityWatchState } from '@/lib/server/watchlist'
@@ -758,12 +759,13 @@ export default async function CompanyPage({ params }: PageProps) {
 
   // Watchlist check + ICIJ data (parallel)
   let isWatching = false
-  const [watchlistRows, icijMatches, icijOfficerLinks] = await Promise.all([
+  const [watchlistRows, icijMatches, icijOfficerLinks, fraudAlerts] = await Promise.all([
     session?.user && (plan === 'professional' || plan === 'enterprise')
       ? getEntityWatchState(session.user.id, company.id)
       : Promise.resolve(false),
     f3Unlocked ? getIcijMatches(company.id) : Promise.resolve([]),
     f3Unlocked ? getIcijOfficerNetwork(company.id) : Promise.resolve([]),
+    f3Unlocked ? getCompanyFraudAlerts(company.name) : Promise.resolve([]),  // per NETDATA-03, T-9-03
   ])
   isWatching = watchlistRows
 
@@ -792,6 +794,7 @@ export default async function CompanyPage({ params }: PageProps) {
     { id: 'beneficial-owners',  label: 'Beneficial Owners' },
     { id: 'vessels',            label: 'Vessels' },
     { id: 'flags',              label: 'Risk Flags' },
+    { id: 'fraud-alerts',       label: 'Fraud Alerts' },
     { id: 'offshore',           label: 'Offshore Leaks' },
     { id: 'intelligence',       label: 'Intelligence' },
     { id: 'domain',             label: 'Domain' },
@@ -811,6 +814,9 @@ export default async function CompanyPage({ params }: PageProps) {
     </ContentLock>,
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel company={company} />
+    </ContentLock>,
+    <ContentLock key="fraud-alerts" unlocked={f3Unlocked} reason={lockReason}>
+      <FraudAlertsPanel alerts={fraudAlerts} />
     </ContentLock>,
     <ContentLock key="offshore" unlocked={f3Unlocked} reason={lockReason}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>

@@ -9,8 +9,9 @@ import TabNav from '@/components/entity/TabNav'
 import ContentLock from '@/components/entity/ContentLock'
 import Header from '@/components/layout/Header'
 import type { Vessel } from '@/lib/types'
-import { getEntityByKey, getPscSummary, getPscInspections } from '@/lib/server/repository'
+import { getEntityByKey, getPscSummary, getPscInspections, getVesselFraudAlerts } from '@/lib/server/repository'
 import type { PscSummary, PscInspection } from '@/lib/server/repository'
+import FraudAlertsPanel from '@/components/entity/FraudAlertsPanel'
 import { consumeQuota } from '@/lib/server/quota'
 import { auth } from '@/auth'
 import { getEntityWatchState } from '@/lib/server/watchlist'
@@ -450,6 +451,9 @@ export default async function VesselPage({ params }: PageProps) {
   isWatching = watchlistRows
 
   const warningHits: WarningHit[] = await getWarningHits(vessel.name, 'vessel')
+  const vesselFraudAlerts = f3Unlocked    // per NETDATA-04, T-9-03
+    ? await getVesselFraudAlerts(vessel.currentOperator)
+    : []
 
   const jsonLd = buildVesselJsonLd({
     name: vessel.name,
@@ -467,6 +471,7 @@ export default async function VesselPage({ params }: PageProps) {
     { id: 'ais',           label: 'AIS Tracking' },
     { id: 'draft',         label: 'Draft Risk' },
     { id: 'flags',         label: 'Risk Flags' },
+    { id: 'fraud-alerts',  label: 'Fraud Alerts' },
     { id: 'history',       label: 'PSC History' },
     { id: 'intelligence',  label: 'Intelligence' },
     { id: 'sources',       label: 'Sources' },
@@ -482,6 +487,9 @@ export default async function VesselPage({ params }: PageProps) {
     </ContentLock>,
     <ContentLock key="flags" unlocked={f3Unlocked} reason={lockReason}>
       <RiskFlagsPanel vessel={vessel} />
+    </ContentLock>,
+    <ContentLock key="fraud-alerts" unlocked={f3Unlocked} reason={lockReason}>
+      <FraudAlertsPanel alerts={vesselFraudAlerts} />
     </ContentLock>,
     <div key="history" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <PscSummaryPanel summary={pscSummary} />
