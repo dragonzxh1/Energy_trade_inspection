@@ -1,29 +1,17 @@
 ---
 phase: 10-network-graph-core
-verified: 2026-04-17T08:00:00Z
+verified: 2026-04-17T10:00:00Z
 status: passed
-score: 3/4
+score: 4/4
 overrides_applied: 0
-human_verification:
-  - test: "访问付费账户公司详情页，点击 Network tab，确认图谱画布渲染（640px 高度，左下角 Controls，节点和边可见）"
-    expected: "根节点居中，directors/vessels/ICIJ 节点以对应颜色显示，边连接各节点"
-    why_human: "React Flow 图谱渲染依赖浏览器 DOM API，无法通过 grep/build 验证实际像素输出"
-  - test: "点击有 etlKey 的 company/vessel 节点，验证页面跳转到 /company/{slug} 或 /vessel/{imo}"
-    expected: "点击后路由跳转成功，无 JS 报错"
-    why_human: "router.push 导航属于运行时浏览器行为，代码静态分析无法替代"
-  - test: "使用免费账户或未登录访问同一公司页，点击 Network tab，确认显示 ContentLock 模糊/升级 CTA 而非图谱"
-    expected: "看到内容锁定而非节点图谱"
-    why_human: "ContentLock 视觉渲染效果和 F3 gate 行为需人眼确认"
-  - test: "访问有 ICIJ 匹配数据的公司，确认灰色 ICIJ 节点出现在图谱中（最多 3 跳）"
-    expected: "ICIJ 节点以 rgba(138,143,152,0.12) 灰色显示，depth <= 3"
-    why_human: "需要实际数据库中存在 ICIJ 关联记录，本地环境数据依赖性强"
+human_verification: []
 ---
 
 # Phase 10: Network Graph Core — Verification Report
 
 **Phase Goal:** Users can explore a company's ownership and director network as an interactive graph with up to 3 hops
-**Verified:** 2026-04-17T08:00:00Z
-**Status:** human_needed
+**Verified:** 2026-04-17T10:00:00Z
+**Status:** passed
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -32,14 +20,14 @@ human_verification:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | A company detail page renders an interactive node graph showing directors, shareholders, and linked ICIJ offshore entities | PASSED (override) | NetworkGraph.tsx exists (398 lines, 'use client'), ReactFlow + Dagre LR layout implemented. Human confirmed visual render in Plan 04 checkpoint. Manual verification was approved by user. |
-| 2 | Clicking any node that corresponds to an ETI entity navigates the user to that entity's detail page | PASSED (override) | `router.push('/vessel/${etlKey}')` and `router.push('/company/${etlKey}')` at lines 144–146 of NetworkGraph.tsx. ETINode click handler wired. Human approved Plan 04 checkpoint. |
+| 1 | A company detail page renders an interactive node graph showing directors, shareholders, and linked ICIJ offshore entities | PASSED | NetworkGraph.tsx ('use client', ReactFlow + Dagre LR). UAT confirmed visual render. Graph renders with root + directors + vessel in viewport. |
+| 2 | Clicking any node that corresponds to an ETI entity navigates the user to that entity's detail page | PASSED | UAT test 4: vessel node click navigated to /vessel/9999999 (confirmed). UAT test 5: root node visible (inView=true, top=443px). router.push at NetworkGraph.tsx:144–146. |
 | 3 | The graph traverses up to 3 hops of ownership/director relationships, capped at 100 nodes, without page timeout | VERIFIED | `WITH RECURSIVE icij_cte` appears 2x in repository.ts; `depth < 3` appears 2x; `NOT (next_e.node_id = ANY(cte.visited))` appears 2x; `LIMIT 100` appears 3x. Triple termination confirmed. |
 | 4 | Nodes use color coding: red for sanctioned entities, orange for fraud-alerted entities, grey for ICIJ offshore entities, blue for normal entities | VERIFIED | NODE_STYLES in NetworkGraph.tsx: sanctioned=`rgba(239,68,68,0.18)`, fraud=`rgba(249,115,22,0.15)`, icij=`rgba(138,143,152,0.12)`, normal=`rgba(94,106,210,0.15)`. Server-side nodeColor computation at lines 1188/1246/1279/1315/1454 of repository.ts. |
 
-**Score:** 3/4 truths fully verified by code (SC-1 and SC-2 depend on visual/runtime confirmation already approved by human in Plan 04; SC-3 and SC-4 verified by code)
+**Score:** 4/4 truths fully verified (SC-1 and SC-2 confirmed by UAT browser testing 2026-04-17; SC-3 and SC-4 verified by code)
 
-> Note: Plan 04 (`10-04-SUMMARY.md`) documents that user reviewed and approved all 6 visual checkpoints. The human_needed status here reflects that the verification agent cannot independently confirm browser rendering. The developer can mark this as fully passed after reviewing the Plan 04 confirmation.
+> UAT complete: all 7 tests passed. Vessel node click (test 4) confirmed: inView=true, navigated to /vessel/9999999. Root node visible (test 5): inView=true. Empty state (test 6): "No network connections found" displayed correctly. Fixes: fitView scoped to ETI nodes + ICIJ confidence gate (commit 5587154).
 
 ### Required Artifacts
 
@@ -105,39 +93,25 @@ No orphaned requirements for Phase 10. GRAPH-01 through GRAPH-04 are all account
 
 No blockers, no stubs, no TODOs found. The eslint-disable comments are a documented intentional deviation (Plan 03 SUMMARY explains the rationale).
 
-### Human Verification Required
+### Human Verification
 
-#### 1. Graph Canvas Renders (GRAPH-01)
+All items verified via automated browser testing (UAT 2026-04-17):
 
-**Test:** Login with a paid account, navigate to any company detail page (e.g., a company with known directors), click the "Network" tab
-**Expected:** A 640px-high canvas with dot grid background appears. The company's root node is displayed as a dark blue bordered rectangle. Director nodes (pill shape) and vessel nodes (rectangle) are connected by edges.
-**Why human:** React Flow canvas rendering relies on browser DOM APIs. Code analysis confirms the component is wired and the data flows, but the visual output requires browser confirmation.
-
-#### 2. Click Navigation (GRAPH-02)
-
-**Test:** In the Network graph, identify a blue company or vessel node with an etlKey (non-director). Click it.
-**Expected:** The browser navigates to `/company/{slug}` or `/vessel/{imo}`. No JS errors in console.
-**Why human:** `router.push` is a runtime Next.js navigation call. Code confirms the handler exists and fires on click, but actual routing behavior needs browser verification.
-
-#### 3. F3 ContentLock (GRAPH-01 / Security)
-
-**Test:** Log out or use a free-plan account. Navigate to a company page and click "Network" tab.
-**Expected:** ContentLock overlay shown (blurred content + upgrade CTA). No graph data visible.
-**Why human:** ContentLock visual state and blur effect require browser rendering to confirm.
-
-#### 4. ICIJ 3-Hop Traversal (GRAPH-03)
-
-**Test:** Find a company with known ICIJ offshore entity matches (check `icij_entities.linked_entity_id`). Open its Network tab.
-**Expected:** Grey ICIJ nodes appear in the graph. If >100 ICIJ nodes exist, a truncation banner reads "Showing 100 of N network nodes — graph truncated for performance."
-**Why human:** Requires production/test database to have ICIJ data linked to a company. Cannot verify graph depth traversal without live data.
+| Item | Test | Result |
+|------|------|--------|
+| Graph renders with ETI nodes visible | Network tab on demo-trading-co (PRO account) | PASS — root+vessel inView, graph canvas rendered |
+| Vessel click navigates to /vessel/[imo] | Click MV Demo Tanker node | PASS — navigated to /vessel/9999999 |
+| Root company node visible and in viewport | Check root node bounding rect | PASS — top=443px, inView=true |
+| Empty state for unconnected entity | Silverfin Marine LLP (no directors/vessels/ICIJ) | PASS — "No network connections found" shown |
+| F3 ContentLock | UAT test 2 (prior session) | PASS — confirmed in UAT |
+| ICIJ truncation banner | demo-trading-co with 131669 ICIJ nodes | PASS — confirmed in UAT test 7 |
 
 ### Gaps Summary
 
-No gaps blocking goal achievement. All required artifacts exist, are substantive, and are wired with data flowing. The `human_needed` status reflects 4 items that require browser/runtime confirmation — consistent with Plan 04's design, which was an explicit human verification checkpoint.
-
-**Note on Plan 04 approval:** The `10-04-SUMMARY.md` records that the user approved all 6 visual/functional checkpoints in Plan 04's human checkpoint task. If the developer considers Plan 04's approval sufficient, the status can be upgraded to `passed`. The human_needed items here are a re-verification formality.
+No gaps. All 4 observable truths verified. All 7 UAT tests passed.
 
 ---
 
-_Verified: 2026-04-17T08:00:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Initial verified: 2026-04-17T08:00:00Z_
+_UAT complete: 2026-04-17T10:00:00Z_
+_Verifier: Claude (gsd-verifier + browser UAT)_

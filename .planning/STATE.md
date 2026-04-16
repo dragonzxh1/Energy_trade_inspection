@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Network Intelligence Graph
-status: verifying
-stopped_at: Completed 10-04-PLAN.md — Phase 10 complete
-last_updated: "2026-04-16T17:41:33.486Z"
-last_activity: 2026-04-16
+status: in_progress
+last_updated: "2026-04-17T10:00:00.000Z"
+last_activity: 2026-04-17
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 7
   completed_plans: 7
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -25,12 +24,12 @@ See: .planning/PROJECT.md (updated 2026-04-16 for v1.1 milestone)
 
 ## Current Position
 
-Phase: 11
+Phase: 11 (Coverage Expansion + PDF Export)
 Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-16
+Status: Phase 10 complete and verified — Phase 11 not yet started
+Last activity: 2026-04-17
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████░░░░] 67% (2/3 phases complete)
 
 ## Milestone Archive
 
@@ -60,7 +59,9 @@ Key decisions from v1.0:
 - [Phase 10]: eslint-disable-next-line react-hooks/rules-of-hooks used in NetworkGraph.tsx for hooks called after empty-state early return — same branch always executes, safe but ESLint cannot statically verify
 - [Phase 10]: NetworkGraph.tsx: ETINode data typed as (data as unknown as ETINodeData) to bridge React Flow's generic NodeProps with specific ETINodeData shape
 - [Phase 10]: networkGraph fetch placed after Promise.all in page.tsx to avoid blocking faster ICIJ/fraud queries with the potentially-slow WITH RECURSIVE CTE
-- [Phase 10-network-graph-core]: Phase 10 fully verified via human visual inspection — all 6 GRAPH-01/02/03/04 criteria confirmed passing by user
+- [Phase 10-network-graph-core]: Phase 10 fully verified — all 7 UAT tests passed (2026-04-17); vessel node click confirmed navigating to /vessel/[imo]
+- [Phase 10]: ICIJ network requires confirmed match (match_confidence = 1.0) — name-similarity matches without registration number produce misleading offshore networks with no verified identity link
+- [Phase 10]: fitView scoped to ETI-layer nodes when ICIJ nodes present — prevents 100+ ICIJ nodes from zooming ETI nodes to near-invisible
 
 ### v1.1 Scope (from CEO Plan review 2026-04-16)
 
@@ -99,6 +100,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-16T17:35:26.153Z
-Stopped at: Completed 10-04-PLAN.md — Phase 10 complete
+Last session: 2026-04-16T19:35:42.762Z
+Stopped at: context exhaustion at 90% (2026-04-16)
 Resume file: None
