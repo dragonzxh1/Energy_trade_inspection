@@ -1149,6 +1149,337 @@ export interface NetworkGraphResult {
   totalNodeCount: number
 }
 
+/**
+ * Build the full network graph for a company entity.
+ * Returns three categories of nodes:
+ *   1. ETI registry connections (directors + beneficial owners) — first-layer, non-recursive
+ *   2. ETI vessels — first-layer, non-recursive
+ *   3. ICIJ offshore entities — recursive up to 3 hops, capped at 100 nodes
+ *
+ * Color priority: sanctioned > fraud > icij > normal
+ * The 100-node cap applies ONLY to ICIJ recursive nodes. ETI directors/vessels are additional.
+ */
+export async function getNetworkGraph(entityId: string): Promise<NetworkGraphResult> {
+  const nodes: NetworkNode[] = []
+  const edges: NetworkEdge[] = []
+
+  // ── 1. Fetch root entity ─────────────────────────────────────────────────
+  const { rows: rootRows } = await db.query(
+    `SELECT id, name, slug, metadata_json,
+            sanction_status
+     FROM entities
+     WHERE id = $1
+     LIMIT 1`,
+    [entityId]
+  )
+  if (rootRows.length === 0) {
+    return { nodes: [], edges: [], truncated: false, totalNodeCount: 0 }
+  }
+  const rootRow = rootRows[0]
+  const rootName: string = rootRow.name ?? 'Unknown'
+
+  // Root node always uses 'root' color regardless of sanction status
+  nodes.push({
+    id: `eti-root-${entityId}`,
+    type: 'root',
+    label: rootName.length > 20 ? rootName.slice(0, 19) + '\u2026' : rootName,
+    fullName: rootName,
+    etlKey: rootRow.slug ?? null,
+    nodeColor: 'root',
+    subtype: 'Company',
+  })
+
+  const rootNodeId = `eti-root-${entityId}`
+  const meta = (rootRow.metadata_json ?? {}) as Record<string, unknown>
+
+  // ── 2. ETI Directors + Beneficial Owners (first-layer, non-recursive) ───
+  // Collect all director/beneficial owner names for fraud alert lookup
+  const directorNames: string[] = []
+  const directors = Array.isArray(meta.directors)
+    ? (meta.directors as Array<{ id?: string; name?: string; role?: string }>)
+    : []
+  const beneficialOwners = Array.isArray(meta.beneficial_owners)
+    ? (meta.beneficial_owners as Array<{ name?: string }>)
+    : []
+
+  for (const d of directors) {
+    if (!d.name) continue
+    directorNames.push(d.name)
+  }
+  for (const bo of beneficialOwners) {
+    if (!bo.name) continue
+    // Avoid duplicates (some directors are also beneficial owners)
+    if (!directorNames.includes(bo.name)) directorNames.push(bo.name)
+  }
+
+  // Fraud alert lookup for all director/BO names (batch query)
+  const fraudAlertsMap = new Set<string>() // lowercased names with fraud alerts
+  if (directorNames.length > 0) {
+    const { rows: fraudRows } = await db.query(
+      `SELECT DISTINCT lower(company_name) AS lname
+       FROM fraud_alerts
+       WHERE lower(company_name) = ANY($1::text[])
+         AND list_type = 'blacklist'`,
+      [directorNames.map((n) => n.toLowerCase())]
+    )
+    for (const fr of fraudRows) {
+      fraudAlertsMap.add(fr.lname as string)
+    }
+  }
+
+  // Add director nodes
+  const addedPersonIds = new Set<string>()
+  for (const d of directors) {
+    if (!d.name) continue
+    const personId = `eti-dir-${d.id ?? d.name.replace(/\s+/g, '-').toLowerCase()}`
+    if (addedPersonIds.has(personId)) continue
+    addedPersonIds.add(personId)
+
+    const hasFraud = fraudAlertsMap.has(d.name.toLowerCase())
+    const fullName = d.name
+    nodes.push({
+      id: personId,
+      type: 'person',
+      label: fullName.length > 20 ? fullName.slice(0, 19) + '\u2026' : fullName,
+      fullName,
+      etlKey: null,
+      nodeColor: hasFraud ? 'fraud' : 'normal',
+      subtype: d.role ? d.role.slice(0, 20) : 'Director',
+    })
+    edges.push({
+      id: `edge-dir-${personId}`,
+      source: rootNodeId,
+      target: personId,
+      edgeType: 'eti',
+      label: 'director of',
+    })
+  }
+
+  // Add beneficial owner nodes (skip if same name already added as director)
+  for (const bo of beneficialOwners) {
+    if (!bo.name) continue
+    const personId = `eti-bo-${bo.name.replace(/\s+/g, '-').toLowerCase()}`
+    if (addedPersonIds.has(personId)) continue
+    const alreadyAdded = [...addedPersonIds].some(
+      (pid) =>
+        pid.startsWith('eti-dir-') &&
+        nodes.find((n) => n.id === pid)?.fullName.toLowerCase() === bo.name!.toLowerCase()
+    )
+    if (alreadyAdded) continue
+    addedPersonIds.add(personId)
+
+    const hasFraud = fraudAlertsMap.has(bo.name.toLowerCase())
+    const fullName = bo.name
+    nodes.push({
+      id: personId,
+      type: 'person',
+      label: fullName.length > 20 ? fullName.slice(0, 19) + '\u2026' : fullName,
+      fullName,
+      etlKey: null,
+      nodeColor: hasFraud ? 'fraud' : 'normal',
+      subtype: 'Beneficial Owner',
+    })
+    edges.push({
+      id: `edge-bo-${personId}`,
+      source: rootNodeId,
+      target: personId,
+      edgeType: 'eti',
+      label: 'beneficial owner of',
+    })
+  }
+
+  // ── 3. ETI Vessels (first-layer, non-recursive) ──────────────────────────
+  const vessels = Array.isArray(meta.vessels)
+    ? (meta.vessels as Array<{ imo?: string; name?: string; flag?: string }>)
+    : []
+
+  for (const v of vessels) {
+    if (!v.imo) continue
+    const vesselNodeId = `eti-vessel-${v.imo}`
+
+    // Look up vessel sanction and fraud status
+    const { rows: vesselRows } = await db.query(
+      `SELECT e.sanction_status,
+              EXISTS(
+                SELECT 1 FROM fraud_alerts fa
+                WHERE lower(fa.company_name) = lower(e.name)
+                  AND fa.list_type = 'blacklist'
+              ) AS has_fraud
+       FROM entities e
+       WHERE e.type = 'vessel'
+         AND e.metadata_json->>'imo' = $1
+       LIMIT 1`,
+      [v.imo]
+    )
+
+    let vesselColor: NetworkNode['nodeColor'] = 'normal'
+    if (vesselRows.length > 0) {
+      if (vesselRows[0].sanction_status === 'listed') vesselColor = 'sanctioned'
+      else if (vesselRows[0].has_fraud) vesselColor = 'fraud'
+    }
+
+    const fullName = v.name ?? `Vessel ${v.imo}`
+    nodes.push({
+      id: vesselNodeId,
+      type: 'vessel',
+      label: fullName.length > 20 ? fullName.slice(0, 19) + '\u2026' : fullName,
+      fullName,
+      etlKey: v.imo,
+      nodeColor: vesselColor,
+      subtype: 'Vessel',
+    })
+    edges.push({
+      id: `edge-vessel-${v.imo}`,
+      source: rootNodeId,
+      target: vesselNodeId,
+      edgeType: 'eti',
+      label: 'operated by',
+    })
+  }
+
+  // ── 4. ICIJ Offshore Entities (WITH RECURSIVE CTE, depth ≤3, limit 100) ─
+  // Step 4a: Get total count (without LIMIT) to detect truncation
+  const { rows: countRows } = await db.query(
+    `WITH RECURSIVE icij_cte AS (
+       -- Base case: ICIJ entities directly linked to this ETI company
+       SELECT
+         ie.node_id,
+         ie.name,
+         ie.dataset,
+         ie.entity_type,
+         ie.is_sanctioned,
+         ie.sanctions_match,
+         0 AS depth,
+         ARRAY[ie.node_id] AS visited,
+         NULL::TEXT AS parent_node_id,
+         NULL::TEXT AS rel_link
+       FROM icij_entities ie
+       WHERE ie.linked_entity_id = $1
+
+       UNION ALL
+
+       -- Recursive case: traverse icij_relationships up to depth 3
+       SELECT
+         next_e.node_id,
+         next_e.name,
+         next_e.dataset,
+         next_e.entity_type,
+         next_e.is_sanctioned,
+         next_e.sanctions_match,
+         cte.depth + 1,
+         cte.visited || next_e.node_id,
+         cte.node_id AS parent_node_id,
+         rel.link    AS rel_link
+       FROM icij_cte cte
+       JOIN icij_relationships rel
+         ON rel.from_node_id = cte.node_id OR rel.to_node_id = cte.node_id
+       JOIN icij_entities next_e
+         ON next_e.node_id = CASE
+              WHEN rel.from_node_id = cte.node_id THEN rel.to_node_id
+              ELSE rel.from_node_id
+            END
+       WHERE cte.depth < 3
+         AND NOT (next_e.node_id = ANY(cte.visited))
+     )
+     SELECT COUNT(DISTINCT node_id)::INT AS total
+     FROM icij_cte`,
+    [entityId]
+  )
+  const totalNodeCount: number = (countRows[0]?.total as number) ?? 0
+  const truncated = totalNodeCount > 100
+
+  // Step 4b: Fetch actual nodes (with LIMIT 100, deduplicated by shallowest depth)
+  const { rows: icijRows } = await db.query(
+    `WITH RECURSIVE icij_cte AS (
+       SELECT
+         ie.node_id,
+         ie.name,
+         ie.dataset,
+         ie.entity_type,
+         ie.is_sanctioned,
+         ie.sanctions_match,
+         0 AS depth,
+         ARRAY[ie.node_id] AS visited,
+         NULL::TEXT AS parent_node_id,
+         NULL::TEXT AS rel_link
+       FROM icij_entities ie
+       WHERE ie.linked_entity_id = $1
+
+       UNION ALL
+
+       SELECT
+         next_e.node_id,
+         next_e.name,
+         next_e.dataset,
+         next_e.entity_type,
+         next_e.is_sanctioned,
+         next_e.sanctions_match,
+         cte.depth + 1,
+         cte.visited || next_e.node_id,
+         cte.node_id AS parent_node_id,
+         rel.link    AS rel_link
+       FROM icij_cte cte
+       JOIN icij_relationships rel
+         ON rel.from_node_id = cte.node_id OR rel.to_node_id = cte.node_id
+       JOIN icij_entities next_e
+         ON next_e.node_id = CASE
+              WHEN rel.from_node_id = cte.node_id THEN rel.to_node_id
+              ELSE rel.from_node_id
+            END
+       WHERE cte.depth < 3
+         AND NOT (next_e.node_id = ANY(cte.visited))
+     )
+     -- Deduplicate: keep shallowest path to each node
+     SELECT DISTINCT ON (node_id)
+       node_id, name, dataset, entity_type,
+       is_sanctioned, sanctions_match,
+       depth, parent_node_id, rel_link
+     FROM icij_cte
+     ORDER BY node_id, depth
+     LIMIT 100`,
+    [entityId]
+  )
+
+  for (const r of icijRows) {
+    const nodeId = r.node_id as string
+    const isSanctioned = r.is_sanctioned === true
+    const fullName = (r.name as string) ?? 'Unknown Entity'
+
+    nodes.push({
+      id: nodeId,
+      type: 'icij',
+      label: fullName.length > 20 ? fullName.slice(0, 19) + '\u2026' : fullName,
+      fullName,
+      etlKey: null,
+      nodeColor: isSanctioned ? 'sanctioned' : 'icij',
+      subtype: 'Offshore Entity',
+    })
+
+    // Add edge from parent to this node
+    const parentId = r.parent_node_id as string | null
+    if (parentId) {
+      edges.push({
+        id: `edge-icij-${parentId}-${nodeId}`,
+        source: parentId,
+        target: nodeId,
+        edgeType: 'icij',
+        label: (r.rel_link as string | null) ?? undefined,
+      })
+    } else {
+      // depth=0: direct link from root ETI company
+      edges.push({
+        id: `edge-icij-root-${nodeId}`,
+        source: rootNodeId,
+        target: nodeId,
+        edgeType: 'icij',
+        label: (r.rel_link as string | null) ?? undefined,
+      })
+    }
+  }
+
+  return { nodes, edges, truncated, totalNodeCount }
+}
+
 // 鈹€鈹€ ICIJ: person search & person-entity links 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface IcijPersonResult {
