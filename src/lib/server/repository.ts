@@ -1500,3 +1500,119 @@ export async function getAdminStats(): Promise<AdminStats> {
   }
 }
 
+// ── Fraud Alerts ──────────────────────────────────────────────────────────────
+
+const FRAUD_SIMILARITY_THRESHOLD = 0.45  // matches fraud-check.ts SIMILARITY_THRESHOLD
+
+export interface FraudAlertRow {
+  source: string
+  source_name: string
+  source_url: string
+  company_name: string
+  list_type: 'blacklist' | 'whitelist'
+  fraud_type: string | null
+  description: string | null
+  scam_url: string | null
+  synced_at: Date                // UI requires "Reported {date}" display
+}
+
+/**
+ * Fetch fraud alerts matching a company name via pg_trgm fuzzy search.
+ * Used by FraudAlertsPanel on company detail page (F3 gated in page.tsx).
+ */
+export async function getCompanyFraudAlerts(name: string): Promise<FraudAlertRow[]> {
+  if (!name || name.trim().length < 2) return []
+  const normalized = normalizeEntityName(name, true)
+  if (!normalized || normalized.length < 2) return []
+
+  try {
+    const { rows } = await db.query<FraudAlertRow & { sim: number }>(
+      `SELECT
+         source, source_name, source_url, company_name,
+         list_type, fraud_type, description, scam_url, synced_at,
+         GREATEST(
+           similarity(normalized_name, $1),
+           word_similarity($1, normalized_name)
+         ) AS sim
+       FROM fraud_alerts
+       WHERE normalized_name % $1 OR $1 %> normalized_name
+       ORDER BY
+         CASE list_type WHEN 'blacklist' THEN 0 ELSE 1 END,
+         synced_at DESC
+       LIMIT 50`,
+      [normalized]
+    )
+    return rows
+      .filter((r) => r.sim >= FRAUD_SIMILARITY_THRESHOLD)
+      .map(({ sim: _sim, ...r }) => r)
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Fetch fraud alerts matching a vessel by operator or manager name.
+ * Used by FraudAlertsPanel on vessel detail page (F3 gated in page.tsx).
+ *
+ * D-04: matches by operator OR manager (vessel.manager not yet in schema;
+ * parameter reserved for future Phase 11 extension when manager data is available).
+ * D-05: SIMILARITY_THRESHOLD = 0.45 (consistent with fraud-check.ts).
+ */
+export async function getVesselFraudAlerts(
+  operator: string | null | undefined,
+  manager?: string | null
+): Promise<FraudAlertRow[]> {
+  const names = [operator, manager].filter((n): n is string => !!n && n.trim().length >= 2)
+  if (names.length === 0) return []
+
+  const normalizedNames = names
+    .map((n) => normalizeEntityName(n, true))
+    .filter((n) => n.length >= 2)
+  if (normalizedNames.length === 0) return []
+
+  try {
+    // Query each name and union results; deduplicate by (source, company_name)
+    const seen = new Set<string>()
+    const results: FraudAlertRow[] = []
+
+    for (const normalized of normalizedNames) {
+      const { rows } = await db.query<FraudAlertRow & { sim: number }>(
+        `SELECT
+           source, source_name, source_url, company_name,
+           list_type, fraud_type, description, scam_url, synced_at,
+           GREATEST(
+             similarity(normalized_name, $1),
+             word_similarity($1, normalized_name)
+           ) AS sim
+         FROM fraud_alerts
+         WHERE normalized_name % $1 OR $1 %> normalized_name
+         ORDER BY
+           CASE list_type WHEN 'blacklist' THEN 0 ELSE 1 END,
+           synced_at DESC
+         LIMIT 50`,
+        [normalized]
+      )
+      for (const row of rows) {
+        if (row.sim < FRAUD_SIMILARITY_THRESHOLD) continue
+        const key = `${row.source}::${row.company_name}`
+        if (seen.has(key)) continue  // deduplicate when operator and manager match same row
+        seen.add(key)
+        const { sim: _sim, ...alert } = row
+        results.push(alert)
+      }
+    }
+
+    // Final sort: blacklist first, then by synced_at DESC
+    results.sort((a, b) => {
+      const typeDiff =
+        (a.list_type === 'blacklist' ? 0 : 1) - (b.list_type === 'blacklist' ? 0 : 1)
+      if (typeDiff !== 0) return typeDiff
+      return new Date(b.synced_at).getTime() - new Date(a.synced_at).getTime()
+    })
+
+    return results
+  } catch {
+    return []
+  }
+}
+
