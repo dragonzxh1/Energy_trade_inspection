@@ -1096,6 +1096,59 @@ export async function getIcijOfficerNetwork(entityId: string): Promise<IcijOffic
   }))
 }
 
+// ── Network Graph (Phase 10) ──────────────────────────────────────────────
+
+/**
+ * A single node in the company network graph.
+ * Covers three categories: ETI registry connections (directors/vessels, first-layer)
+ * and ICIJ offshore entities (recursive, up to 3 hops).
+ */
+export interface NetworkNode {
+  /** Unique node identifier. For ETI nodes: prefixed "eti-{id}". For ICIJ nodes: icij_entities.node_id */
+  id: string
+  /** Visual node type — controls shape/size in the React Flow renderer */
+  type: 'root' | 'company' | 'vessel' | 'person' | 'icij'
+  /** Truncated display label (≤20 chars, trailing … if longer) */
+  label: string
+  /** Full untruncated name (used for native title tooltip) */
+  fullName: string
+  /** Navigation key: company slug or vessel IMO. null = non-clickable node */
+  etlKey: string | null
+  /** Color category — computed server-side from sanction status and fraud alerts */
+  nodeColor: 'root' | 'sanctioned' | 'fraud' | 'icij' | 'normal'
+  /** One-line human-readable subtype shown below the label e.g. "Director", "Vessel", "Offshore Entity" */
+  subtype: string
+}
+
+/**
+ * A directed edge between two nodes in the network graph.
+ */
+export interface NetworkEdge {
+  /** Unique edge identifier */
+  id: string
+  /** Source node id */
+  source: string
+  /** Target node id */
+  target: string
+  /** Visual style category — ETI registry connections vs. ICIJ relationships */
+  edgeType: 'eti' | 'icij'
+  /** Optional relationship label (e.g. "director of", "shareholder of") from icij_relationships.link */
+  label?: string
+}
+
+/**
+ * Return type of getNetworkGraph(). Serialized and passed as props to the
+ * NetworkGraph client component.
+ */
+export interface NetworkGraphResult {
+  nodes: NetworkNode[]
+  edges: NetworkEdge[]
+  /** True when ICIJ recursive query hit the 100-node cap */
+  truncated: boolean
+  /** Total ICIJ node count before cap was applied (for truncation banner copy) */
+  totalNodeCount: number
+}
+
 // 鈹€鈹€ ICIJ: person search & person-entity links 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export interface IcijPersonResult {
