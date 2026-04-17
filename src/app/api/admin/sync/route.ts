@@ -150,8 +150,20 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // Sanctions → GLEIF linkage: match sanctions entities to lei_cache by name similarity
+  if (source === 'sanctions-gleif-link') {
+    try {
+      const results = await runSync('sanctions-gleif-link')
+      const hasError = results.some((r) => !r.success)
+      return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   // GLEIF delta syncs: run in-process (3-58 MB, completes within maxDuration)
-  if (source === 'gleif:delta' || source === 'gleif:level2' || source === 'gleif:exceptions' || source === 'gleif') {
+  if (source === 'gleif:delta' || source === 'gleif:level2' || source === 'gleif:level2:full' || source === 'gleif:exceptions' || source === 'gleif:exceptions:full' || source === 'gleif') {
     const gleifSource = source === 'gleif' ? 'gleif:delta' : source as SyncSource
     try {
       const results = await runSync(gleifSource)

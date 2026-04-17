@@ -124,10 +124,7 @@ async function run() {
                 const legalName = val(value?.Entity?.LegalName)
                 if (!lei || !legalName) return
 
-                // D-02: Active entities only for bulk import
-                const status = val(value?.Entity?.EntityStatus)
-                if (status !== 'ACTIVE') return
-
+                const status = val(value?.Entity?.EntityStatus) ?? 'ACTIVE'
                 const jurisdiction = val(value?.Entity?.LegalJurisdiction)
                 const jur2 = jurisdiction ? jurisdiction.slice(0, 2).toUpperCase() : null
 
@@ -139,7 +136,7 @@ async function run() {
                   val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityID),
                   val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityEntityID),
                   val(value?.Registration?.InitialRegistrationDate),
-                  'ACTIVE',
+                  status,
                   new Date().toISOString(),
                 ])
 
@@ -171,7 +168,7 @@ async function run() {
       [totalCount, durationMs],
     )
 
-    console.log(`[gleif:full] Import complete: ${totalCount.toLocaleString()} ACTIVE records in ${(durationMs/1000).toFixed(0)}s`)
+    console.log(`[gleif:full] Import complete: ${totalCount.toLocaleString()} records (ACTIVE + INACTIVE) in ${(durationMs/1000).toFixed(0)}s`)
     process.exit(0)
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})

@@ -439,8 +439,44 @@ export async function searchEntities(query: string, entityType?: string): Promis
     LIMIT 20
   `
 
-  const { rows } = await db.query(sql, params)
-  const localResults: SearchResult[] = rows.map((row) => ({
+  const shouldSearchCompanies = !entityType || entityType === 'company'
+
+  // === Tier 1: Parallel local queries ===
+  // 1a. Sanctions entities (always searched — the primary compliance layer)
+  // 1b. GLEIF lei_cache (companies only) — 2.3M records, the primary identity anchor
+  // 1c. non_lei_cache (companies only) — cached results from prior external API calls
+  const [localRows, leiCacheRows, nonLeiCacheRows] = await Promise.all([
+    db.query(sql, params).then((r) => r.rows).catch(() => []),
+    shouldSearchCompanies
+      ? db
+          .query<LeiCacheRow>(
+            `SELECT * FROM lei_cache
+             WHERE SIMILARITY(legal_name, $1) > 0.45
+               AND entity_status = 'ACTIVE'
+             ORDER BY SIMILARITY(legal_name, $1) DESC
+             LIMIT 10`,
+            [query],
+          )
+          .then((r) => r.rows)
+          .catch(() => [] as LeiCacheRow[])
+      : Promise.resolve([] as LeiCacheRow[]),
+    shouldSearchCompanies
+      ? db
+          .query<{ id: string; data_json: SearchResult }>(
+            `SELECT id, data_json FROM non_lei_cache
+             WHERE SIMILARITY(canonical_name, $1) > 0.45
+               AND expires_at > NOW()
+             ORDER BY SIMILARITY(canonical_name, $1) DESC
+             LIMIT 10`,
+            [query],
+          )
+          .then((r) => r.rows)
+          .catch(() => [] as Array<{ id: string; data_json: SearchResult }>)
+      : Promise.resolve([] as Array<{ id: string; data_json: SearchResult }>),
+  ])
+
+  // Map sanctions entity rows → SearchResult
+  const localResults: SearchResult[] = localRows.map((row) => ({
     id: row.id,
     name: row.name,
     type: row.entity_type,
@@ -455,101 +491,142 @@ export async function searchEntities(query: string, entityType?: string): Promis
     vesselType: row.vessel_type ?? undefined,
   }))
 
-  // When local results are thin, supplement from external registries.
-  const localIds = new Set(localResults.map((r) => r.registrationNumber).filter(Boolean))
-  let acraResults: SearchResult[] = []
-  let chResults: SearchResult[] = []
-
-  const shouldSearchCompanies = !entityType || entityType === 'company'
-  if (shouldSearchCompanies && localResults.length === 0) {
-    // 骞惰鏌ヨ ACRA锛堟柊鍔犲潯锛夈€丆ompanies House锛堣嫳鍥斤級銆乑efix锛堢憺澹級銆丱penCorporates锛堝叏鐞冭仛鍚堬級銆丟LEIF锛堟渶缁堝悗澶囷級
-    // Cache-first: try lei_cache similarity search before calling live GLEIF API
-    let cachedGleifRows: LeiCacheRow[] = []
-    try {
-      const { rows } = await db.query<LeiCacheRow>(
-        `SELECT * FROM lei_cache
-         WHERE SIMILARITY(legal_name, $1) > 0.45
-           AND entity_status = 'ACTIVE'
-         ORDER BY SIMILARITY(legal_name, $1) DESC
-         LIMIT 5`,
-        [query],
-      )
-      cachedGleifRows = rows
-    } catch {
-      // Ignore cache errors — fall through to live API
-    }
-
-    // Use cache hits if found; otherwise call live GLEIF API
-    const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
-      searchACRA(query, 5).catch(() => []),
-      searchCompaniesHouse(query, 5).catch(() => []),
-      searchZefix(query, 5).catch(() => []),
-      searchOpenCorporates(query, 5).catch(() => []),
-      cachedGleifRows.length > 0 ? Promise.resolve([]) : searchGleifMultiple(query, 5).catch(() => []),
-    ])
-
-    // Merge cache hits as GleifLeiRecord-compatible objects
-    const gleifFromCache: GleifLeiRecord[] = cachedGleifRows.map((row) => ({
-      lei: row.lei,
-      legalName: row.legal_name,
-      jurisdiction: row.jurisdiction,
-      country: row.country,
-      initialRegistrationDate: row.initial_registration_date,
-      registrationAuthorityId: row.registration_authority_id,
-      registrationAuthorityEntityId: row.registration_authority_entity_id,
-    }))
-    const allGleifRecords = [...gleifFromCache, ...gleifRecords]
-
-    // ACRA 缁撴灉鍘婚噸
-    acraResults = acraEntities
-      .filter((e) => !localIds.has(e.uen))
-      .map(acraToSearchResult)
-
-    // Companies House 缁撴灉鍘婚噸
-    chResults = chEntities
-      .filter((c) => !localIds.has(c.company_number))
-      .map(chToSearchResult)
-
-    // Zefix 缁撴灉鍘婚噸
-    const zefixResults = zefixEntities
-      .filter((c) => !localIds.has(c.uid))
-      .map(zefixToSearchResult)
-
-    // OpenCorporates 缁撴灉鍘婚噸锛堣仛鍚堟敞鍐屽唽锛岃鐩?NL/HK/DE/FR 绛夋棤鐩存帴娉ㄥ唽鍐岀殑鍙告硶绠¤緰鍖猴級
-    const ocResults = ocEntities
-      .filter((c) => !localIds.has(c.company_number))
-      .map(ocToSearchResult)
-
-    // De-duplicate GLEIF results and only keep records not covered by other sources.
-    const allRegNums = new Set([
-      ...localIds,
-      ...acraResults.map(r => r.registrationNumber).filter(Boolean),
-      ...chResults.map(r => r.registrationNumber).filter(Boolean),
-      ...zefixResults.map(r => r.registrationNumber).filter(Boolean),
-      ...ocResults.map(r => r.registrationNumber).filter(Boolean),
-    ])
-    const gleifResults = allGleifRecords
-      .filter((r) => !allRegNums.has(r.lei))
-      .map((r) => ({
-        id: `gleif:${r.lei}`,
-        name: r.legalName,
-        type: 'company' as const,
-        country: r.jurisdiction ?? r.country ?? '',
-        jurisdictionFlag: r.jurisdiction ?? '',
-        sanctionStatus: 'unknown' as const,
-        // LEI = 10 pts existence; +5 if registration date known; no sanctions in search path
-        authenticityScore: 10 + (r.initialRegistrationDate ? 5 : 0),
-        riskLevel: 'medium' as const,
-        registrationNumber: r.lei,
-        slug: `lei-${r.lei.toLowerCase()}`,
-      }))
-
-    // Merge results with local records first. Heavy profile enrichment stays on entity pages.
-    return [...localResults, ...acraResults, ...chResults, ...zefixResults, ...ocResults, ...gleifResults].slice(0, 20)
+  // Build dedup set: track all ids and registration numbers seen in Tier 1
+  const tier1Seen = new Set<string>()
+  for (const r of localResults) {
+    tier1Seen.add(r.id)
+    if (r.registrationNumber) tier1Seen.add(r.registrationNumber)
   }
 
-  // Merge results with local records first. Heavy profile enrichment stays on entity pages.
-  return [...localResults, ...acraResults, ...chResults].slice(0, 20)
+  // Map lei_cache rows → SearchResult, deduplicating against sanctions results.
+  // Skip if the underlying national registry number is already represented in localResults
+  // (prevents showing both a sanctioned entity and its GLEIF entry as separate results).
+  const gleifTier1: SearchResult[] = leiCacheRows
+    .filter(
+      (row) =>
+        !tier1Seen.has(row.registration_authority_entity_id ?? '__none__') &&
+        !tier1Seen.has(`gleif:${row.lei}`),
+    )
+    .map((row) => ({
+      id:                `gleif:${row.lei}`,
+      name:              row.legal_name,
+      type:              'company' as const,
+      country:           row.jurisdiction ?? row.country ?? '',
+      jurisdictionFlag:  row.jurisdiction ?? '',
+      sanctionStatus:    'unknown' as const,
+      // LEI existence = 10 pts; +5 if registration date known
+      authenticityScore: 10 + (row.initial_registration_date ? 5 : 0),
+      riskLevel:         'medium' as const,
+      registrationNumber: row.lei,
+      slug:              `lei-${row.lei.toLowerCase()}`,
+    }))
+
+  // Extend dedup set with GLEIF tier 1 ids
+  for (const r of gleifTier1) {
+    tier1Seen.add(r.id)
+    if (r.registrationNumber) tier1Seen.add(r.registrationNumber)
+  }
+
+  // Map non_lei_cache rows → SearchResult, deduplicating against all Tier 1 so far.
+  const nonLeiTier1: SearchResult[] = nonLeiCacheRows
+    .filter((row) => {
+      const sr = row.data_json
+      return !tier1Seen.has(sr.id) && !(sr.registrationNumber && tier1Seen.has(sr.registrationNumber))
+    })
+    .map((row) => row.data_json)
+
+  const tier1Results = [...localResults, ...gleifTier1, ...nonLeiTier1]
+
+  // If Tier 1 already provides enough results, skip external API calls entirely.
+  if (!shouldSearchCompanies || tier1Results.length >= 5) {
+    return tier1Results.slice(0, 20)
+  }
+
+  // === Tier 2: External API calls (ACRA, CH, Zefix, OC, GLEIF live) ===
+  // Only reached when Tier 1 has fewer than 5 results.
+  const tier1RegNums = new Set(
+    tier1Results.map((r) => r.registrationNumber).filter(Boolean) as string[],
+  )
+
+  const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
+    searchACRA(query, 5).catch(() => []),
+    searchCompaniesHouse(query, 5).catch(() => []),
+    searchZefix(query, 5).catch(() => []),
+    searchOpenCorporates(query, 5).catch(() => []),
+    searchGleifMultiple(query, 5).catch(() => []),
+  ])
+
+  const acraResults  = acraEntities.filter((e) => !tier1RegNums.has(e.uen)).map(acraToSearchResult)
+  const chResults    = chEntities.filter((c) => !tier1RegNums.has(c.company_number)).map(chToSearchResult)
+  const zefixResults = zefixEntities.filter((c) => !tier1RegNums.has(c.uid)).map(zefixToSearchResult)
+  const ocResults    = ocEntities.filter((c) => !tier1RegNums.has(c.company_number)).map(ocToSearchResult)
+
+  const allRegNums = new Set([
+    ...tier1RegNums,
+    ...acraResults.map((r) => r.registrationNumber).filter(Boolean),
+    ...chResults.map((r) => r.registrationNumber).filter(Boolean),
+    ...zefixResults.map((r) => r.registrationNumber).filter(Boolean),
+    ...ocResults.map((r) => r.registrationNumber).filter(Boolean),
+  ])
+  const gleifTier2 = gleifRecords
+    .filter((r) => !allRegNums.has(r.lei))
+    .map((r) => ({
+      id:                `gleif:${r.lei}`,
+      name:              r.legalName,
+      type:              'company' as const,
+      country:           r.jurisdiction ?? r.country ?? '',
+      jurisdictionFlag:  r.jurisdiction ?? '',
+      sanctionStatus:    'unknown' as const,
+      authenticityScore: 10 + (r.initialRegistrationDate ? 5 : 0),
+      riskLevel:         'medium' as const,
+      registrationNumber: r.lei,
+      slug:              `lei-${r.lei.toLowerCase()}`,
+    }))
+
+  // Write Tier 2 results to non_lei_cache (fire-and-forget, 7-day TTL).
+  // Prevents re-hitting external APIs for the same company on subsequent searches.
+  const toCache: Parameters<typeof writeNonLeiCache>[0] = [
+    ...acraResults.map((r) => ({
+      id:             `acra:${r.registrationNumber ?? r.id}`,
+      canonicalName:  r.name,
+      registrySource: 'acra',
+      jurisdiction:   'SG' as string | null,
+      result:         r,
+    })),
+    ...chResults.map((r) => ({
+      id:             `ch:${r.registrationNumber ?? r.id}`,
+      canonicalName:  r.name,
+      registrySource: 'ch',
+      jurisdiction:   'GB' as string | null,
+      result:         r,
+    })),
+    ...zefixResults.map((r) => ({
+      id:             `zefix:${r.registrationNumber ?? r.id}`,
+      canonicalName:  r.name,
+      registrySource: 'zefix',
+      jurisdiction:   'CH' as string | null,
+      result:         r,
+    })),
+    ...ocResults.map((r) => ({
+      id:             r.id,
+      canonicalName:  r.name,
+      registrySource: 'oc',
+      jurisdiction:   null,
+      result:         r,
+    })),
+  ]
+  if (toCache.length > 0) {
+    writeNonLeiCache(toCache).catch(() => {})
+  }
+
+  return [
+    ...tier1Results,
+    ...acraResults,
+    ...chResults,
+    ...zefixResults,
+    ...ocResults,
+    ...gleifTier2,
+  ].slice(0, 20)
 }
 
 export interface BrowseResult {
@@ -681,12 +758,93 @@ async function writeLeiCacheRecord(record: GleifLeiRecord): Promise<void> {
   }
 }
 
+/** Cache-first: read a registry-enriched Company from registry_enrichment_cache (7-day TTL). */
+async function getRegistryEnrichmentCache(lei: string): Promise<Company | null> {
+  try {
+    const { rows } = await db.query<{ data_json: Company }>(
+      `SELECT data_json FROM registry_enrichment_cache
+       WHERE lei = $1 AND expires_at > NOW()
+       LIMIT 1`,
+      [lei],
+    )
+    return rows[0]?.data_json ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Write a resolved Company object to registry_enrichment_cache with a 7-day TTL. */
+async function setRegistryEnrichmentCache(
+  lei: string,
+  registrySource: string,
+  company: Company,
+  ttlDays = 7,
+): Promise<void> {
+  try {
+    await db.query(
+      `INSERT INTO registry_enrichment_cache (lei, registry_source, data_json, expires_at)
+       VALUES ($1, $2, $3::jsonb, NOW() + ($4 || ' days')::interval)
+       ON CONFLICT (lei) DO UPDATE SET
+         registry_source = EXCLUDED.registry_source,
+         data_json       = EXCLUDED.data_json,
+         fetched_at      = NOW(),
+         expires_at      = EXCLUDED.expires_at`,
+      [lei, registrySource, JSON.stringify(company), String(ttlDays)],
+    )
+  } catch (err) {
+    console.error('[registry-enrichment-cache] write failed:', err)
+  }
+}
+
+/**
+ * Write external API SearchResults to non_lei_cache (write-through on Tier 2 calls).
+ * Prevents re-hitting external APIs for the same company on subsequent searches.
+ */
+async function writeNonLeiCache(
+  entries: Array<{
+    id: string
+    canonicalName: string
+    registrySource: string
+    jurisdiction: string | null
+    result: SearchResult
+  }>,
+): Promise<void> {
+  for (const e of entries) {
+    try {
+      await db.query(
+        `INSERT INTO non_lei_cache
+           (id, canonical_name, entity_type, jurisdiction, registry_source, data_json, authenticity_score, expires_at)
+         VALUES ($1, $2, 'company', $3, $4, $5::jsonb, $6, NOW() + interval '7 days')
+         ON CONFLICT (id) DO UPDATE SET
+           canonical_name     = EXCLUDED.canonical_name,
+           data_json          = EXCLUDED.data_json,
+           authenticity_score = EXCLUDED.authenticity_score,
+           fetched_at         = NOW(),
+           expires_at         = NOW() + interval '7 days'`,
+        [
+          e.id,
+          e.canonicalName,
+          e.jurisdiction,
+          e.registrySource,
+          JSON.stringify(e.result),
+          e.result.authenticityScore ?? null,
+        ],
+      )
+    } catch {
+      // Non-critical — silently skip on write error
+    }
+  }
+}
+
 /** Opacity-indicating GLEIF Reporting Exception types that reduce the trust signal (per D-07). */
 const OPACITY_EXCEPTION_TYPES = new Set(['NON_CONSOLIDATING', 'NON_PUBLIC', 'NO_LEI'])
 
 /**
  * Given a GLEIF LEI record, attempt to fetch a richer Company object from the
  * underlying national registry identified by registrationAuthorityId.
+ *
+ * Cache-first: checks registry_enrichment_cache (7-day TTL) before making any
+ * outbound registry HTTP calls.  On cache miss the result is written back.
  *
  * - RA000585 (Companies House): fetches officers + PSC → full directors/beneficialOwners
  * - RA000523 (ACRA): fetches UEN entity → proper ACRA Company object
@@ -697,8 +855,15 @@ const OPACITY_EXCEPTION_TYPES = new Set(['NON_CONSOLIDATING', 'NON_PUBLIC', 'NO_
 async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifRecordByLei>>): Promise<Company | null> {
   if (!record) return null
 
-  const raId     = record.registrationAuthorityId?.toUpperCase()
-  const regNum   = record.registrationAuthorityEntityId
+  // Cache-first: return cached Company if available (avoids repeated national registry HTTP calls)
+  const cached = await getRegistryEnrichmentCache(record.lei)
+  if (cached) return cached
+
+  const raId   = record.registrationAuthorityId?.toUpperCase()
+  const regNum = record.registrationAuthorityEntityId
+
+  let company: Company | null = null
+  let registrySource = 'gleif_only'
 
   // Route to Companies House
   if (raId === RA_COMPANIES_HOUSE && regNum) {
@@ -711,26 +876,27 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
         getCHPSC(chCompany.company_number).catch(() => []),
       ])
       const directors: Company['directors'] = officers.map((o, i) => ({
-        id:           `ch-officer-${i}`,
-        name:         o.name,
-        role:         o.role,
-        nationality:  o.nationality,
+        id:            `ch-officer-${i}`,
+        name:          o.name,
+        role:          o.role,
+        nationality:   o.nationality,
         appointedDate: o.appointedOn,
       }))
-      return {
+      company = {
         ...buildCHCompany(chCompany, sanctionStatus),
         directors:        directors.length > 0 ? directors : undefined,
         beneficialOwners: psc.length > 0 ? psc : undefined,
       }
+      registrySource = 'ch'
     }
   }
 
   // Route to ACRA
-  if (raId === RA_ACRA && regNum) {
+  if (raId === RA_ACRA && regNum && !company) {
     const acraEntity = await getACRAByUEN(regNum).catch(() => null)
     if (acraEntity) {
       const sanctionStatus = await screenSanctions(acraEntity.entity_name).catch(
-        () => 'unknown' as SanctionStatus
+        () => 'unknown' as SanctionStatus,
       )
       const { authenticityScore: acraScore, scoreBreakdown: acraBreakdown } =
         computeACRAScore(acraEntity, sanctionStatus)
@@ -742,54 +908,67 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
         documentConsistency: { score: 1, maxScore: 10 },
         communityReputation: { score: 0, maxScore: 10 },
       } : acraBreakdown
-      return {
-        id:               `acra:${acraEntity.uen}`,
-        type:             'company',
-        name:             acraEntity.entity_name,
-        slug:             acraEntity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      company = {
+        id:                 `acra:${acraEntity.uen}`,
+        type:               'company',
+        name:               acraEntity.entity_name,
+        slug:               acraEntity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         registrationNumber: acraEntity.uen,
-        country:          'Singapore',
-        jurisdictionFlag: '🇸🇬',
+        country:            'Singapore',
+        jurisdictionFlag:   '🇸🇬',
         sanctionStatus,
-        authenticityScore: finalScore,
-        scoreBreakdown:   finalBreakdown,
-        riskLevel:        sanctionStatus === 'listed' ? 'critical' : 'medium',
-        riskFlags:        [],
-        lastVerified:     new Date().toISOString(),
-        dataSource:       ['ACRA Singapore'],
+        authenticityScore:  finalScore,
+        scoreBreakdown:     finalBreakdown,
+        riskLevel:          sanctionStatus === 'listed' ? 'critical' : 'medium',
+        riskFlags:          [],
+        lastVerified:       new Date().toISOString(),
+        dataSource:         ['ACRA Singapore'],
       }
+      registrySource = 'acra'
     }
   }
 
   // Route to Zefix (Switzerland)
-  if (raId === RA_ZEFIX && regNum) {
+  if (raId === RA_ZEFIX && regNum && !company) {
     const uid = normalizeSwissUid(regNum)
     const zefixCompany = await getZefixByUid(uid).catch(() => null)
     if (zefixCompany) {
       const sanctionStatus = await screenSanctions(zefixCompany.name).catch(
-        () => 'unknown' as SanctionStatus
+        () => 'unknown' as SanctionStatus,
       )
-      return buildZefixCompany(zefixCompany, sanctionStatus) as unknown as Company
+      company = buildZefixCompany(zefixCompany, sanctionStatus) as unknown as Company
+      registrySource = 'zefix'
     }
   }
 
   // Fallback: try OpenCorporates by jurisdiction + registration number
-  const jurisdiction = record.jurisdiction?.toLowerCase()
-  if (jurisdiction && regNum) {
-    const ocCompany = await getOCCompanyByNumber(jurisdiction, regNum).catch(() => null)
-    if (ocCompany) {
-      const sanctionStatus = await screenSanctions(ocCompany.name).catch(
-        () => 'unknown' as SanctionStatus
-      )
-      return buildOCCompany(ocCompany, sanctionStatus) as unknown as Company
+  if (!company) {
+    const jurisdiction = record.jurisdiction?.toLowerCase()
+    if (jurisdiction && regNum) {
+      const ocCompany = await getOCCompanyByNumber(jurisdiction, regNum).catch(() => null)
+      if (ocCompany) {
+        const sanctionStatus = await screenSanctions(ocCompany.name).catch(
+          () => 'unknown' as SanctionStatus,
+        )
+        company = buildOCCompany(ocCompany, sanctionStatus) as unknown as Company
+        registrySource = 'oc'
+      }
     }
   }
 
   // Last resort: build minimal Company from GLEIF data only
-  const sanctionStatus = await screenSanctions(record.legalName).catch(
-    () => 'unknown' as SanctionStatus
-  )
-  return buildGleifCompany(record, sanctionStatus) as unknown as Company
+  if (!company) {
+    const sanctionStatus = await screenSanctions(record.legalName).catch(
+      () => 'unknown' as SanctionStatus,
+    )
+    company = buildGleifCompany(record, sanctionStatus) as unknown as Company
+    registrySource = 'gleif_only'
+  }
+
+  // Write to registry_enrichment_cache (fire-and-forget — 7-day TTL)
+  setRegistryEnrichmentCache(record.lei, registrySource, company).catch(() => {})
+
+  return company
 }
 
 export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | Vessel | Terminal | null> {

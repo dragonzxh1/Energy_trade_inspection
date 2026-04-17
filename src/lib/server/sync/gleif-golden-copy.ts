@@ -243,13 +243,9 @@ export async function syncLeiDelta(): Promise<{ count: number }> {
   }
 }
 
-// ── syncLeiLevel2 — ownership chain (RR delta) ────────────────────────────────
+// ── syncLeiLevel2 — ownership chain (RR delta or full) ───────────────────────
 
-/**
- * Downloads the Level 2 RR delta and updates direct_parent_lei / ultimate_parent_lei
- * on existing lei_cache rows.
- */
-export async function syncLeiLevel2(): Promise<{ count: number }> {
+async function runLeiLevel2Sync(url: string, label: string): Promise<{ count: number }> {
   const startMs = Date.now()
   let totalCount = 0
 
@@ -258,7 +254,7 @@ export async function syncLeiLevel2(): Promise<{ count: number }> {
     await client.query('BEGIN')
     let batchCommitCount = 0
 
-    await streamGleifRecords(URLS.rrDelta, 'relations', async (record: unknown) => {
+    await streamGleifRecords(url, 'relations', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
       const rel = r?.RelationshipRecord?.Relationship
@@ -287,30 +283,36 @@ export async function syncLeiLevel2(): Promise<{ count: number }> {
         await client.query('COMMIT')
         await client.query('BEGIN')
         batchCommitCount = 0
-        console.log(`[gleif:level2] processed ${totalCount.toLocaleString()} relationships...`)
+        console.log(`[${label}] processed ${totalCount.toLocaleString()} relationships...`)
       }
     })
 
     await client.query('COMMIT')
-    await writeSyncLog('gleif:level2', 'success', totalCount, Date.now() - startMs)
-    console.log(`[gleif:level2] sync complete: ${totalCount.toLocaleString()} relationships in ${Date.now() - startMs}ms`)
+    await writeSyncLog(label, 'success', totalCount, Date.now() - startMs)
+    console.log(`[${label}] sync complete: ${totalCount.toLocaleString()} relationships in ${Date.now() - startMs}ms`)
     return { count: totalCount }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
-    await writeSyncLog('gleif:level2', 'error', 0, Date.now() - startMs, String(err))
+    await writeSyncLog(label, 'error', 0, Date.now() - startMs, String(err))
     throw err
   } finally {
     client.release()
   }
 }
 
-// ── syncLeiExceptions — reporting exceptions (REPEX delta) ────────────────────
+/** Downloads the Level 2 RR daily delta and updates ownership chain on existing lei_cache rows. */
+export async function syncLeiLevel2(): Promise<{ count: number }> {
+  return runLeiLevel2Sync(URLS.rrDelta, 'gleif:level2')
+}
 
-/**
- * Downloads the REPEX delta and updates reporting_exception_type / reporting_exception_reason
- * on existing lei_cache rows.
- */
-export async function syncLeiExceptions(): Promise<{ count: number }> {
+/** Downloads the full Level 2 RR Golden Copy and updates ownership chain on all lei_cache rows. */
+export async function syncLeiLevel2Full(): Promise<{ count: number }> {
+  return runLeiLevel2Sync(URLS.rrFull, 'gleif:level2:full')
+}
+
+// ── syncLeiExceptions — reporting exceptions (REPEX delta or full) ────────────
+
+async function runLeiExceptionsSync(url: string, label: string): Promise<{ count: number }> {
   const startMs = Date.now()
   let totalCount = 0
 
@@ -319,7 +321,7 @@ export async function syncLeiExceptions(): Promise<{ count: number }> {
     await client.query('BEGIN')
     let batchCommitCount = 0
 
-    await streamGleifRecords(URLS.repexDelta, 'exceptions', async (record: unknown) => {
+    await streamGleifRecords(url, 'exceptions', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
       // REPEX format: fields are at root level; ExceptionReason is an array
@@ -341,18 +343,29 @@ export async function syncLeiExceptions(): Promise<{ count: number }> {
         await client.query('COMMIT')
         await client.query('BEGIN')
         batchCommitCount = 0
+        console.log(`[${label}] processed ${totalCount.toLocaleString()} records...`)
       }
     })
 
     await client.query('COMMIT')
-    await writeSyncLog('gleif:exceptions', 'success', totalCount, Date.now() - startMs)
-    console.log(`[gleif:exceptions] sync complete: ${totalCount.toLocaleString()} records in ${Date.now() - startMs}ms`)
+    await writeSyncLog(label, 'success', totalCount, Date.now() - startMs)
+    console.log(`[${label}] sync complete: ${totalCount.toLocaleString()} records in ${Date.now() - startMs}ms`)
     return { count: totalCount }
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
-    await writeSyncLog('gleif:exceptions', 'error', 0, Date.now() - startMs, String(err))
+    await writeSyncLog(label, 'error', 0, Date.now() - startMs, String(err))
     throw err
   } finally {
     client.release()
   }
+}
+
+/** Downloads the REPEX daily delta and updates reporting exceptions on existing lei_cache rows. */
+export async function syncLeiExceptions(): Promise<{ count: number }> {
+  return runLeiExceptionsSync(URLS.repexDelta, 'gleif:exceptions')
+}
+
+/** Downloads the full REPEX Golden Copy and updates reporting exceptions on all lei_cache rows. */
+export async function syncLeiExceptionsFull(): Promise<{ count: number }> {
+  return runLeiExceptionsSync(URLS.repexFull, 'gleif:exceptions:full')
 }

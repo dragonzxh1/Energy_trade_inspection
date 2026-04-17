@@ -7,7 +7,8 @@ import { syncOFAC } from './ofac'
 import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-alerts'
 import { syncLegitDomains } from './legitimate-domains'
 import { syncRegulatoryWarnings } from './regulatory-warnings'
-import { syncLeiDelta, syncLeiLevel2, syncLeiExceptions } from './gleif-golden-copy'
+import { syncLeiDelta, syncLeiLevel2, syncLeiLevel2Full, syncLeiExceptions, syncLeiExceptionsFull } from './gleif-golden-copy'
+import { db } from '@/lib/server/db'
 
 export type SyncSource =
   | 'ofac'
@@ -18,7 +19,10 @@ export type SyncSource =
   | 'gleif:full'
   | 'gleif:delta'
   | 'gleif:level2'
+  | 'gleif:level2:full'
   | 'gleif:exceptions'
+  | 'gleif:exceptions:full'
+  | 'sanctions-gleif-link'
   | 'all'
 
 export interface SyncResult {
@@ -128,7 +132,117 @@ export async function runSync(source: SyncSource): Promise<SyncResult[]> {
     }
   }
 
+  if (source === 'gleif:level2:full') {
+    const start = Date.now()
+    try {
+      const { count } = await syncLeiLevel2Full()
+      results.push({ source: 'gleif:level2:full', success: true, count, durationMs: Date.now() - start })
+    } catch (err) {
+      results.push({ source: 'gleif:level2:full', success: false, error: String(err), durationMs: Date.now() - start })
+    }
+  }
+
+  if (source === 'gleif:exceptions:full') {
+    const start = Date.now()
+    try {
+      const { count } = await syncLeiExceptionsFull()
+      results.push({ source: 'gleif:exceptions:full', success: true, count, durationMs: Date.now() - start })
+    } catch (err) {
+      results.push({ source: 'gleif:exceptions:full', success: false, error: String(err), durationMs: Date.now() - start })
+    }
+  }
+
+  if (source === 'sanctions-gleif-link') {
+    const start = Date.now()
+    try {
+      const { linked, skipped } = await linkSanctionsToGleif()
+      results.push({
+        source: 'sanctions-gleif-link',
+        success: true,
+        count: linked,
+        durationMs: Date.now() - start,
+        error: skipped > 0 ? `${skipped} entities skipped (ambiguous matches)` : undefined,
+      })
+    } catch (err) {
+      results.push({
+        source: 'sanctions-gleif-link',
+        success: false,
+        error: String(err),
+        durationMs: Date.now() - start,
+      })
+    }
+  }
+
   return results
+}
+
+/**
+ * Link sanctions entities in the `entities` table to their GLEIF LEI in `lei_cache`.
+ *
+ * For each entity where `lei IS NULL`, searches `lei_cache` by name similarity
+ * (threshold 0.6) within the same jurisdiction/country.  Updates `entities.lei`
+ * only when there is a single unambiguous match (multiple candidates are skipped
+ * to avoid false positives).
+ *
+ * This enables:
+ *   - Ultimate-parent chain traversal without live GLEIF API calls
+ *   - Detecting when a trade counterparty's parent is on a sanctions list
+ *
+ * Trigger via: POST /api/admin/sync { source: 'sanctions-gleif-link' }
+ */
+export async function linkSanctionsToGleif(): Promise<{ linked: number; skipped: number }> {
+  // Fetch all unlinked company entities (vessels don't have LEI)
+  const { rows: unlinked } = await db.query<{
+    id: string
+    name: string
+    country: string
+  }>(
+    `SELECT id, name, country
+     FROM entities
+     WHERE lei IS NULL
+       AND entity_type = 'company'
+     ORDER BY id`,
+  )
+
+  let linked = 0
+  let skipped = 0
+
+  for (const entity of unlinked) {
+    try {
+      // Use the entity name directly (no normalization — lei_cache stores legal names)
+      const countryCode = entity.country.slice(0, 2).toUpperCase()
+
+      const { rows: candidates } = await db.query<{ lei: string; similarity: number }>(
+        `SELECT lei, SIMILARITY(legal_name, $1) AS similarity
+         FROM lei_cache
+         WHERE SIMILARITY(legal_name, $1) > 0.6
+           AND entity_status = 'ACTIVE'
+           AND (
+             jurisdiction = $2
+             OR country    = $2
+           )
+         ORDER BY similarity DESC
+         LIMIT 2`,
+        [entity.name, countryCode],
+      )
+
+      if (candidates.length === 1) {
+        // Single high-confidence match — safe to link
+        await db.query(`UPDATE entities SET lei = $1 WHERE id = $2`, [
+          candidates[0].lei,
+          entity.id,
+        ])
+        linked++
+      } else {
+        // 0 matches or ambiguous (2+ candidates) — skip to avoid false positives
+        skipped++
+      }
+    } catch {
+      skipped++
+    }
+  }
+
+  return { linked, skipped }
 }
 
 /** Sync a single fraud alert source by key (e.g. 'storagespoofing'). */
