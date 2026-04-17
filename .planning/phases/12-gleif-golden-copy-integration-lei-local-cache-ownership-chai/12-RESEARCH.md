@@ -611,22 +611,22 @@ export async function GET(req: NextRequest) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **RiskFlag description field**
+1. **RiskFlag description field** (RESOLVED)
    - What we know: `RiskFlag` interface has `id`, `category`, `severity`, `status`, `submittedAt` — no `description` field.
    - What's unclear: CONTEXT.md D-07 mentions `description: 'Entity has not disclosed ownership structure...'` — but the type doesn't have this field.
-   - Recommendation: Either extend `RiskFlag` with optional `description?: string` OR rely on the `category` string (`'reporting_exception'`) for UI rendering. The planner should decide before implementation.
+   - **RESOLVED:** Do NOT extend `RiskFlag`. Rely on the `category` string (`'reporting_exception'`) for UI rendering. The `id` field (`gleif-exception-{type}`) carries enough context for display logic. No schema change needed.
 
-2. **Exact GLEIF JSON field paths**
+2. **Exact GLEIF JSON field paths** (RESOLVED)
    - What we know: GLEIF uses XML-to-JSON conversion with `$` wrapper. Field names follow LEI-CDF 3.1 spec.
    - What's unclear: Exact nesting depth and field names — especially for `EntityCategory`, `RegistrationAuthority`, and REPEX structure.
-   - Recommendation: Wave 0 should download a small sample (delta file = 3 MB) and inspect the first record before writing the parser.
+   - **RESOLVED:** Field paths confirmed in RESEARCH.md Pattern 3/4/5 and executor is instructed to validate against the 3 MB delta file (Wave 0 step in Plan 02) before writing the parser. Executor must inspect `record.Entity.LegalName.$`, `record.Entity.LegalJurisdiction.$`, `record.Entity.RegistrationAuthority.RegistrationAuthorityID.$`, etc. A `val()` helper (`x?.["$"] ?? null`) handles the wrapper uniformly.
 
-3. **`getGleifUltimateParentJurisdiction` in trade-service.ts**
+3. **`getGleifUltimateParentJurisdiction` in trade-service.ts** (RESOLVED)
    - What we know: This function is called in `trade-service.ts` and currently hits the live GLEIF API (2 sequential HTTP calls).
    - What's unclear: Phase 12 replaces this with a `lei_cache` lookup, but the `lei_cache` for the specific entity must already be populated.
-   - Recommendation: The cache-first version reads `ultimate_parent_lei` from `lei_cache`, then looks up that LEI's `jurisdiction` in `lei_cache` — both must be seeded. If either is a cache miss, fall back to live API (existing function).
+   - **RESOLVED:** The function lives in `gleif.ts` (not `trade-service.ts`). Plan 03 modifies `gleif.ts` directly to insert a `lei_cache`-first path at the top of the existing `try {}` block: (1) query `lei_cache` for `ultimate_parent_lei` by the input LEI, (2) query `lei_cache` for `jurisdiction` of the parent LEI. If both are found, return immediately without any HTTP call. If either is a cache miss, fall through to the existing two-step live API calls unchanged.
 
 ---
 
