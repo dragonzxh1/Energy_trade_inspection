@@ -8,7 +8,17 @@ import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-al
 import { syncLegitDomains } from './legitimate-domains'
 import { syncRegulatoryWarnings } from './regulatory-warnings'
 
-export type SyncSource = 'ofac' | 'fraud' | 'legitdomains' | 'warninglists' | 'all'
+export type SyncSource =
+  | 'ofac'
+  | 'fraud'
+  | 'legitdomains'
+  | 'warninglists'
+  | 'gleif'
+  | 'gleif:full'
+  | 'gleif:delta'
+  | 'gleif:level2'
+  | 'gleif:exceptions'
+  | 'all'
 
 export interface SyncResult {
   source: string
