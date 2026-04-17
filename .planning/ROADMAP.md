@@ -90,7 +90,7 @@ Plans:
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
-| 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete   | 2026-04-17 |
+| 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete    | 2026-04-17 |
 
 ## Backlog
 
