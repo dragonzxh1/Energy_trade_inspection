@@ -21,7 +21,9 @@
 import { Readable } from 'node:stream'
 import pg from 'pg'
 import unzipper from 'unzipper'
-import { withParser } from 'stream-json/streamers/stream-array.js'
+import { parser } from 'stream-json'
+import { pick } from 'stream-json/filters/pick.js'
+import { streamArray } from 'stream-json/streamers/stream-array.js'
 import { chain } from 'stream-chain'
 
 const { Pool } = pg
@@ -112,43 +114,46 @@ async function run() {
         .pipe(unzipper.Parse())
         .on('entry', (entry) => {
           if (entry.name?.endsWith('.json') || entry.path?.endsWith('.json')) {
-            const jsonStream = entry.pipe(chain([withParser()]))
-            jsonStream.on('data', async ({ value }) => {
-              const lei = val(value?.LEI)
-              const legalName = val(value?.Entity?.LegalName)
-              if (!lei || !legalName) return
+            // GLEIF full export: {"records": [...]} — use Pick to select the array key
+            const jsonStream = entry.pipe(chain([parser(), pick({ filter: 'records' }), streamArray()]))
+            // Process records sequentially via promise chain to avoid async-callback races
+            let processing = Promise.resolve()
+            jsonStream.on('data', ({ value }) => {
+              processing = processing.then(async () => {
+                const lei = val(value?.LEI)
+                const legalName = val(value?.Entity?.LegalName)
+                if (!lei || !legalName) return
 
-              // D-02: Active entities only for bulk import
-              const status = val(value?.Entity?.EntityStatus)
-              if (status !== 'ACTIVE') return
+                // D-02: Active entities only for bulk import
+                const status = val(value?.Entity?.EntityStatus)
+                if (status !== 'ACTIVE') return
 
-              const jurisdiction = val(value?.Entity?.LegalJurisdiction)
-              const jur2 = jurisdiction ? jurisdiction.slice(0, 2).toUpperCase() : null
+                const jurisdiction = val(value?.Entity?.LegalJurisdiction)
+                const jur2 = jurisdiction ? jurisdiction.slice(0, 2).toUpperCase() : null
 
-              batch.push([
-                lei,
-                legalName,
-                jur2,
-                val(value?.Entity?.LegalAddress?.Country),
-                val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityID),
-                val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityEntityID),
-                val(value?.Registration?.InitialRegistrationDate),
-                'ACTIVE',
-                new Date().toISOString(),
-              ])
+                batch.push([
+                  lei,
+                  legalName,
+                  jur2,
+                  val(value?.Entity?.LegalAddress?.Country),
+                  val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityID),
+                  val(value?.Entity?.RegistrationAuthority?.RegistrationAuthorityEntityID),
+                  val(value?.Registration?.InitialRegistrationDate),
+                  'ACTIVE',
+                  new Date().toISOString(),
+                ])
 
-              if (batch.length >= BATCH_SIZE) {
-                await flushBatch().catch(reject)
-              }
+                if (batch.length >= BATCH_SIZE) {
+                  await flushBatch()
+                }
+              }).catch((err) => { reject(err); return Promise.reject(err) })
             })
             jsonStream.on('error', reject)
-            jsonStream.on('end', async () => {
-              try {
+            jsonStream.on('end', () => {
+              processing.then(async () => {
                 await flushBatch()
                 resolve()
-              } catch (err) {
-                reject(err)
-              }
+              }).catch(reject)
             })
           } else {
             entry.autodrain()

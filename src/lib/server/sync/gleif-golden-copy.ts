@@ -11,7 +11,9 @@ import { Readable } from 'node:stream'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import unzipper from 'unzipper'
-import { withParser } from 'stream-json/streamers/stream-array.js'
+import { parser } from 'stream-json'
+import { pick } from 'stream-json/filters/pick.js'
+import { streamArray } from 'stream-json/streamers/stream-array.js'
 import { chain } from 'stream-chain'
 import { db } from '@/lib/server/db'
 
@@ -56,11 +58,12 @@ const BATCH_SIZE = 1000
 
 /**
  * Download a GLEIF ZIP file and stream individual JSON records.
- * The API returns HTTP 302 directly to the ZIP file — fetch follows redirects by default.
- * Calls onRecord for each parsed record object.
+ * The API returns a ZIP containing a single JSON file with structure { [arrayKey]: [...] }.
+ * Calls onRecord for each item in the array, sequentially (not concurrent).
  */
 async function streamGleifRecords(
   apiUrl: string,
+  arrayKey: string,
   onRecord: (record: unknown) => Promise<void>,
 ): Promise<number> {
   const res = await fetch(apiUrl, {
@@ -81,19 +84,21 @@ async function streamGleifRecords(
       .on('entry', (entry: { name: string; path: string; pipe: (dest: unknown) => unknown; autodrain: () => void }) => {
         // ZIP contains a single JSON file; skip directories
         if (entry.name?.endsWith('.json') || entry.path?.endsWith('.json')) {
+          // GLEIF JSON format: { [arrayKey]: [...records] }
+          // Use Pick to select the array, then StreamArray to iterate items.
+          // Chain records sequentially via promise chain to avoid EventEmitter async-callback races.
           const jsonStream = (entry as unknown as NodeJS.ReadableStream).pipe(
-            chain([withParser()])
+            chain([parser(), pick({ filter: arrayKey }), streamArray()])
           ) as NodeJS.EventEmitter
-          jsonStream.on('data', async ({ value }: { value: unknown }) => {
-            try {
+          let processing = Promise.resolve()
+          jsonStream.on('data', ({ value }: { value: unknown }) => {
+            processing = processing.then(async () => {
               await onRecord(value)
               count++
-            } catch (err) {
-              reject(err)
-            }
+            }).catch((err) => { reject(err); return Promise.reject(err) })
           })
           jsonStream.on('error', reject)
-          jsonStream.on('end', () => resolve(count))
+          jsonStream.on('end', () => { processing.then(() => resolve(count)).catch(reject) })
         } else {
           (entry as unknown as { autodrain(): void }).autodrain()
         }
@@ -195,7 +200,7 @@ export async function syncLeiDelta(): Promise<{ count: number }> {
 
     await client.query('BEGIN')
 
-    await streamGleifRecords(URLS.lei2Delta, async (record: unknown) => {
+    await streamGleifRecords(URLS.lei2Delta, 'records', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
       const lei = val(r?.LEI)
@@ -253,10 +258,10 @@ export async function syncLeiLevel2(): Promise<{ count: number }> {
     await client.query('BEGIN')
     let batchCommitCount = 0
 
-    await streamGleifRecords(URLS.rrDelta, async (record: unknown) => {
+    await streamGleifRecords(URLS.rrDelta, 'relations', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
-      const rel = r?.Relationship
+      const rel = r?.RelationshipRecord?.Relationship
       if (!rel) return
 
       const childLei = val(rel?.StartNode?.NodeID)
@@ -314,15 +319,13 @@ export async function syncLeiExceptions(): Promise<{ count: number }> {
     await client.query('BEGIN')
     let batchCommitCount = 0
 
-    await streamGleifRecords(URLS.repexDelta, async (record: unknown) => {
+    await streamGleifRecords(URLS.repexDelta, 'exceptions', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
-      const body = r?.ExceptionBody
-      if (!body) return
-
-      const lei = val(body?.LEI)
-      const excType = val(body?.ExceptionCategory)
-      const excReason = val(body?.ExceptionReason)
+      // REPEX format: fields are at root level; ExceptionReason is an array
+      const lei = val(r?.LEI)
+      const excType = val(r?.ExceptionCategory)
+      const excReason = val(Array.isArray(r?.ExceptionReason) ? r.ExceptionReason[0] : r?.ExceptionReason)
       if (!lei || !excType) return
 
       await client.query(
