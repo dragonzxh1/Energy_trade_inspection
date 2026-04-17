@@ -463,13 +463,42 @@ export async function searchEntities(query: string, entityType?: string): Promis
   const shouldSearchCompanies = !entityType || entityType === 'company'
   if (shouldSearchCompanies && localResults.length === 0) {
     // 骞惰鏌ヨ ACRA锛堟柊鍔犲潯锛夈€丆ompanies House锛堣嫳鍥斤級銆乑efix锛堢憺澹級銆丱penCorporates锛堝叏鐞冭仛鍚堬級銆丟LEIF锛堟渶缁堝悗澶囷級
+    // Cache-first: try lei_cache similarity search before calling live GLEIF API
+    let cachedGleifRows: LeiCacheRow[] = []
+    try {
+      const { rows } = await db.query<LeiCacheRow>(
+        `SELECT * FROM lei_cache
+         WHERE SIMILARITY(legal_name, $1) > 0.45
+           AND entity_status = 'ACTIVE'
+         ORDER BY SIMILARITY(legal_name, $1) DESC
+         LIMIT 5`,
+        [query],
+      )
+      cachedGleifRows = rows
+    } catch {
+      // Ignore cache errors — fall through to live API
+    }
+
+    // Use cache hits if found; otherwise call live GLEIF API
     const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
       searchACRA(query, 5).catch(() => []),
       searchCompaniesHouse(query, 5).catch(() => []),
       searchZefix(query, 5).catch(() => []),
       searchOpenCorporates(query, 5).catch(() => []),
-      searchGleifMultiple(query, 5).catch(() => []),
+      cachedGleifRows.length > 0 ? Promise.resolve([]) : searchGleifMultiple(query, 5).catch(() => []),
     ])
+
+    // Merge cache hits as GleifLeiRecord-compatible objects
+    const gleifFromCache: GleifLeiRecord[] = cachedGleifRows.map((row) => ({
+      lei: row.lei,
+      legalName: row.legal_name,
+      jurisdiction: row.jurisdiction,
+      country: row.country,
+      initialRegistrationDate: row.initial_registration_date,
+      registrationAuthorityId: row.registration_authority_id,
+      registrationAuthorityEntityId: row.registration_authority_entity_id,
+    }))
+    const allGleifRecords = [...gleifFromCache, ...gleifRecords]
 
     // ACRA 缁撴灉鍘婚噸
     acraResults = acraEntities
@@ -499,7 +528,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
       ...zefixResults.map(r => r.registrationNumber).filter(Boolean),
       ...ocResults.map(r => r.registrationNumber).filter(Boolean),
     ])
-    const gleifResults = gleifRecords
+    const gleifResults = allGleifRecords
       .filter((r) => !allRegNums.has(r.lei))
       .map((r) => ({
         id: `gleif:${r.lei}`,
