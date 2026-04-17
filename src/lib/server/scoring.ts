@@ -44,6 +44,12 @@ export interface ScoringInputs {
   domainAgeDays?: number | null
   /** True when domain has MX records or is DNS-reachable. False when NXDOMAIN/error AND no MX AND no website. null if unknown. */
   hasWebPresence?: boolean | null
+  /**
+   * True when the entity has an opacity-indicating GLEIF Reporting Exception
+   * (NON_CONSOLIDATING, NON_PUBLIC, or NO_LEI). Deducts 3 pts from communityReputation.
+   * Not set for NATURAL_PERSONS exception (informational only).
+   */
+  reportingExceptionFlag?: boolean
 }
 
 export interface ScoreResult {
@@ -170,6 +176,10 @@ function scoreCompany(inputs: ScoringInputs): {
     C += riskHits === 0 ? 4 : 2
     // Rotterdam Port Whitelist: verified by port authority → +2 bonus
     if (whitelisted) C = Math.min(10, C + 2)
+  }
+  // GLEIF Reporting Exception: opacity-indicating types reduce trust signal (per D-07)
+  if (inputs.reportingExceptionFlag) {
+    C = Math.max(0, C - 3)
   }
 
   return {
