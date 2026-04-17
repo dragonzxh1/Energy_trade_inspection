@@ -184,6 +184,13 @@ export async function getGleifRecordByLei(lei: string): Promise<GleifLeiRecord |
 }
 
 /**
+ * Opacity-indicating GLEIF Reporting Exception types that reduce the trust signal (per D-07).
+ * NATURAL_PERSONS is intentionally excluded — it is informational only and does not indicate
+ * ownership opacity.
+ */
+const OPACITY_EXCEPTION_TYPES = new Set(['NON_CONSOLIDATING', 'NON_PUBLIC', 'NO_LEI'])
+
+/**
  * Build a Company object from a GLEIF LEI record (not persisted to DB).
  * ID prefix `gleif:${lei}` signals GLEIF-only provenance to registry source detection.
  *
@@ -191,10 +198,14 @@ export async function getGleifRecordByLei(lei: string): Promise<GleifLeiRecord |
  * is regulated enough to have obtained an LEI, but no direct registry verification.
  * entityExistence: 10/25 (has valid LEI)
  * documentConsistency: +5 if registration date is known
- * communityReputation: +8 if not_listed
+ * communityReputation: +8 if not_listed (−3 if opacity-indicating reporting exception)
  * Max score is about 23, which is appropriate for an indirect source.
  */
-export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: SanctionStatus) {
+export function buildGleifCompany(
+  record: GleifLeiRecord,
+  sanctionStatus: SanctionStatus,
+  reportingExceptionType?: string | null,
+) {
   const cc = record.jurisdiction ?? record.country
   const country = jurisdictionToCountry(cc)
 
@@ -232,17 +243,24 @@ export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: Sancti
   const entityExistence    = 10  // valid LEI = minimal existence signal
   const documentConsistency = record.initialRegistrationDate ? 5 : 0
   const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
-  const authenticityScore   = entityExistence + documentConsistency + communityReputation
+  // GLEIF Reporting Exception: opacity-indicating types reduce trust signal (per D-07)
+  // buildGleifCompany uses inline scoring (not computeScore), so deduction is applied here directly.
+  const hasOpacityException =
+    reportingExceptionType != null && OPACITY_EXCEPTION_TYPES.has(reportingExceptionType)
+  const communityReputationFinal = hasOpacityException
+    ? Math.max(0, communityReputation - 3)
+    : communityReputation
+  const authenticityScore = entityExistence + documentConsistency + communityReputationFinal
 
   return {
     ...base,
     authenticityScore,
     scoreBreakdown: {
-      entityExistence:     { score: entityExistence,     maxScore: 25 },
-      assetReality:        { score: 0,                   maxScore: 30 },
-      tradingTrackRecord:  { score: 0,                   maxScore: 25 },
-      documentConsistency: { score: documentConsistency, maxScore: 10 },
-      communityReputation: { score: communityReputation, maxScore: 10 },
+      entityExistence:     { score: entityExistence,          maxScore: 25 },
+      assetReality:        { score: 0,                        maxScore: 30 },
+      tradingTrackRecord:  { score: 0,                        maxScore: 25 },
+      documentConsistency: { score: documentConsistency,      maxScore: 10 },
+      communityReputation: { score: communityReputationFinal, maxScore: 10 },
     },
     riskLevel: 'medium' as const,
   }

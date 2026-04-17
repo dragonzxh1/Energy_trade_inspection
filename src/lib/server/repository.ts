@@ -681,6 +681,9 @@ async function writeLeiCacheRecord(record: GleifLeiRecord): Promise<void> {
   }
 }
 
+/** Opacity-indicating GLEIF Reporting Exception types that reduce the trust signal (per D-07). */
+const OPACITY_EXCEPTION_TYPES = new Set(['NON_CONSOLIDATING', 'NON_PUBLIC', 'NO_LEI'])
+
 /**
  * Given a GLEIF LEI record, attempt to fetch a richer Company object from the
  * underlying national registry identified by registrationAuthorityId.
@@ -914,14 +917,58 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           registrationAuthorityId: cachedLei.registration_authority_id,
           registrationAuthorityEntityId: cachedLei.registration_authority_entity_id,
         }
-        const resolved = await resolveGleifRecord(gleifRecordFromCache)
-        if (resolved) return resolved
+        const company = await resolveGleifRecord(gleifRecordFromCache)
+        if (company && cachedLei.reporting_exception_type &&
+            OPACITY_EXCEPTION_TYPES.has(cachedLei.reporting_exception_type)) {
+          company.riskFlags = [
+            ...(company.riskFlags ?? []),
+            {
+              id: `gleif-exception-${cachedLei.reporting_exception_type.toLowerCase()}`,
+              category: 'reporting_exception',
+              severity: 'medium' as const,
+              status: 'verified' as const,
+              submittedAt: new Date().toISOString(),
+            },
+          ]
+          // Apply score deduction on cache-hit path
+          const crScore = company.scoreBreakdown?.communityReputation?.score ?? 0
+          const deduction = Math.min(3, crScore)
+          if (deduction > 0) {
+            company.scoreBreakdown.communityReputation.score = crScore - deduction
+            company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+          }
+        }
+        if (company) return company
       } else {
         // Cache miss: call live API and warm the cache
         const record = await getGleifRecordByLei(lei).catch(() => null)
         if (record) await writeLeiCacheRecord(record)
-        const resolved = await resolveGleifRecord(record)
-        if (resolved) return resolved
+        const company = await resolveGleifRecord(record)
+        if (company) {
+          // Warm-on-miss: check if exception data was written to cache
+          const freshCached = record ? await getLeiCacheRecord(record.lei) : null
+          if (freshCached?.reporting_exception_type &&
+              OPACITY_EXCEPTION_TYPES.has(freshCached.reporting_exception_type)) {
+            company.riskFlags = [
+              ...(company.riskFlags ?? []),
+              {
+                id: `gleif-exception-${freshCached.reporting_exception_type.toLowerCase()}`,
+                category: 'reporting_exception',
+                severity: 'medium' as const,
+                status: 'verified' as const,
+                submittedAt: new Date().toISOString(),
+              },
+            ]
+            // Apply score deduction on warm-on-miss path
+            const crScore = company.scoreBreakdown?.communityReputation?.score ?? 0
+            const deduction = Math.min(3, crScore)
+            if (deduction > 0) {
+              company.scoreBreakdown.communityReputation.score = crScore - deduction
+              company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+            }
+          }
+          return company
+        }
       }
     }
 
@@ -940,14 +987,58 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           registrationAuthorityId: cachedLei.registration_authority_id,
           registrationAuthorityEntityId: cachedLei.registration_authority_entity_id,
         }
-        const resolved = await resolveGleifRecord(gleifRecordFromCache)
-        if (resolved) return resolved
+        const company = await resolveGleifRecord(gleifRecordFromCache)
+        if (company && cachedLei.reporting_exception_type &&
+            OPACITY_EXCEPTION_TYPES.has(cachedLei.reporting_exception_type)) {
+          company.riskFlags = [
+            ...(company.riskFlags ?? []),
+            {
+              id: `gleif-exception-${cachedLei.reporting_exception_type.toLowerCase()}`,
+              category: 'reporting_exception',
+              severity: 'medium' as const,
+              status: 'verified' as const,
+              submittedAt: new Date().toISOString(),
+            },
+          ]
+          // Apply score deduction on cache-hit path
+          const crScore = company.scoreBreakdown?.communityReputation?.score ?? 0
+          const deduction = Math.min(3, crScore)
+          if (deduction > 0) {
+            company.scoreBreakdown.communityReputation.score = crScore - deduction
+            company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+          }
+        }
+        if (company) return company
       } else {
         // Cache miss: call live API and warm the cache
         const record = await getGleifRecordByLei(lei).catch(() => null)
         if (record) await writeLeiCacheRecord(record)
-        const resolved = await resolveGleifRecord(record)
-        if (resolved) return resolved
+        const company = await resolveGleifRecord(record)
+        if (company) {
+          // Warm-on-miss: check if exception data was written to cache
+          const freshCached = record ? await getLeiCacheRecord(record.lei) : null
+          if (freshCached?.reporting_exception_type &&
+              OPACITY_EXCEPTION_TYPES.has(freshCached.reporting_exception_type)) {
+            company.riskFlags = [
+              ...(company.riskFlags ?? []),
+              {
+                id: `gleif-exception-${freshCached.reporting_exception_type.toLowerCase()}`,
+                category: 'reporting_exception',
+                severity: 'medium' as const,
+                status: 'verified' as const,
+                submittedAt: new Date().toISOString(),
+              },
+            ]
+            // Apply score deduction on warm-on-miss path
+            const crScore = company.scoreBreakdown?.communityReputation?.score ?? 0
+            const deduction = Math.min(3, crScore)
+            if (deduction > 0) {
+              company.scoreBreakdown.communityReputation.score = crScore - deduction
+              company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+            }
+          }
+          return company
+        }
       }
     }
 
