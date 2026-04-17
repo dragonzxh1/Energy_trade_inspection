@@ -129,6 +129,40 @@ export async function POST(req: NextRequest) {
     })
   }
 
+  // GLEIF full import: spawn background process (875 MB download, hours to complete)
+  if (source === 'gleif:full') {
+    const scriptPath = path.join(process.cwd(), 'scripts', 'sync-gleif-full.mjs')
+    const child = spawn(process.execPath, [scriptPath], {
+      detached: true,
+      stdio: 'ignore',
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL,
+      },
+    })
+    child.unref()
+
+    return NextResponse.json({
+      success: true,
+      source: 'gleif:full',
+      pid: child.pid,
+      message: 'GLEIF full Level 1 import started in background. Check GET /api/admin/sync for progress via sanctions_sync_log.',
+    })
+  }
+
+  // GLEIF delta syncs: run in-process (3-58 MB, completes within maxDuration)
+  if (source === 'gleif:delta' || source === 'gleif:level2' || source === 'gleif:exceptions' || source === 'gleif') {
+    const gleifSource = source === 'gleif' ? 'gleif:delta' : source as SyncSource
+    try {
+      const results = await runSync(gleifSource)
+      const hasError = results.some((r) => !r.success)
+      return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   // Fraud alert sync: POST { source: 'fraud' } or { source: 'fraud:storagespoofing' } etc.
   if (source === 'fraud') {
     try {
