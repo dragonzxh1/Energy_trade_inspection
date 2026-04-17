@@ -97,6 +97,8 @@ function jurisdictionToCountry(cc: string | null): string {
 }
 
 import type { SanctionStatus } from '@/lib/types'
+import { db } from '@/lib/server/db'
+import type { LeiCacheRow } from '@/lib/server/sync/gleif-golden-copy'
 
 /**
  * Find the best-matching LEI record for a given company name.
@@ -248,6 +250,29 @@ export function buildGleifCompany(record: GleifLeiRecord, sanctionStatus: Sancti
 
 export async function getGleifUltimateParentJurisdiction(lei: string): Promise<string | null> {
   try {
+    // Cache-first: check lei_cache for ultimate_parent_lei (per D-05)
+    // If both the entity and its ultimate parent are in lei_cache, skip live API entirely.
+    try {
+      const { rows: entityRows } = await db.query<Pick<LeiCacheRow, 'ultimate_parent_lei'>>(
+        `SELECT ultimate_parent_lei FROM lei_cache WHERE lei = $1 LIMIT 1`,
+        [lei],
+      )
+      const ultimateParentLei = entityRows[0]?.ultimate_parent_lei
+      if (ultimateParentLei && ultimateParentLei !== lei) {
+        const { rows: parentRows } = await db.query<Pick<LeiCacheRow, 'jurisdiction'>>(
+          `SELECT jurisdiction FROM lei_cache WHERE lei = $1 LIMIT 1`,
+          [ultimateParentLei],
+        )
+        const cachedJurisdiction = parentRows[0]?.jurisdiction
+        if (cachedJurisdiction) {
+          return cachedJurisdiction  // Cache hit — no live API call
+        }
+      }
+    } catch {
+      // Cache lookup failed — fall through to live API
+    }
+    // Cache miss or incomplete — fall through to live GLEIF API calls below
+
     // Step 1: resolve the ultimate-parent relationship to obtain the parent LEI
     const relRes = await fetch(
       `${GLEIF_BASE}/lei-records/${encodeURIComponent(lei)}/ultimate-parent-relationship`,
