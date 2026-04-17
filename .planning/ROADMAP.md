@@ -90,6 +90,7 @@ Plans:
 | 9. Data Enrichment Foundations | v1.1 | 0/3 | Planned | - |
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
+| 12. GLEIF Golden Copy Integration | standalone | 0/5 | Planned | - |
 
 ## Backlog
 
@@ -152,7 +153,6 @@ Plans:
 **Goal:** 接入香港公司注册处 (Companies Registry) 注册数据
 **Priority:** P1（香港是能源贸易高频司法管辖区，当前仅有 SFC 警告，无注册局数据）
 **Requirements:** TBD
-**Plans:** TBD
 **Plans:** 0 plans
 
 Implementation notes:
@@ -194,7 +194,7 @@ Plans:
 Implementation notes:
 - Equasis：免费（需注册），整合 MarineTraffic/VesselTracker/P&I 来源
 - 捕获：船东/管理人/运营人、PSC 检查记录、扣押记录、P&I 保险
-- 关键先决条件：确认服务条款是否允许自动化访问
+- 关键先决条件：确认服务条款是否允许服务条款是否允许自动化访问
 - 高风险信号：同一管理公司频繁关联高风险船舶
 
 Plans:
@@ -217,6 +217,20 @@ Implementation notes:
 
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
+
+### Phase 12: GLEIF Golden Copy integration — LEI local cache, ownership chain, reporting exceptions
+
+**Goal:** 将 GLEIF 实时 API 调用替换为本地缓存（lei_cache 表），通过 Golden Copy 批量导入实现 LEI 数据本地化，并将所有权链（Level 2 RR）和报告豁免（REPEX）数据转化为风险信号
+**Requirements**: D-01, D-02, D-03, D-04, D-05, D-06, D-07, D-08, D-09, D-10
+**Depends on:** Phase 11
+**Plans:** 5 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — npm 安装 unzipper/stream-json + 迁移 037_lei_cache.sql + SyncSource 类型扩展 (D-01, D-08, D-09)
+- [ ] 12-02-PLAN.md — gleif-golden-copy.ts sync 模块（四个 sync 函数）+ scripts/sync-gleif-full.mjs 子进程脚本 (D-02, D-03, D-04, D-06)
+- [ ] 12-03-PLAN.md — repository.ts 缓存优先集成（getLeiCacheRecord + writeLeiCacheRecord + 三处调用点） (D-05, D-06)
+- [ ] 12-04-PLAN.md — scoring.ts reportingExceptionFlag + repository.ts reporting_exception RiskFlag 注入 (D-07)
+- [ ] 12-05-PLAN.md — sync/index.ts dispatch 块 + admin/sync/route.ts gleif:full/delta + cron/gleif-delta/route.ts (D-09, D-10)
 
 ---
 
