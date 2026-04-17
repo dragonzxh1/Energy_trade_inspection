@@ -7,6 +7,7 @@ import { syncOFAC } from './ofac'
 import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-alerts'
 import { syncLegitDomains } from './legitimate-domains'
 import { syncRegulatoryWarnings } from './regulatory-warnings'
+import { syncLeiDelta, syncLeiLevel2, syncLeiExceptions } from './gleif-golden-copy'
 
 export type SyncSource =
   | 'ofac'
@@ -94,6 +95,36 @@ export async function runSync(source: SyncSource): Promise<SyncResult[]> {
         error: r.error,
         durationMs: r.durationMs,
       })
+    }
+  }
+
+  if (source === 'gleif:delta') {
+    const start = Date.now()
+    try {
+      const { count } = await syncLeiDelta()
+      results.push({ source: 'gleif:delta', success: true, count, durationMs: Date.now() - start })
+    } catch (err) {
+      results.push({ source: 'gleif:delta', success: false, error: String(err), durationMs: Date.now() - start })
+    }
+  }
+
+  if (source === 'gleif:level2') {
+    const start = Date.now()
+    try {
+      const { count } = await syncLeiLevel2()
+      results.push({ source: 'gleif:level2', success: true, count, durationMs: Date.now() - start })
+    } catch (err) {
+      results.push({ source: 'gleif:level2', success: false, error: String(err), durationMs: Date.now() - start })
+    }
+  }
+
+  if (source === 'gleif:exceptions') {
+    const start = Date.now()
+    try {
+      const { count } = await syncLeiExceptions()
+      results.push({ source: 'gleif:exceptions', success: true, count, durationMs: Date.now() - start })
+    } catch (err) {
+      results.push({ source: 'gleif:exceptions', success: false, error: String(err), durationMs: Date.now() - start })
     }
   }
 
