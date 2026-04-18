@@ -250,10 +250,43 @@ async function runLeiLevel2Sync(url: string, label: string): Promise<{ count: nu
   let totalCount = 0
 
   const client = await db.connect()
-  try {
-    await client.query('BEGIN')
-    let batchCommitCount = 0
 
+  // Separate arrays for each relationship type — avoids per-row UPDATE locks held in a long tx.
+  const directChildren: string[] = []
+  const directParents: string[] = []
+  const ultimateChildren: string[] = []
+  const ultimateParents: string[] = []
+
+  // Each flush is one short-lived auto-commit UPDATE via unnest — no long open transaction.
+  const flushDirect = async () => {
+    if (directChildren.length === 0) return
+    await client.query(
+      `UPDATE lei_cache AS t
+       SET direct_parent_lei = v.parent, last_synced_at = NOW()
+       FROM (SELECT unnest($1::text[]) AS child, unnest($2::text[]) AS parent) v
+       WHERE t.lei = v.child`,
+      [directChildren, directParents],
+    )
+    totalCount += directChildren.length
+    directChildren.length = 0
+    directParents.length = 0
+  }
+
+  const flushUltimate = async () => {
+    if (ultimateChildren.length === 0) return
+    await client.query(
+      `UPDATE lei_cache AS t
+       SET ultimate_parent_lei = v.parent, last_synced_at = NOW()
+       FROM (SELECT unnest($1::text[]) AS child, unnest($2::text[]) AS parent) v
+       WHERE t.lei = v.child`,
+      [ultimateChildren, ultimateParents],
+    )
+    totalCount += ultimateChildren.length
+    ultimateChildren.length = 0
+    ultimateParents.length = 0
+  }
+
+  try {
     await streamGleifRecords(url, 'relations', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
@@ -266,33 +299,23 @@ async function runLeiLevel2Sync(url: string, label: string): Promise<{ count: nu
       if (!childLei || !parentLei || !relType) return
 
       if (relType === 'IS_DIRECTLY_CONSOLIDATED_BY') {
-        await client.query(
-          `UPDATE lei_cache SET direct_parent_lei = $1, last_synced_at = NOW() WHERE lei = $2`,
-          [parentLei, childLei],
-        )
+        directChildren.push(childLei)
+        directParents.push(parentLei)
+        if (directChildren.length >= BATCH_SIZE) await flushDirect()
       } else if (relType === 'IS_ULTIMATELY_CONSOLIDATED_BY') {
-        await client.query(
-          `UPDATE lei_cache SET ultimate_parent_lei = $1, last_synced_at = NOW() WHERE lei = $2`,
-          [parentLei, childLei],
-        )
-      }
-
-      totalCount++
-      batchCommitCount++
-      if (batchCommitCount >= 10_000) {
-        await client.query('COMMIT')
-        await client.query('BEGIN')
-        batchCommitCount = 0
-        console.log(`[${label}] processed ${totalCount.toLocaleString()} relationships...`)
+        ultimateChildren.push(childLei)
+        ultimateParents.push(parentLei)
+        if (ultimateChildren.length >= BATCH_SIZE) await flushUltimate()
       }
     })
 
-    await client.query('COMMIT')
+    await flushDirect()
+    await flushUltimate()
+
     await writeSyncLog(label, 'success', totalCount, Date.now() - startMs)
     console.log(`[${label}] sync complete: ${totalCount.toLocaleString()} relationships in ${Date.now() - startMs}ms`)
     return { count: totalCount }
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {})
     await writeSyncLog(label, 'error', 0, Date.now() - startMs, String(err))
     throw err
   } finally {
@@ -317,10 +340,33 @@ async function runLeiExceptionsSync(url: string, label: string): Promise<{ count
   let totalCount = 0
 
   const client = await db.connect()
-  try {
-    await client.query('BEGIN')
-    let batchCommitCount = 0
 
+  const leis: string[] = []
+  const excTypes: string[] = []
+  const excReasons: Array<string | null> = []
+
+  const flushBatch = async () => {
+    if (leis.length === 0) return
+    await client.query(
+      `UPDATE lei_cache AS t
+       SET reporting_exception_type = v.exc_type,
+           reporting_exception_reason = v.exc_reason,
+           last_synced_at = NOW()
+       FROM (
+         SELECT unnest($1::text[]) AS lei,
+                unnest($2::text[]) AS exc_type,
+                unnest($3::text[]) AS exc_reason
+       ) v
+       WHERE t.lei = v.lei`,
+      [leis, excTypes, excReasons],
+    )
+    totalCount += leis.length
+    leis.length = 0
+    excTypes.length = 0
+    excReasons.length = 0
+  }
+
+  try {
     await streamGleifRecords(url, 'exceptions', async (record: unknown) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const r = record as any
@@ -330,29 +376,17 @@ async function runLeiExceptionsSync(url: string, label: string): Promise<{ count
       const excReason = val(Array.isArray(r?.ExceptionReason) ? r.ExceptionReason[0] : r?.ExceptionReason)
       if (!lei || !excType) return
 
-      await client.query(
-        `UPDATE lei_cache
-         SET reporting_exception_type = $1, reporting_exception_reason = $2, last_synced_at = NOW()
-         WHERE lei = $3`,
-        [excType, excReason, lei],
-      )
-
-      totalCount++
-      batchCommitCount++
-      if (batchCommitCount >= 10_000) {
-        await client.query('COMMIT')
-        await client.query('BEGIN')
-        batchCommitCount = 0
-        console.log(`[${label}] processed ${totalCount.toLocaleString()} records...`)
-      }
+      leis.push(lei)
+      excTypes.push(excType)
+      excReasons.push(excReason)
+      if (leis.length >= BATCH_SIZE) await flushBatch()
     })
 
-    await client.query('COMMIT')
+    await flushBatch()
     await writeSyncLog(label, 'success', totalCount, Date.now() - startMs)
     console.log(`[${label}] sync complete: ${totalCount.toLocaleString()} records in ${Date.now() - startMs}ms`)
     return { count: totalCount }
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {})
     await writeSyncLog(label, 'error', 0, Date.now() - startMs, String(err))
     throw err
   } finally {
