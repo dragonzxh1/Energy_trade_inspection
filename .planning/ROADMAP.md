@@ -91,6 +91,7 @@ Plans:
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
 | 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete    | 2026-04-17 |
+| 13. Trade Check UI Redesign | standalone | 0/2 | Planned | - |
 
 ## Backlog
 
@@ -231,6 +232,22 @@ Plans:
 - [x] 12-03-PLAN.md — repository.ts 缓存优先集成（getLeiCacheRecord + writeLeiCacheRecord + 三处调用点） (D-05, D-06)
 - [x] 12-04-PLAN.md — scoring.ts reportingExceptionFlag + repository.ts reporting_exception RiskFlag 注入 (D-07)
 - [x] 12-05-PLAN.md — sync/index.ts dispatch 块 + admin/sync/route.ts gleif:full/delta + cron/gleif-delta/route.ts (D-09, D-10)
+
+### Phase 13: Trade Check UI Redesign
+
+**Goal**: Trade Check 页面从当前单列布局升级为 sketch 验证的 Split Panel 布局，应用 micro-gradient 控件设计规范，提供 Empty/Loading/Result 三态右面板和 Recent Checks 历史记录
+**Depends on**: Phase 12
+**Requirements**: TRADE-UI-01, TRADE-UI-02, TRADE-UI-03, TRADE-UI-04
+**Success Criteria** (what must be TRUE):
+  1. `/trade` 页面渲染 380px 固定左列（表单 + Recent Checks）+ 弹性右列（三态面板）的 split panel 布局
+  2. Primary 按钮使用 micro-gradient（`linear-gradient(180deg, #7578f2, #5558e8)`），hover 时 translateY(-1px)
+  3. 输入框使用 inset-shadow 设计，focus 时显示 `var(--color-primary)` border + 2px focus ring
+  4. 运行检查后，右面板显示 Loading 进度条动画，完成后切换到 Result 视图，不需要页面滚动即可看到结果
+**Plans**: 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — page.tsx main 去 maxWidth + TradeClient 全量重写（Split Panel + TOKEN + FormValues 提升 + 单列表单 + 三态面板 + Recent Checks）(TRADE-UI-01, TRADE-UI-03, TRADE-UI-04)
+- [ ] 13-02-PLAN.md — controls 样式升级（Primary 按钮 micro-gradient + inputs inset-shadow + Secondary 按钮）+ 视觉验证 checkpoint (TRADE-UI-02, TRADE-UI-03)
+**UI hint**: yes
 
 ---
 
