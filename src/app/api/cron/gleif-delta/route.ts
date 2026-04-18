@@ -37,10 +37,21 @@ export async function GET(req: NextRequest) {
   const startMs = Date.now()
 
   try {
-    // Run sequentially — all three write to lei_cache; concurrent writes cause deadlocks
+    // Run sequentially — all three write to lei_cache; concurrent writes cause deadlocks.
+    // 5s pause before exceptions lets autovacuum clear dead tuples from delta/level2 commits,
+    // reducing deadlock probability. One retry on deadlock as belt-and-suspenders.
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+    const withDeadlockRetry = async (fn: () => Promise<{ count: number }>) => {
+      try { return await fn() } catch (e) {
+        if (String(e).includes('deadlock')) { await sleep(3000); return await fn() }
+        throw e
+      }
+    }
+
     const deltaResult = await syncLeiDelta().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
     const level2Result = await syncLeiLevel2().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
-    const exceptionsResult = await syncLeiExceptions().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
+    await sleep(5000)
+    const exceptionsResult = await withDeadlockRetry(syncLeiExceptions).then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
 
     const counts = {
       delta: deltaResult.status === 'fulfilled' ? deltaResult.value.count : 0,
