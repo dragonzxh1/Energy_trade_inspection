@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # cron-runner.sh — wrapper for ETI scheduled tasks
 # Usage: scripts/cron-runner.sh <task>
-#   tasks: cleanup | sync-sanctions | sync-fraud
+#   tasks: cleanup | sync-sanctions | sync-fraud | gleif-delta
 
 set -euo pipefail
 
@@ -49,6 +49,15 @@ case "$TASK" in
     cd "$APP_DIR"
     node scripts/sync-fraud-alerts.mjs >> "$LOG_FILE" 2>&1
     echo "[$TIMESTAMP] sync-fraud done" >> "$LOG_FILE"
+    ;;
+
+  gleif-delta)
+    RESULT=$(curl -s -w "\nHTTP_STATUS:%{http_code}" \
+      -H "Authorization: Bearer $ADMIN_SECRET" \
+      "$APP_URL/api/cron/gleif-delta")
+    HTTP_STATUS=$(echo "$RESULT" | grep "HTTP_STATUS:" | cut -d: -f2)
+    BODY=$(echo "$RESULT" | grep -v "HTTP_STATUS:")
+    echo "[$TIMESTAMP] gleif-delta → HTTP $HTTP_STATUS: $BODY" >> "$LOG_FILE"
     ;;
 
   *)
