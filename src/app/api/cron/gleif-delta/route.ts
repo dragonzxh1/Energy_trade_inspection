@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
     }
 
     const deltaResult = await syncLeiDelta().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
-    const level2Result = await syncLeiLevel2().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
+    await sleep(5000)
+    const level2Result = await withDeadlockRetry(syncLeiLevel2).then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
     await sleep(5000)
     const exceptionsResult = await withDeadlockRetry(syncLeiExceptions).then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
 
