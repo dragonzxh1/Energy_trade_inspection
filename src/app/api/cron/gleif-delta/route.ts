@@ -37,12 +37,10 @@ export async function GET(req: NextRequest) {
   const startMs = Date.now()
 
   try {
-    // Run all three delta syncs sequentially (RR and REPEX depend on lei_cache rows from delta)
-    const [deltaResult, level2Result, exceptionsResult] = await Promise.allSettled([
-      syncLeiDelta(),
-      syncLeiLevel2(),
-      syncLeiExceptions(),
-    ])
+    // Run sequentially — all three write to lei_cache; concurrent writes cause deadlocks
+    const deltaResult = await syncLeiDelta().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
+    const level2Result = await syncLeiLevel2().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
+    const exceptionsResult = await syncLeiExceptions().then((v) => ({ status: 'fulfilled' as const, value: v })).catch((e) => ({ status: 'rejected' as const, reason: e }))
 
     const counts = {
       delta: deltaResult.status === 'fulfilled' ? deltaResult.value.count : 0,
