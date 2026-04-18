@@ -1,21 +1,35 @@
-﻿'use client'
+'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import type { TradeCheckResult, TradePartyResult, TradeVesselResult, TradePortResult } from '@/app/api/trade/route'
 import type { TradeFlag, TradeVerdict } from '@/lib/server/trade-rules'
 import { FLAG_EXPLANATIONS } from '@/lib/server/trade-rules'
 import type { RiskLevel } from '@/lib/types'
+// GlowLoader import retained (not deleted), LoadingView uses inline progress bar instead
 import GlowLoader from '@/components/ui/GlowLoader'
 
-// 鈹€鈹€ Design tokens 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── TOKEN (all hardcoded values live here; never scatter magic strings) ──────
+const TOKEN = {
+  surface:      '#111113',
+  elevated:     '#1e1e24',
+  elevated2:    '#26262e',
+  border:       'rgba(255,255,255,0.07)',
+  borderHover:  'rgba(255,255,255,0.14)',
+  primary:      '#6366f1',
+  text:         '#f1f1f3',
+  textMuted:    '#8b8b9a',
+  textSubtle:   '#55556a',
+} as const
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   critical: '#ef4444',
   high:     '#f97316',
-  medium:   '#eab308',
-  low:      '#22c55e',
+  medium:   '#fbbf24',
+  low:      '#4ade80',
 }
 const RISK_BG: Record<RiskLevel, string> = {
   critical: 'rgba(239,68,68,0.10)',
@@ -69,6 +83,35 @@ const VERDICT_DISPLAY: Record<TradeVerdict, string> = {
   safe:   'SAFE',
 }
 
+// ── Recent Checks (localStorage) ─────────────────────────────────────────────
+
+const LS_KEY = 'eti_recent_trade_checks'
+const MAX_RECENT = 5
+
+interface RecentCheck {
+  seller: string
+  vessel?: string
+  commodity?: string
+  loadingPort?: string
+  overallRisk: RiskLevel
+  checkedAt: string  // ISO string
+}
+
+function getRecent(): RecentCheck[] {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') as RecentCheck[]
+  } catch { return [] }
+}
+
+function pushRecent(entry: RecentCheck) {
+  const list = [entry, ...getRecent().filter(
+    r => r.seller !== entry.seller || r.vessel !== entry.vessel
+  )]
+  localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0, MAX_RECENT)))
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
 function VerdictLabel({ verdict }: { verdict: TradeVerdict }) {
   const level = VERDICT_RISK_MAP[verdict]
   return (
@@ -99,8 +142,6 @@ function fmt(iso: string | null | undefined) {
     })
   } catch { return iso }
 }
-
-// 鈹€鈹€ Badges 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 function RiskBadge({ level, large }: { level: RiskLevel; large?: boolean }) {
   return (
@@ -137,7 +178,7 @@ function SanctionBadge({ status }: { status: string }) {
   )
 }
 
-// 鈹€鈹€ Form 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Form ──────────────────────────────────────────────────────────────────────
 
 interface FormValues {
   seller: string
@@ -146,17 +187,25 @@ interface FormValues {
   date: string
   loadingPort: string
   commodity: string
-  sellerDomain: string   // NEW (D-02)
+  sellerDomain: string
 }
 
-function inputStyle(hasError?: boolean): React.CSSProperties {
+function inputStyleNew(key: string, focused: string | null, hasError?: boolean): React.CSSProperties {
+  const isFocused = focused === key
   return {
     width: '100%',
     boxSizing: 'border-box' as const,
-    backgroundColor: 'var(--bg-elevated)',
-    border: `1px solid ${hasError ? 'rgba(239,68,68,0.5)' : 'var(--border-subtle)'}`,
-    borderRadius: '6px',
-    color: 'var(--text-primary)',
+    background: 'rgba(0,0,0,0.28)',
+    border: `1px solid ${
+      hasError    ? 'rgba(239,68,68,0.5)' :
+      isFocused   ? '#6366f1'             :
+                    TOKEN.border
+    }`,
+    boxShadow: isFocused
+      ? 'inset 0 2px 3px rgba(0,0,0,0.3), 0 0 0 2px rgba(99,102,241,0.18)'
+      : 'inset 0 2px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(0,0,0,0.12)',
+    borderRadius: '7px',
+    color: TOKEN.text,
     fontSize: '13px',
     fontFamily: 'inherit',
     padding: '8px 12px',
@@ -164,37 +213,18 @@ function inputStyle(hasError?: boolean): React.CSSProperties {
   }
 }
 
-function labelStyle(): React.CSSProperties {
-  return {
-    display: 'block',
-    fontSize: '12px',
-    fontWeight: 600,
-    color: 'var(--text-secondary)',
-    marginBottom: '6px',
-    letterSpacing: '0.02em',
-  }
-}
-
-function hintStyle(): React.CSSProperties {
-  return { fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }
-}
-
-function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
+interface TradeFormProps {
+  values: FormValues
+  setValues: React.Dispatch<React.SetStateAction<FormValues>>
   onSubmit: (v: FormValues) => void
-  initialSeller?: string
-  initialVessel?: string
-}) {
-  const [values, setValues] = useState<FormValues>({
-    seller: initialSeller, vessel: initialVessel, imo: '', date: '', loadingPort: '', commodity: '',
-    sellerDomain: '',   // NEW
-  })
+}
+
+function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
   const [touched, setTouched] = useState({ seller: false })
+  const [focused, setFocused] = useState<string | null>(null)
 
   const set = (k: keyof FormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues(v => ({ ...v, [k]: e.target.value }))
-
-  const blur = (k: 'seller') => () =>
-    setTouched(t => ({ ...t, [k]: true }))
 
   const sellerErr = touched.seller && values.seller.trim().length < 2
 
@@ -205,102 +235,112 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
     onSubmit(values)
   }
 
-  const field = (
-    label: string,
-    key: keyof FormValues,
-    placeholder: string,
-    hint?: string,
-    required?: boolean,
-    type = 'text',
-  ) => {
-    const isReq = key === 'seller'
-    const hasError = isReq && touched.seller && values[key].trim().length < 2
-
+  // Single-column field renderer
+  const field = (label: string, key: keyof FormValues, placeholder: string, hint?: string, required?: boolean, type = 'text') => {
+    const hasError = key === 'seller' && touched.seller && values[key].trim().length < 2
     return (
-      <div>
-        <label style={labelStyle()}>
-          {label}
-          {required && <span style={{ color: '#ef4444', marginLeft: '3px' }}>*</span>}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <label style={{
+          fontSize: '11px', fontWeight: 500, color: TOKEN.textMuted,
+          textTransform: 'uppercase', letterSpacing: '0.07em',
+        }}>
+          {label}{required && <span style={{ color: '#ef4444', marginLeft: '3px' }}>*</span>}
         </label>
         <input
           type={type}
           value={values[key]}
           onChange={set(key)}
-          onBlur={isReq ? blur(key as 'seller') : undefined}
+          onFocus={() => setFocused(key)}
+          onBlur={() => { if (key === 'seller') setTouched(t => ({ ...t, seller: true })); setFocused(null) }}
           placeholder={placeholder}
-          style={inputStyle(hasError)}
+          style={inputStyleNew(key, focused, hasError)}
         />
-        {hint && <p style={hintStyle()}>{hint}</p>}
-        {hasError && (
-          <p style={{ ...hintStyle(), color: '#ef4444', marginTop: '4px' }}>
-            Required
-          </p>
-        )}
+        {hint && <span style={{ fontSize: '11px', color: TOKEN.textSubtle }}>{hint}</span>}
+        {hasError && <span style={{ fontSize: '11px', color: '#ef4444' }}>Required</span>}
       </div>
     )
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+      {/* Single-column layout, field order per CONTEXT.md § Form 布局调整 */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {field('Seller / Counterparty', 'seller', 'e.g. ZHENFU ENERGY (HAINAN) CO., LTD', undefined, true)}
         {field('Vessel Name', 'vessel', 'e.g. MV START', 'Optional — leave blank to screen seller only')}
-              {field('IMO Number', 'imo', '7-digit number', 'Optional — improves vessel lookup accuracy')}
+        {field('IMO Number', 'imo', '7-digit number', 'Optional — improves vessel lookup accuracy')}
         {field('Trade Date', 'date', '', 'Used to correlate AIS dark periods', false, 'date')}
-        {field('Loading Port (LOCODE)', 'loadingPort', 'e.g. CNHAK, SGSIN, AEDXB',
-                'UN/LOCODE — enables draft risk and geo checks')}
+        {field('Loading Port (LOCODE)', 'loadingPort', 'e.g. CNHAK, SGSIN, AEDXB', 'UN/LOCODE — enables draft risk and geo checks')}
         {field('Commodity', 'commodity', 'e.g. Fuel Oil, Crude Oil, LNG', 'Optional context')}
-        {field(
-          'Seller domain (optional)',
-          'sellerDomain',
-          'e.g. seller.com or contact@seller.com',
-          'Used for domain fraud detection — leave blank to skip',
-        )}
+        {field('Seller Domain (optional)', 'sellerDomain', 'e.g. seller.com', 'Used for domain fraud detection')}
       </div>
 
-      <div style={{ marginTop: 'var(--space-6)' }}>
+      <div style={{ marginTop: '20px' }}>
+        {/* Primary button — Plan 02 will upgrade with box-shadow micro-gradient */}
         <button
           type="submit"
           style={{
             width: '100%',
-            fontSize: '14px',
-            fontWeight: 600,
-            color: '#fff',
-            backgroundColor: 'var(--accent-primary)',
-            border: 'none',
-            borderRadius: '8px',
             padding: '11px 0',
+            background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+            color: '#fff',
+            border: '1px solid rgba(99,102,241,0.45)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+            borderRadius: '7px',
+            fontSize: '13px',
+            fontWeight: 500,
+            fontFamily: 'inherit',
             cursor: 'pointer',
             letterSpacing: '0.01em',
+            transition: 'all 0.12s ease',
           }}
         >
-              Run Trade Check →
-            </button>
+          Run Trade Check →
+        </button>
       </div>
     </form>
   )
 }
 
-// 鈹€鈹€ Loading view 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-const STEPS = [
-  { keyword: 'Screening',  label: 'Screening seller against sanctions lists...' },
-  { keyword: 'Searching',  label: 'Looking up seller in company registries...' },
-  { keyword: 'Checking',   label: 'Checking vessel AIS and PSC records...' },
-  { keyword: 'Analyzing',  label: 'Running geographic and draft risk checks...' },
-  { keyword: 'Running',    label: 'Applying trade rule engine...' },
-]
+// ── Loading view (inline progress bar, replaces GlowLoader) ──────────────────
 
 function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
+  const barRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (barRef.current) barRef.current.style.width = '100%'
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
-    <GlowLoader
-      steps={STEPS}
-      subtext={vessel ? `${seller} · ${vessel}` : seller}
-    />
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      minHeight: '400px', gap: '16px',
+    }}>
+      <p style={{ fontSize: '14px', color: TOKEN.textMuted, margin: 0 }}>Screening trade...</p>
+      <div style={{
+        width: '200px', height: '3px',
+        background: 'rgba(0,0,0,0.35)',
+        borderRadius: '2px', overflow: 'hidden',
+      }}>
+        <div
+          ref={barRef}
+          style={{
+            height: '100%', background: TOKEN.primary,
+            width: '0%', transition: 'width 1.4s ease',
+          }}
+        />
+      </div>
+      <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>
+        {seller}{vessel ? ` · ${vessel}` : ''}
+      </p>
+    </div>
   )
 }
 
-// 鈹€鈹€ Flag card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Flag card ─────────────────────────────────────────────────────────────────
 
 function FlagCard({ flag }: { flag: TradeFlag }) {
   return (
@@ -382,7 +422,7 @@ function FlagCard({ flag }: { flag: TradeFlag }) {
   )
 }
 
-// 鈹€鈹€ Party card (seller / buyer) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Party card (seller / buyer) ───────────────────────────────────────────────
 
 function PartyCard({ label, party }: { label: string; party: TradePartyResult }) {
   const href = party.dbMatch?.slug ? `/company/${party.dbMatch.slug}` : null
@@ -401,8 +441,8 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
         <div style={{ minWidth: 0 }}>
           {href ? (
             <Link href={href} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>
-                  {party.name} →
-                </Link>
+              {party.name} →
+            </Link>
           ) : (
             <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
               {party.name}
@@ -426,7 +466,7 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
       </div>
       {(party.icijConnections > 0) && (
         <p style={{ fontSize: '12px', color: '#f97316', margin: 'var(--space-2) 0 0' }}>
-                  ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
+          ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
         </p>
       )}
       {party.incorporationDate && (
@@ -448,7 +488,7 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
   )
 }
 
-// 鈹€鈹€ Vessel card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Vessel card ───────────────────────────────────────────────────────────────
 
 function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
   const href = vessel.imo ? `/vessel/${vessel.imo}` : null
@@ -467,8 +507,8 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
         <div style={{ minWidth: 0 }}>
           {href ? (
             <Link href={href} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>
-                  {vessel.name} →
-                </Link>
+              {vessel.name} →
+            </Link>
           ) : (
             <p style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{vessel.name}</p>
           )}
@@ -502,7 +542,7 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
         </span>
         {vessel.darkPeriods > 0 && (
           <span style={{ fontSize: '12px', color: '#f97316' }}>
-                  ⚠ {vessel.darkPeriods} dark period{vessel.darkPeriods !== 1 ? 's' : ''}
+            ⚠ {vessel.darkPeriods} dark period{vessel.darkPeriods !== 1 ? 's' : ''}
           </span>
         )}
         {vessel.psc && vessel.psc.totalInspections > 0 && (
@@ -523,7 +563,7 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
   )
 }
 
-// 鈹€鈹€ Port card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Port card ─────────────────────────────────────────────────────────────────
 
 function PortCard({ port }: { port: TradePortResult }) {
   const hasWarning = port.isStsZone || port.draftRisk?.canBerth === false
@@ -549,13 +589,13 @@ function PortCard({ port }: { port: TradePortResult }) {
 
       {!port.found && (
         <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0', fontStyle: 'italic' }}>
-                Port not found in database — geo and draft checks skipped
+          Port not found in database — geo and draft checks skipped
         </p>
       )}
 
       {port.isStsZone && (
         <p style={{ fontSize: '12px', color: '#f97316', margin: '6px 0 0' }}>
-                  ⚠ STS anchorage zone — not a terminal berth
+          ⚠ STS anchorage zone — not a terminal berth
         </p>
       )}
 
@@ -567,7 +607,7 @@ function PortCard({ port }: { port: TradePortResult }) {
         }}>
           {port.draftRisk.warning ??
             (port.draftRisk.portMaxDraftM
-                  ? `Max draft: ${port.draftRisk.portMaxDraftM}m${port.draftRisk.vesselDraftM ? ` · Vessel: ${port.draftRisk.vesselDraftM}m` : ''}`
+              ? `Max draft: ${port.draftRisk.portMaxDraftM}m${port.draftRisk.vesselDraftM ? ` · Vessel: ${port.draftRisk.vesselDraftM}m` : ''}`
               : 'Draft data not available')}
         </p>
       )}
@@ -575,7 +615,7 @@ function PortCard({ port }: { port: TradePortResult }) {
   )
 }
 
-// 鈹€鈹€ Overall risk banner 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Overall risk banner ───────────────────────────────────────────────────────
 
 function ResultBanner({ result }: { result: TradeCheckResult }) {
   const { overallRisk, flags, checkedAt, input } = result
@@ -605,20 +645,20 @@ function ResultBanner({ result }: { result: TradeCheckResult }) {
         </span>
       </div>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 4px' }}>
-              {input.seller}{input.vessel ? ` · ${input.vessel}` : ''}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
-              {input.date ? ` · ${input.date}` : ''}
+        {input.seller}{input.vessel ? ` · ${input.vessel}` : ''}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
+        {input.date ? ` · ${input.date}` : ''}
       </p>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
         {flags.length} flag{flags.length !== 1 ? 's' : ''} raised
-              {critical > 0 && <span style={{ color: '#ef4444', marginLeft: '8px' }}>· {critical} critical</span>}
-              {high > 0 && <span style={{ color: '#f97316', marginLeft: '8px' }}>· {high} high</span>}
-              <span style={{ marginLeft: '8px' }}>· Checked {fmt(checkedAt)}</span>
+        {critical > 0 && <span style={{ color: '#ef4444', marginLeft: '8px' }}>· {critical} critical</span>}
+        {high > 0 && <span style={{ color: '#f97316', marginLeft: '8px' }}>· {high} high</span>}
+        <span style={{ marginLeft: '8px' }}>· Checked {fmt(checkedAt)}</span>
       </p>
     </div>
   )
 }
 
-// 鈹€鈹€ Save trade watch button 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Save trade watch button ───────────────────────────────────────────────────
 
 type WatchState = 'idle' | 'saving' | 'watching' | 'error'
 
@@ -679,7 +719,7 @@ function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
   )
 }
 
-// 鈹€鈹€ Results view 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Results view ──────────────────────────────────────────────────────────────
 
 function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: () => void }) {
   return (
@@ -718,7 +758,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
             textDecoration: 'none', display: 'inline-block',
           }}
         >
-                Export Audit PDF
+          Export Audit PDF
         </a>
         <button
           onClick={onReset}
@@ -734,7 +774,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
         </button>
       </div>
 
-          {/* Flags are the core output. */}
+      {/* Flags are the core output. */}
       {result.flags.length > 0 && (
         <section style={{ marginBottom: 'var(--space-6)' }}>
           <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)', letterSpacing: '0.03em' }}>
@@ -776,121 +816,214 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
   )
 }
 
-// 鈹€鈹€ Main component 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Main component ────────────────────────────────────────────────────────────
 
-type ViewState = 'form' | 'loading' | 'results' | 'error'
+type RightPanelState = 'empty' | 'loading' | 'result' | 'error'
 
 export default function TradeClient({ initialSessionId }: { initialSessionId?: string }) {
-  const searchParams  = useSearchParams()
-  const initSeller    = searchParams.get('seller') ?? ''
-  const initVessel    = searchParams.get('vessel') ?? ''
+  const searchParams = useSearchParams()
+  const initSeller   = searchParams.get('seller') ?? ''
+  const initVessel   = searchParams.get('vessel') ?? ''
 
-  const [view, setView]       = useState<ViewState>('form')
-  const [result, setResult]   = useState<TradeCheckResult | null>(null)
-  const [error, setError]     = useState('')
-  const [lastInput, setInput] = useState<FormValues | null>(null)
+  // FormValues lifted to parent — Recent Checks needs write access via setValues
+  const [values, setValues] = useState<FormValues>({
+    seller: initSeller, vessel: initVessel,
+    imo: '', date: '', loadingPort: '', commodity: '', sellerDomain: '',
+  })
 
-  // Restore a previous session when navigating from Reports
+  const [panelState, setPanelState] = useState<RightPanelState>('empty')
+  const [result, setResult]         = useState<TradeCheckResult | null>(null)
+  const [error, setError]           = useState('')
+  const [lastInput, setInput]       = useState<FormValues | null>(null)
+
+  // Recent Checks state (SSR-safe: only access localStorage in useEffect)
+  const [recent, setRecent] = useState<RecentCheck[]>([])
+  useEffect(() => { setRecent(getRecent()) }, [])
+
+  // Restore session from Reports page navigation
   useEffect(() => {
     if (!initialSessionId) return
-    setView('loading')
+    setPanelState('loading')
     setInput({ seller: '', vessel: '', imo: '', date: '', loadingPort: '', commodity: '', sellerDomain: '' })
     fetch(`/api/trade/${encodeURIComponent(initialSessionId)}`)
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(data => { setResult(data as TradeCheckResult); setView('results') })
-      .catch(() => { setError('Could not load report.'); setView('error') })
+      .then(data => { setResult(data as TradeCheckResult); setPanelState('result') })
+      .catch(() => { setError('Could not load report.'); setPanelState('error') })
   }, [initialSessionId])
 
-  async function submit(values: FormValues) {
-    setInput(values)
-    setView('loading')
+  async function submit(v: FormValues) {
+    setInput(v)
+    setPanelState('loading')
     setError('')
-
     try {
       const res = await fetch('/api/trade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          seller:      values.seller.trim(),
-          vessel:      values.vessel.trim(),
-          imo:         values.imo.trim() || undefined,
-          date:        values.date || undefined,
-          loadingPort: values.loadingPort.trim() || undefined,
-          commodity:   values.commodity.trim() || undefined,
-          sellerDomain: values.sellerDomain.trim() || undefined,
+          seller:       v.seller.trim(),
+          vessel:       v.vessel.trim(),
+          imo:          v.imo.trim() || undefined,
+          date:         v.date || undefined,
+          loadingPort:  v.loadingPort.trim() || undefined,
+          commodity:    v.commodity.trim() || undefined,
+          sellerDomain: v.sellerDomain.trim() || undefined,
         }),
       })
-
       const json = await res.json()
       if (!res.ok) {
         setError((json as { error?: string }).error ?? 'Trade check failed.')
-        setView('error')
+        setPanelState('error')
         return
       }
+      const tradeResult = json as TradeCheckResult
+      setResult(tradeResult)
+      setPanelState('result')
 
-      setResult(json as TradeCheckResult)
-      setView('results')
+      // Write to Recent Checks
+      const entry: RecentCheck = {
+        seller:      v.seller.trim(),
+        vessel:      v.vessel.trim() || undefined,
+        commodity:   v.commodity.trim() || undefined,
+        loadingPort: v.loadingPort.trim() || undefined,
+        overallRisk: tradeResult.overallRisk,
+        checkedAt:   new Date().toISOString(),
+      }
+      pushRecent(entry)
+      setRecent(getRecent())
     } catch {
       setError('Network error. Please try again.')
-      setView('error')
+      setPanelState('error')
     }
   }
 
   function reset() {
-    setView('form')
+    setPanelState('empty')
     setResult(null)
     setError('')
   }
 
   return (
-    <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+    // Split Panel shell (Pattern B — Variant B confirmed winner)
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '380px 1fr',
+      minHeight: 'calc(100vh - 44px)',
+    }}>
+      {/* Left column: form + Recent Checks */}
+      <div style={{
+        borderRight: `1px solid ${TOKEN.border}`,
+        padding: '32px 24px',
+        overflowY: 'auto',
+        background: TOKEN.surface,
+      }}>
+        {/* Page title */}
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 700, color: TOKEN.text, margin: '0 0 6px' }}>
+            Trade Check
+          </h1>
+          <p style={{ fontSize: '13px', color: TOKEN.textMuted, lineHeight: '1.5', margin: 0 }}>
+            Screen seller, vessel, and port against sanctions, AIS, and registry data.
+          </p>
+        </div>
 
-      {/* Page heading */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
-          Trade Check
-        </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-          Input a seller and vessel to run a multi-source risk check: sanctions screening,
-          company registry lookup, AIS vessel tracking, PSC inspection history, and geographic
-          mismatch detection with deterministic flags and evidence references.
-        </p>
+        {/* Form */}
+        <TradeForm values={values} setValues={setValues} onSubmit={submit} />
+
+        {/* Error display (left column below form) */}
+        {panelState === 'error' && (
+          <div style={{
+            marginTop: '16px',
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: '7px',
+            padding: '12px 14px',
+          }}>
+            <p style={{ fontSize: '13px', fontWeight: 500, color: '#ef4444', margin: '0 0 4px' }}>
+              Check failed
+            </p>
+            <p style={{ fontSize: '12px', color: TOKEN.textMuted, margin: 0 }}>{error}</p>
+          </div>
+        )}
+
+        {/* Recent Checks (below form, only when history exists) */}
+        {recent.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <div style={{
+              fontSize: '11px', color: TOKEN.textSubtle,
+              textTransform: 'uppercase', letterSpacing: '0.07em',
+              marginBottom: '12px',
+            }}>
+              Recent Checks
+            </div>
+            {recent.map((r, i) => (
+              <div
+                key={i}
+                onClick={() => setValues({
+                  seller:      r.seller,
+                  vessel:      r.vessel ?? '',
+                  commodity:   r.commodity ?? '',
+                  loadingPort: r.loadingPort ?? '',
+                  imo:         '',
+                  date:        '',
+                  sellerDomain: '',
+                })}
+                style={{ padding: '8px 10px', borderRadius: '7px', cursor: 'pointer', transition: 'background 0.1s ease' }}
+                onMouseEnter={e => (e.currentTarget.style.background = TOKEN.elevated)}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div style={{ fontSize: '13px', fontWeight: 500, color: TOKEN.text }}>
+                  {r.seller}
+                </div>
+                <div style={{ fontSize: '11px', color: TOKEN.textMuted }}>
+                  {[r.commodity, r.loadingPort].filter(Boolean).join(' · ')}
+                  {(r.commodity || r.loadingPort) ? ' · ' : ''}
+                  <span style={{ color: RISK_COLOR[r.overallRisk] }}>
+                    {r.overallRisk.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Form */}
-      {(view === 'form' || view === 'error') && (
-        <>
+      {/* Right column: three-state panel */}
+      <div style={{ padding: '32px', overflowY: 'auto' }}>
+        {panelState === 'empty' && (
           <div style={{
-            backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
-            borderRadius: '10px', padding: 'var(--space-6)', marginBottom: 'var(--space-4)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            minHeight: '400px', textAlign: 'center',
           }}>
-            <TradeForm onSubmit={submit} initialSeller={initSeller} initialVessel={initVessel} />
+            <div style={{ fontSize: '28px', color: TOKEN.textSubtle, marginBottom: '12px' }}>⚡</div>
+            <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
+              Run a trade check to see results
+            </p>
           </div>
+        )}
 
-          {view === 'error' && (
-            <div style={{
-              backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
-              borderRadius: '8px', padding: 'var(--space-4)',
-            }}>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444', margin: '0 0 4px' }}>
-                Check failed
-              </p>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{error}</p>
-            </div>
-          )}
-        </>
-      )}
+        {panelState === 'loading' && lastInput && (
+          <LoadingView seller={lastInput.seller} vessel={lastInput.vessel} />
+        )}
 
-      {/* Loading */}
-      {view === 'loading' && lastInput && (
-        <LoadingView seller={lastInput.seller} vessel={lastInput.vessel} />
-      )}
+        {panelState === 'result' && result && (
+          <ResultsView result={result} onReset={reset} />
+        )}
 
-      {/* Results */}
-      {view === 'results' && result && (
-        <ResultsView result={result} onReset={reset} />
-      )}
+        {/* error state: right panel stays empty (error shown in left column) */}
+        {panelState === 'error' && (
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            minHeight: '400px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '28px', color: TOKEN.textSubtle, marginBottom: '12px' }}>⚡</div>
+            <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
+              Run a trade check to see results
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
-
