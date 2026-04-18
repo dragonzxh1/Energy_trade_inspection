@@ -98,7 +98,7 @@ Plans:
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
 | 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete    | 2026-04-17 |
 | 13. Trade Check UI Redesign | v1.2 | 2/2 | Complete   | 2026-04-18 |
-| 14. Platform-Wide UI Polish | v1.2 | 0/? | Not started | - |
+| 14. Platform-Wide UI Polish | v1.2 | 0/3 | Not started | - |
 
 ## Backlog
 
@@ -267,7 +267,11 @@ Plans:
   3. `/reports` 页面 GhostButton 替换为 secondary button 样式，列表行 hover 使用 `#1e1e24` 背景
   4. 首页 (`/`) CTA 按钮（"Run trade check →"、"Screen a document →"）使用 primary micro-gradient 样式，feature cards 使用 score-card surface 规范
   5. `/account` 页面 action 按钮（Manage Billing、Sign Out 等）使用 secondary button 样式，quota 进度条使用 score progress bar 规范
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 14-01-PLAN.md — ScreenClient.tsx 全量重写（Split Panel + TOKEN + GlowLoader→进度条 + 三态面板 + screen/page.tsx 去 maxWidth）(UI-POLISH-01)
+- [ ] 14-02-PLAN.md — watchlist/page.tsx + ReportsClient.tsx 按钮/pill/surface 样式升级 (UI-POLISH-02, UI-POLISH-03)
+- [ ] 14-03-PLAN.md — page.tsx + account/page.tsx 样式升级 + 视觉验证 checkpoint (UI-POLISH-04, UI-POLISH-05)
 **UI hint**: yes
 
 ---
