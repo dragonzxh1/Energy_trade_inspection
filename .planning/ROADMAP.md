@@ -91,7 +91,7 @@ Plans:
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
 | 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete    | 2026-04-17 |
-| 13. Trade Check UI Redesign | standalone | 0/2 | Planned | - |
+| 13. Trade Check UI Redesign | standalone | 2/2 | Complete   | 2026-04-18 |
 
 ## Backlog
 
@@ -246,7 +246,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 13-01-PLAN.md — page.tsx main 去 maxWidth + TradeClient 全量重写（Split Panel + TOKEN + FormValues 提升 + 单列表单 + 三态面板 + Recent Checks）(TRADE-UI-01, TRADE-UI-03, TRADE-UI-04)
-- [ ] 13-02-PLAN.md — controls 样式升级（Primary 按钮 micro-gradient + inputs inset-shadow + Secondary 按钮）+ 视觉验证 checkpoint (TRADE-UI-02, TRADE-UI-03)
+- [x] 13-02-PLAN.md — controls 样式升级（Primary 按钮 micro-gradient + inputs inset-shadow + Secondary 按钮）+ 视觉验证 checkpoint (TRADE-UI-02, TRADE-UI-03)
 **UI hint**: yes
 
 ---
@@ -256,7 +256,7 @@ Plans:
 **Goal:** 接入 Open Ownership 数据，实现 PSC/UBO 层级穿透和壳公司网络发现
 **Priority:** P3（当前阶段优先级较低，2026 年各国 UBO 登记公开访问不一致）
 **Requirements:** TBD
-**Plans:** 0 plans
+**Plans:** 2/2 plans complete
 
 Implementation notes:
 - Open Ownership 采用 BODS 标准，被英国政府采纳为官方开放标准
