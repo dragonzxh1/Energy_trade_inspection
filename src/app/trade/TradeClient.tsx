@@ -83,6 +83,22 @@ const VERDICT_DISPLAY: Record<TradeVerdict, string> = {
   safe:   'SAFE',
 }
 
+// ── Secondary button style (Watch trade, Export PDF, New check) ───────────────
+const secondaryBtnStyle: React.CSSProperties = {
+  background: '#1e1e24',
+  color: '#8b8b9a',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '7px',
+  padding: '6px 14px',
+  fontSize: '13px',
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+  transition: 'all 0.12s ease',
+  textDecoration: 'none',
+  display: 'inline-block',
+}
+
 // ── Recent Checks (localStorage) ─────────────────────────────────────────────
 
 const LS_KEY = 'eti_recent_trade_checks'
@@ -222,6 +238,7 @@ interface TradeFormProps {
 function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
   const [touched, setTouched] = useState({ seller: false })
   const [focused, setFocused] = useState<string | null>(null)
+  const [btnHover, setBtnHover] = useState(false)
 
   const set = (k: keyof FormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues(v => ({ ...v, [k]: e.target.value }))
@@ -275,10 +292,26 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        {/* Primary button — Plan 02 will upgrade with box-shadow micro-gradient */}
         <button
           type="submit"
-          style={{
+          onMouseEnter={() => setBtnHover(true)}
+          onMouseLeave={() => setBtnHover(false)}
+          style={btnHover ? {
+            width: '100%',
+            padding: '11px 0',
+            background: 'linear-gradient(180deg, #818cf8 0%, #6366f1 100%)',
+            color: '#fff',
+            border: '1px solid rgba(99,102,241,0.45)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35)',
+            borderRadius: '7px',
+            fontSize: '13px',
+            fontWeight: 500,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            letterSpacing: '0.01em',
+            transition: 'all 0.12s ease',
+            transform: 'translateY(-1px)',
+          } : {
             width: '100%',
             padding: '11px 0',
             background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
@@ -705,14 +738,10 @@ function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
   return (
     <button
       onClick={toggle}
-      style={{
-        fontSize: '13px',
-        color: state === 'watching' ? 'var(--accent-primary)' : 'var(--text-muted)',
-        backgroundColor: 'var(--bg-elevated)',
-        border: `1px solid ${state === 'watching' ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-        borderRadius: '6px', padding: '6px 14px', cursor: 'pointer',
-        fontFamily: 'inherit',
-      }}
+      style={state === 'watching'
+        ? { ...secondaryBtnStyle, color: '#6366f1', borderColor: '#6366f1' }
+        : secondaryBtnStyle
+      }
     >
       {label}
     </button>
@@ -750,25 +779,13 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
         <a
           href={`/api/trade/${result.id}/report`}
           download
-          style={{
-            fontSize: '13px', color: 'var(--accent-primary)',
-            backgroundColor: 'var(--bg-elevated)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '6px', padding: '6px 14px',
-            textDecoration: 'none', display: 'inline-block',
-          }}
+          style={{ ...secondaryBtnStyle, display: 'inline-block', textDecoration: 'none' }}
         >
           Export Audit PDF
         </a>
         <button
           onClick={onReset}
-          style={{
-            fontSize: '13px', color: 'var(--text-muted)',
-            backgroundColor: 'var(--bg-elevated)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '6px', padding: '6px 14px', cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
+          style={secondaryBtnStyle}
         >
           New check
         </button>
