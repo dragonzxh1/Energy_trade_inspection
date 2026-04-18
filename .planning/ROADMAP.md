@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1–8 (shipped 2026-04-15)
 - 🔄 **v1.1 Network Intelligence Graph** — Phases 9–11 (in progress)
+- 🎨 **v1.2 Platform UI Polish** — Phases 13–14 (Design system rollout to all pages)
 
 ## Phases
 
@@ -28,6 +29,11 @@ See full details: `.planning/milestones/v1.0-ROADMAP.md`
 - [ ] **Phase 9: Data Enrichment Foundations** — ICIJ↔sanctions linkage + fraud alert panels on company and vessel pages
 - [x] **Phase 10: Network Graph Core** — React Flow interactive node graph with 3-hop recursive query on company pages (completed 2026-04-16)
 - [ ] **Phase 11: Coverage Expansion + PDF Export** — ICIJ panels on vessel/port pages + graph SVG embedded in PDF reports
+
+### v1.2 Platform UI Polish (Phases 13–14)
+
+- [x] **Phase 13: Trade Check UI Redesign** — Split Panel layout + micro-gradient controls on /trade (completed 2026-04-18)
+- [ ] **Phase 14: Platform-Wide UI Polish** — Apply micro-gradient design system to all remaining interactive pages
 
 ## Phase Details
 
@@ -91,7 +97,8 @@ Plans:
 | 10. Network Graph Core | v1.1 | 4/4 | Complete    | 2026-04-16 |
 | 11. Coverage Expansion + PDF Export | v1.1 | 0/? | Not started | - |
 | 12. GLEIF Golden Copy Integration | standalone | 5/5 | Complete    | 2026-04-17 |
-| 13. Trade Check UI Redesign | standalone | 2/2 | Complete   | 2026-04-18 |
+| 13. Trade Check UI Redesign | v1.2 | 2/2 | Complete   | 2026-04-18 |
+| 14. Platform-Wide UI Polish | v1.2 | 0/? | Not started | - |
 
 ## Backlog
 
@@ -247,6 +254,20 @@ Plans:
 Plans:
 - [x] 13-01-PLAN.md — page.tsx main 去 maxWidth + TradeClient 全量重写（Split Panel + TOKEN + FormValues 提升 + 单列表单 + 三态面板 + Recent Checks）(TRADE-UI-01, TRADE-UI-03, TRADE-UI-04)
 - [x] 13-02-PLAN.md — controls 样式升级（Primary 按钮 micro-gradient + inputs inset-shadow + Secondary 按钮）+ 视觉验证 checkpoint (TRADE-UI-02, TRADE-UI-03)
+**UI hint**: yes
+
+### Phase 14: Platform-Wide UI Polish
+
+**Goal**: 将 Phase 13 确立的 micro-gradient 设计规范推广到其余所有交互页面，统一 ETI 平台的视觉语言
+**Depends on**: Phase 13
+**Requirements**: UI-POLISH-01, UI-POLISH-02, UI-POLISH-03, UI-POLISH-04, UI-POLISH-05
+**Success Criteria** (what must be TRUE):
+  1. `/screen` 页面采用 Split Panel 布局（左列文件上传 + 右列结果），GlowLoader 替换为 inline 进度条，所有按钮/输入框使用 Phase 13 控件规范
+  2. `/watchlist` 页面所有 action 按钮（Refresh、Remove、Dismiss）使用 secondary button 样式，状态 pill 使用统一风险颜色规范
+  3. `/reports` 页面 GhostButton 替换为 secondary button 样式，列表行 hover 使用 `#1e1e24` 背景
+  4. 首页 (`/`) CTA 按钮（"Run trade check →"、"Screen a document →"）使用 primary micro-gradient 样式，feature cards 使用 score-card surface 规范
+  5. `/account` 页面 action 按钮（Manage Billing、Sign Out 等）使用 secondary button 样式，quota 进度条使用 score progress bar 规范
+**Plans**: TBD
 **UI hint**: yes
 
 ---
