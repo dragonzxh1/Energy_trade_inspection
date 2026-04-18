@@ -245,7 +245,7 @@ Plans:
   4. 运行检查后，右面板显示 Loading 进度条动画，完成后切换到 Result 视图，不需要页面滚动即可看到结果
 **Plans**: 2 plans
 Plans:
-- [ ] 13-01-PLAN.md — page.tsx main 去 maxWidth + TradeClient 全量重写（Split Panel + TOKEN + FormValues 提升 + 单列表单 + 三态面板 + Recent Checks）(TRADE-UI-01, TRADE-UI-03, TRADE-UI-04)
+- [x] 13-01-PLAN.md — page.tsx main 去 maxWidth + TradeClient 全量重写（Split Panel + TOKEN + FormValues 提升 + 单列表单 + 三态面板 + Recent Checks）(TRADE-UI-01, TRADE-UI-03, TRADE-UI-04)
 - [ ] 13-02-PLAN.md — controls 样式升级（Primary 按钮 micro-gradient + inputs inset-shadow + Secondary 按钮）+ 视觉验证 checkpoint (TRADE-UI-02, TRADE-UI-03)
 **UI hint**: yes
 
