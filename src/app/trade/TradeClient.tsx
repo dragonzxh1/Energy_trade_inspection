@@ -188,21 +188,20 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
     seller: initialSeller, vessel: initialVessel, imo: '', date: '', loadingPort: '', commodity: '',
     sellerDomain: '',   // NEW
   })
-  const [touched, setTouched] = useState({ seller: false, vessel: false })
+  const [touched, setTouched] = useState({ seller: false })
 
   const set = (k: keyof FormValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setValues(v => ({ ...v, [k]: e.target.value }))
 
-  const blur = (k: 'seller' | 'vessel') => () =>
+  const blur = (k: 'seller') => () =>
     setTouched(t => ({ ...t, [k]: true }))
 
   const sellerErr = touched.seller && values.seller.trim().length < 2
-  const vesselErr = touched.vessel && values.vessel.trim().length < 2
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setTouched({ seller: true, vessel: true })
-    if (values.seller.trim().length < 2 || values.vessel.trim().length < 2) return
+    setTouched({ seller: true })
+    if (values.seller.trim().length < 2) return
     onSubmit(values)
   }
 
@@ -214,9 +213,8 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
     required?: boolean,
     type = 'text',
   ) => {
-    const isReq = key === 'seller' || key === 'vessel'
-    const hasError = isReq && touched[key as 'seller' | 'vessel'] &&
-      values[key].trim().length < 2
+    const isReq = key === 'seller'
+    const hasError = isReq && touched.seller && values[key].trim().length < 2
 
     return (
       <div>
@@ -228,7 +226,7 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
           type={type}
           value={values[key]}
           onChange={set(key)}
-          onBlur={isReq ? blur(key as 'seller' | 'vessel') : undefined}
+          onBlur={isReq ? blur(key as 'seller') : undefined}
           placeholder={placeholder}
           style={inputStyle(hasError)}
         />
@@ -246,7 +244,7 @@ function TradeForm({ onSubmit, initialSeller = '', initialVessel = '' }: {
     <form onSubmit={handleSubmit}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
         {field('Seller / Counterparty', 'seller', 'e.g. ZHENFU ENERGY (HAINAN) CO., LTD', undefined, true)}
-        {field('Vessel Name', 'vessel', 'e.g. MV START', undefined, true)}
+        {field('Vessel Name', 'vessel', 'e.g. MV START', 'Optional — leave blank to screen seller only')}
               {field('IMO Number', 'imo', '7-digit number', 'Optional — improves vessel lookup accuracy')}
         {field('Trade Date', 'date', '', 'Used to correlate AIS dark periods', false, 'date')}
         {field('Loading Port (LOCODE)', 'loadingPort', 'e.g. CNHAK, SGSIN, AEDXB',
@@ -297,7 +295,7 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
   return (
     <GlowLoader
       steps={STEPS}
-      subtext={`${seller} · ${vessel}`}
+      subtext={vessel ? `${seller} · ${vessel}` : seller}
     />
   )
 }
@@ -607,7 +605,7 @@ function ResultBanner({ result }: { result: TradeCheckResult }) {
         </span>
       </div>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 4px' }}>
-              {input.seller} · {input.vessel}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
+              {input.seller}{input.vessel ? ` · ${input.vessel}` : ''}{result.vessel.imo ? ` (IMO ${result.vessel.imo})` : ''}{input.loadingPort ? ` · ${input.loadingPort}` : ''}
               {input.date ? ` · ${input.date}` : ''}
       </p>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
@@ -770,7 +768,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <PartyCard label="Seller" party={result.seller} />
-          <VesselCard vessel={result.vessel} />
+          {result.vessel.name && <VesselCard vessel={result.vessel} />}
           {result.port && <PortCard port={result.port} />}
         </div>
       </section>

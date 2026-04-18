@@ -268,15 +268,20 @@ async function checkRelatedPartyRisk(
 
 export async function runTradeCheck(userId: string, input: TradeCheckInput): Promise<TradeCheckResult> {
   const { seller, vessel, date, loadingPort, commodity, imoField } = input
-  const vesselImo = extractImo(vessel, imoField)
+  const hasVessel = vessel.trim().length >= 2
+  const vesselImo = hasVessel ? extractImo(vessel, imoField) : null
 
   const [sellerSanction, sellerDbResults, vesselSanction, vesselDbMatch, portData, vesselAis, gleifRecord, sellerFraudCheck] = await Promise.all([
     checkSanctions(seller).catch(() => ({ status: 'degraded' as const, listed: false, sources: [] as string[] })),
     searchEntities(seller, 'company').catch(() => [] as SearchResult[]),
-    checkSanctions(vessel).catch(() => ({ status: 'degraded' as const, listed: false, sources: [] as string[] })),
-    vesselImo
-      ? getEntityByKey(vesselImo).catch(() => null)
-      : searchEntities(vessel, 'vessel').then((r) => r[0] ?? null).catch(() => null),
+    hasVessel
+      ? checkSanctions(vessel).catch(() => ({ status: 'degraded' as const, listed: false, sources: [] as string[] }))
+      : Promise.resolve({ status: 'ok' as const, listed: false, sources: [] as string[] }),
+    hasVessel
+      ? (vesselImo
+          ? getEntityByKey(vesselImo).catch(() => null)
+          : searchEntities(vessel, 'vessel').then((r) => r[0] ?? null).catch(() => null))
+      : Promise.resolve(null),
     loadingPort ? getPortByLocode(loadingPort).catch(() => null) : Promise.resolve(null),
     vesselImo ? getAisForTrade(vesselImo) : Promise.resolve(null),
     searchGleifByName(seller).catch(() => null),
@@ -341,7 +346,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
 
   const sellerSanctionStatus: SanctionStatus = sellerSanction.listed ? 'listed' : 'not_listed'
   const vesselSanctionStatus: SanctionStatus = vesselSanction.listed ? 'listed' : 'not_listed'
-  const sanctionDegraded = sellerSanction.status === 'degraded' || vesselSanction.status === 'degraded'
+  const sanctionDegraded = sellerSanction.status === 'degraded' || (hasVessel && vesselSanction.status === 'degraded')
 
   // 1-hop director/PSC sanction pre-check (DECISION-05)
   function isCompany(e: unknown): e is Company {
@@ -370,6 +375,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
     vesselSanctioned: vesselSanction.listed,
     vesselSanctionSources: vesselSanction.sources,
     vesselAis,
+    skipAisRules: !hasVessel,
     vesselOperatorChanges: null,
     vesselPscDetentions: pscSummary?.detentions ?? null,
     vesselPscDeficiencyRate: pscSummary?.deficiencyRate ?? null,
@@ -387,7 +393,9 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
 
   const flagRisk = overallRiskFromFlags(flags)
   const sellerLevel = entityRisk(sellerSanction.listed, sellerDbMatch, sellerIcijCount)
-  const vesselLevel = vesselRisk(vesselSanction.listed, vesselDbResult, vesselAis, pscSummary)
+  const vesselLevel = hasVessel
+    ? vesselRisk(vesselSanction.listed, vesselDbResult, vesselAis, pscSummary)
+    : 'low'
   const overallRisk = worstRisk(flagRisk, sellerLevel, vesselLevel)
   const verdict = deriveVerdict(flags)
   const summary = generateSummary(flags, overallRisk, seller, vessel)

@@ -57,9 +57,6 @@ export async function POST(req: NextRequest) {
   if (!seller || seller.length < 2) {
     return NextResponse.json({ error: 'Field \"seller\" is required (min 2 chars).' }, { status: 400 })
   }
-  if (!vessel || vessel.length < 2) {
-    return NextResponse.json({ error: 'Field \"vessel\" is required (min 2 chars).' }, { status: 400 })
-  }
 
   try {
     const result = await runTradeCheck(session.user.id, {
