@@ -266,67 +266,112 @@ export function buildGleifCompany(
   }
 }
 
-export async function getGleifUltimateParentJurisdiction(lei: string): Promise<string | null> {
+export interface GleifOwnershipChain {
+  directParentLei: string | null
+  directParentName: string | null
+  ultimateParentLei: string | null
+  ultimateParentName: string | null
+  /** ISO 3166-1 alpha-2 jurisdiction of the ultimate parent entity. */
+  ultimateParentJurisdiction: string | null
+}
+
+/**
+ * Resolve the full GLEIF Level-2 ownership chain for a given LEI.
+ *
+ * Returns direct parent and ultimate parent with legal name, LEI, and jurisdiction.
+ * Cache-first: queries lei_cache. Falls through to live GLEIF API for jurisdiction
+ * when the parent is known but not yet cached.
+ *
+ * Returns null when:
+ *   - The entity is its own ultimate parent (top of chain)
+ *   - No Level-2 data is available (reporting exception or not filed)
+ *   - Any unrecoverable error occurs
+ */
+export async function getGleifOwnershipChain(lei: string): Promise<GleifOwnershipChain | null> {
   try {
-    // Cache-first: check lei_cache for ultimate_parent_lei (per D-05)
-    // If both the entity and its ultimate parent are in lei_cache, skip live API entirely.
+    // Step 1: cache-first lookup for entity's parent LEIs
+    let directParentLei: string | null = null
+    let ultimateParentLei: string | null = null
+
     try {
-      const { rows: entityRows } = await db.query<Pick<LeiCacheRow, 'ultimate_parent_lei'>>(
-        `SELECT ultimate_parent_lei FROM lei_cache WHERE lei = $1 LIMIT 1`,
+      const { rows } = await db.query<Pick<LeiCacheRow, 'direct_parent_lei' | 'ultimate_parent_lei'>>(
+        `SELECT direct_parent_lei, ultimate_parent_lei FROM lei_cache WHERE lei = $1 LIMIT 1`,
         [lei],
       )
-      const ultimateParentLei = entityRows[0]?.ultimate_parent_lei
-      if (ultimateParentLei && ultimateParentLei !== lei) {
-        const { rows: parentRows } = await db.query<Pick<LeiCacheRow, 'jurisdiction'>>(
-          `SELECT jurisdiction FROM lei_cache WHERE lei = $1 LIMIT 1`,
-          [ultimateParentLei],
-        )
-        const cachedJurisdiction = parentRows[0]?.jurisdiction
-        if (cachedJurisdiction) {
-          return cachedJurisdiction  // Cache hit — no live API call
-        }
-      }
+      directParentLei = rows[0]?.direct_parent_lei ?? null
+      ultimateParentLei = rows[0]?.ultimate_parent_lei ?? null
     } catch {
       // Cache lookup failed — fall through to live API
     }
-    // Cache miss or incomplete — fall through to live GLEIF API calls below
 
-    // Step 1: resolve the ultimate-parent relationship to obtain the parent LEI
-    const relRes = await fetch(
-      `${GLEIF_BASE}/lei-records/${encodeURIComponent(lei)}/ultimate-parent-relationship`,
-      {
-        headers: { Accept: 'application/vnd.api+json' },
-        signal:  AbortSignal.timeout(4_000),
-      }
-    )
-    if (!relRes.ok) return null
-
-    const relJson = await relRes.json() as {
-      data?: {
-        attributes?: {
-          relationship?: {
-            endNode?: { nodeID?: string }
+    // If entity not in cache, use live API to find the ultimate parent LEI
+    if (!ultimateParentLei) {
+      try {
+        const relRes = await fetch(
+          `${GLEIF_BASE}/lei-records/${encodeURIComponent(lei)}/ultimate-parent-relationship`,
+          { headers: { Accept: 'application/vnd.api+json' }, signal: AbortSignal.timeout(4_000) },
+        )
+        if (relRes.ok) {
+          const relJson = await relRes.json() as {
+            data?: { attributes?: { relationship?: { endNode?: { nodeID?: string } } } }
           }
+          const parentLei = relJson?.data?.attributes?.relationship?.endNode?.nodeID
+          if (parentLei && parentLei !== lei) ultimateParentLei = parentLei
         }
+      } catch {
+        // Live API failed — leave as null
       }
     }
-    const parentLei = relJson?.data?.attributes?.relationship?.endNode?.nodeID
 
-    // If no parent LEI or self-referential (company is already the ultimate parent)
-    if (!parentLei || parentLei === lei) return null
+    // Remove self-referential entries (entity is its own parent)
+    if (ultimateParentLei === lei) ultimateParentLei = null
+    if (directParentLei === lei) directParentLei = null
+    if (!directParentLei && !ultimateParentLei) return null
 
-    // Step 2: fetch the parent LEI record to determine its jurisdiction
-    const parentRes = await fetch(
-      `${GLEIF_BASE}/lei-records/${encodeURIComponent(parentLei)}`,
-      {
-        headers: { Accept: 'application/vnd.api+json' },
-        signal:  AbortSignal.timeout(4_000),
+    // Step 2: batch lookup of parent names and jurisdictions from cache
+    const parentLeis = [...new Set(
+      [directParentLei, ultimateParentLei].filter((l): l is string => !!l)
+    )]
+
+    let directParentName: string | null = null
+    let ultimateParentName: string | null = null
+    let ultimateParentJurisdiction: string | null = null
+
+    try {
+      const { rows: parentRows } = await db.query<
+        Pick<LeiCacheRow, 'lei' | 'legal_name' | 'jurisdiction'>
+      >(
+        `SELECT lei, legal_name, jurisdiction FROM lei_cache WHERE lei = ANY($1)`,
+        [parentLeis],
+      )
+      const parentMap = new Map(parentRows.map(r => [r.lei, r]))
+      const directParent  = directParentLei  ? parentMap.get(directParentLei)  : undefined
+      const ultimateParent = ultimateParentLei ? parentMap.get(ultimateParentLei) : undefined
+
+      directParentName         = directParent?.legal_name  ?? null
+      ultimateParentName       = ultimateParent?.legal_name ?? null
+      ultimateParentJurisdiction = ultimateParent?.jurisdiction ?? null
+    } catch {
+      // Cache lookup for parents failed
+    }
+
+    // Fallback to live GLEIF API for jurisdiction when parent is known but not cached
+    if (ultimateParentLei && !ultimateParentJurisdiction) {
+      try {
+        const parentRes = await fetch(
+          `${GLEIF_BASE}/lei-records/${encodeURIComponent(ultimateParentLei)}`,
+          { headers: { Accept: 'application/vnd.api+json' }, signal: AbortSignal.timeout(4_000) },
+        )
+        if (parentRes.ok) {
+          const parentJson = await parentRes.json() as { data?: unknown }
+          ultimateParentJurisdiction = parseRecord(parentJson?.data)?.jurisdiction ?? null
+        }
+      } catch {
+        // Live API fallback failed
       }
-    )
-    if (!parentRes.ok) return null
+    }
 
-    const parentJson = await parentRes.json() as { data?: unknown }
-    return parseRecord(parentJson?.data)?.jurisdiction ?? null
+    return { directParentLei, directParentName, ultimateParentLei, ultimateParentName, ultimateParentJurisdiction }
   } catch {
     return null
   }

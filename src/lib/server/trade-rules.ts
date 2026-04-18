@@ -77,6 +77,17 @@ export interface TradeRuleInput {
    * Null if not found or GLEIF Level-2 data is unavailable.
    */
   sellerUltimateParentJurisdiction?: string | null
+  /**
+   * GLEIF Level-2 ownership chain for the seller.
+   * Used to enrich OFFSHORE_HOLDING_STRUCTURE evidence with parent names and LEIs.
+   * Null when the seller has no GLEIF record or Level-2 data is unavailable.
+   */
+  sellerOwnershipChain?: {
+    directParentLei: string | null
+    directParentName: string | null
+    ultimateParentLei: string | null
+    ultimateParentName: string | null
+  } | null
 
   // Vessel
   vesselName: string
@@ -540,16 +551,24 @@ export function runTradeRules(input: TradeRuleInput): TradeFlag[] {
     OFFSHORE_CC.has(input.sellerUltimateParentJurisdiction.toUpperCase())
   ) {
     const cc = input.sellerUltimateParentJurisdiction.toUpperCase()
+    const chain = input.sellerOwnershipChain
+    const evidence: string[] = [
+      `Ultimate parent jurisdiction: ${cc} (${OFFSHORE_NAMES[cc] ?? 'known offshore jurisdiction'})`,
+    ]
+    if (chain?.ultimateParentName && chain?.ultimateParentLei) {
+      evidence.push(`Ultimate parent: ${chain.ultimateParentName} (LEI: ${chain.ultimateParentLei})`)
+    }
+    if (chain?.directParentName && chain?.directParentLei) {
+      evidence.push(`Direct parent: ${chain.directParentName} (LEI: ${chain.directParentLei})`)
+    }
+    evidence.push('Source: GLEIF Level-2 Relationship Data')
+    evidence.push('Offshore set: BVI, Cayman, Marshall Is., Seychelles, Belize, Panama, Samoa, Vanuatu')
     flags.push({
       code: 'OFFSHORE_HOLDING_STRUCTURE',
       severity: 'high',
       target: 'seller',
       reason: `Seller "${input.sellerName}" is ultimately owned through ${OFFSHORE_NAMES[cc] ?? cc} - a jurisdiction commonly used for opaque holding structures that can obscure beneficial ownership.`,
-      evidence: [
-        `Ultimate parent jurisdiction: ${cc} (${OFFSHORE_NAMES[cc] ?? 'known offshore jurisdiction'})`,
-        'Source: GLEIF Level-2 Relationship Data',
-        'Offshore set: BVI, Cayman, Marshall Is., Seychelles, Belize, Panama, Samoa, Vanuatu',
-      ],
+      evidence,
       dataSource: 'Company Registry',
       dataSourceSyncedAt: null,
     })

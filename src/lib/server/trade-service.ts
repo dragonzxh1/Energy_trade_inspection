@@ -11,7 +11,7 @@ import {
   getIcijOfficerNetwork,
   type PscSummary,
 } from './repository'
-import { searchGleifByName, getGleifUltimateParentJurisdiction } from './gleif'
+import { searchGleifByName, getGleifOwnershipChain } from './gleif'
 import {
   runTradeRules,
   overallRiskFromFlags,
@@ -288,7 +288,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
   const resolvedImo = vesselImo ?? vesselDbResult?.imo ?? null
   const vesselDraftM = vesselAis?.position?.draught ?? null
 
-  const [sellerIcijCount, sellerDbIncDate, sellerUltimateParentJurisdiction, pscSummary, draftRisk, sellerFullEntity] = await Promise.all([
+  const [sellerIcijCount, sellerDbIncDate, gleifOwnershipChain, pscSummary, draftRisk, sellerFullEntity] = await Promise.all([
     sellerDbMatch?.id
       ? getIcijOfficerNetwork(sellerDbMatch.id).then((links) => links.length).catch(() => 0)
       : Promise.resolve(0),
@@ -299,7 +299,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
         ).then((r) => r.rows[0]?.inc_date ?? null).catch(() => null)
       : Promise.resolve(null),
     gleifRecord?.lei
-      ? getGleifUltimateParentJurisdiction(gleifRecord.lei).catch(() => null)
+      ? getGleifOwnershipChain(gleifRecord.lei).catch(() => null)
       : Promise.resolve(null),
     resolvedImo ? getPscSummary(resolvedImo).catch(() => null) : Promise.resolve(null),
     loadingPort ? checkDraftRisk(loadingPort, vesselDraftM).catch(() => null) : Promise.resolve(null),
@@ -308,6 +308,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
       : Promise.resolve(null),
   ])
 
+  const sellerUltimateParentJurisdiction = gleifOwnershipChain?.ultimateParentJurisdiction ?? null
   const sellerIncorporationDate = sellerDbIncDate ?? gleifRecord?.initialRegistrationDate ?? null
   const sellerBeneficialOwners: BeneficialOwner[] | null = (sellerFullEntity as Company | null)?.beneficialOwners ?? null
 
@@ -359,6 +360,7 @@ export async function runTradeCheck(userId: string, input: TradeCheckInput): Pro
     sellerSanctionSources: sellerSanction.sources,
     sellerIncorporationDate,
     sellerUltimateParentJurisdiction,
+    sellerOwnershipChain: gleifOwnershipChain,
     sellerBeneficialOwners,
     sellerRegistrySource: deriveRegistrySource(sellerDbMatch?.id),
     sellerDomainCheck,        // GAP-1 (DECISION-03) — undefined when no domain resolved (D-04)
