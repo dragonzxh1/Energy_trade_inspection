@@ -7,10 +7,10 @@ import type { TradeSessionRow, ScreeningSessionRow } from '@/lib/server/report-h
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<string, string> = {
-  critical: 'var(--status-listed)',
+  critical: '#ef4444',
   high:     '#f97316',
   medium:   '#f59e0b',
-  low:      'var(--status-clear)',
+  low:      '#4ade80',
 }
 
 const RISK_LABEL: Record<string, string> = {
@@ -18,6 +18,28 @@ const RISK_LABEL: Record<string, string> = {
   high:     'HIGH',
   medium:   'MEDIUM',
   low:      'LOW',
+}
+
+const secondaryBtnStyle: React.CSSProperties = {
+  background: '#1e1e24',
+  color: '#8b8b9a',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '7px',
+  padding: '6px 14px',
+  fontSize: '13px',
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+  transition: 'all 0.12s ease',
+  textDecoration: 'none',
+  display: 'inline-block',
+  lineHeight: 1,
+}
+
+const dangerBtnStyle: React.CSSProperties = {
+  ...secondaryBtnStyle,
+  color: '#ef4444',
+  border: '1px solid rgba(239,68,68,0.4)',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -33,20 +55,21 @@ function formatDate(iso: string): string {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function RiskBadge({ risk }: { risk: string }) {
-  const color = RISK_COLOR[risk] ?? 'var(--text-muted)'
+  const color = RISK_COLOR[risk] ?? '#55556a'
   const label = RISK_LABEL[risk] ?? risk.toUpperCase()
   return (
     <span
       style={{
-        fontSize:      '11px',
-        fontWeight:    600,
-        letterSpacing: '0.04em',
-        textTransform: 'uppercase',
+        fontSize:        '11px',
+        fontWeight:      600,
+        letterSpacing:   '0.04em',
+        textTransform:   'uppercase',
         color,
-        border:        `1px solid ${color}`,
-        borderRadius:  '4px',
-        padding:       '2px 7px',
-        flexShrink:    0,
+        backgroundColor: `${color}18`,
+        border:          `1px solid ${color}44`,
+        borderRadius:    '4px',
+        padding:         '2px 7px',
+        flexShrink:      0,
       }}
     >
       {label}
@@ -54,46 +77,24 @@ function RiskBadge({ risk }: { risk: string }) {
   )
 }
 
-function GhostButton({
-  href,
-  onClick,
-  children,
-  danger,
-}: {
-  href?: string
-  onClick?: () => void
-  children: React.ReactNode
-  danger?: boolean
-}) {
-  const color = danger ? 'var(--status-listed)' : 'var(--accent-primary)'
-  const style: React.CSSProperties = {
-    fontSize:       '12px',
-    color,
-    textDecoration: 'none',
-    border:         `1px solid ${color}`,
-    borderRadius:   '4px',
-    padding:        '4px 10px',
-    flexShrink:     0,
-    background:     'none',
-    cursor:         'pointer',
-    fontFamily:     'inherit',
-    lineHeight:     1,
-  }
-  if (href) return <Link href={href} style={style}>{children}</Link>
-  return <button type="button" onClick={onClick} style={style}>{children}</button>
-}
-
 function RowShell({ children }: { children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false)
   return (
     <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         display:         'flex',
         alignItems:      'center',
-        gap:             'var(--space-4)',
-        padding:         'var(--space-3) var(--space-4)',
-        backgroundColor: 'var(--surface-card)',
-        border:          '1px solid var(--border-subtle)',
-        borderRadius:    '8px',
+        gap:             '16px',
+        padding:         '12px 16px',
+        backgroundColor: hovered ? '#1e1e24' : '#111113',
+        border:          '1px solid rgba(255,255,255,0.07)',
+        borderTop:       '1px solid rgba(255,255,255,0.09)',
+        borderRadius:    '10px',
+        boxShadow:       '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+        transition:      'background 0.1s ease',
+        cursor:          'default',
       }}
     >
       {children}
@@ -114,13 +115,13 @@ function DeleteConfirm({
 }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+      <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
         {pending ? 'Deleting…' : 'Delete?'}
       </span>
       {!pending && (
         <>
-          <GhostButton onClick={onConfirm} danger>Yes</GhostButton>
-          <GhostButton onClick={onCancel}>No</GhostButton>
+          <button type="button" onClick={onConfirm} style={dangerBtnStyle}>Yes</button>
+          <button type="button" onClick={onCancel} style={secondaryBtnStyle}>No</button>
         </>
       )}
     </span>
@@ -148,7 +149,7 @@ function TradeRow({
 
   return (
     <RowShell>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0, minWidth: '90px' }}>
+      <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0, minWidth: '90px' }}>
         {formatDate(row.created_at)}
       </span>
 
@@ -157,19 +158,19 @@ function TradeRow({
           {input.seller}
         </span>
         {input.vessel && (
-          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '13px', color: '#8b8b9a' }}>
             {' · '}{input.vessel}
           </span>
         )}
         {(input.loadingPort || input.commodity) && (
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>
+          <span style={{ fontSize: '12px', color: '#8b8b9a', display: 'block' }}>
             {[input.loadingPort, input.commodity].filter(Boolean).join(' · ')}
           </span>
         )}
       </div>
 
       {row.flag_count > 0 && (
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>
+        <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0 }}>
           {row.flag_count} flag{row.flag_count !== 1 ? 's' : ''}
         </span>
       )}
@@ -184,8 +185,8 @@ function TradeRow({
         />
       ) : (
         <>
-          <GhostButton href={`/trade?sessionId=${row.id}`}>View</GhostButton>
-          <GhostButton href={`/api/trade/${row.id}/report`}>PDF</GhostButton>
+          <Link href={`/trade?sessionId=${row.id}`} style={secondaryBtnStyle}>View</Link>
+          <a href={`/api/trade/${row.id}/report`} style={secondaryBtnStyle}>PDF</a>
           <button
             type="button"
             onClick={() => setConfirming(true)}
@@ -194,7 +195,7 @@ function TradeRow({
               background:  'none',
               border:      'none',
               cursor:      'pointer',
-              color:       'var(--text-muted)',
+              color:       '#8b8b9a',
               fontSize:    '14px',
               padding:     '4px 6px',
               flexShrink:  0,
@@ -229,7 +230,7 @@ function ScreeningRow({
 
   return (
     <RowShell>
-      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0, minWidth: '90px' }}>
+      <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0, minWidth: '90px' }}>
         {formatDate(row.created_at)}
       </span>
 
@@ -249,7 +250,7 @@ function ScreeningRow({
           {row.filename}
         </span>
         {row.entity_count > 0 && (
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+          <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
             {row.entity_count} entit{row.entity_count !== 1 ? 'ies' : 'y'} screened
           </span>
         )}
@@ -265,8 +266,8 @@ function ScreeningRow({
         />
       ) : (
         <>
-          <GhostButton href={`/screen?sessionId=${row.id}`}>View</GhostButton>
-          <GhostButton href={`/api/screen/report?sessionId=${row.id}`}>PDF</GhostButton>
+          <Link href={`/screen?sessionId=${row.id}`} style={secondaryBtnStyle}>View</Link>
+          <a href={`/api/screen/report?sessionId=${row.id}`} style={secondaryBtnStyle}>PDF</a>
           <button
             type="button"
             onClick={() => setConfirming(true)}
@@ -275,7 +276,7 @@ function ScreeningRow({
               background:  'none',
               border:      'none',
               cursor:      'pointer',
-              color:       'var(--text-muted)',
+              color:       '#8b8b9a',
               fontSize:    '14px',
               padding:     '4px 6px',
               flexShrink:  0,
@@ -296,12 +297,12 @@ function SectionHeading({ label, count }: { label: string; count: number }) {
   return (
     <h2
       style={{
-        fontSize:      '12px',
+        fontSize:      '11px',
         fontWeight:    600,
-        color:         'var(--text-muted)',
+        color:         '#55556a',
         textTransform: 'uppercase',
-        letterSpacing: '0.06em',
-        marginBottom:  'var(--space-3)',
+        letterSpacing: '0.07em',
+        marginBottom:  '12px',
       }}
     >
       {label}
@@ -316,9 +317,9 @@ function EmptyState({ message, cta }: { message: string; cta: { href: string; la
       style={{
         padding:      'var(--space-8)',
         textAlign:    'center',
-        border:       '1px dashed var(--border-subtle)',
+        border:       '1px dashed rgba(255,255,255,0.07)',
         borderRadius: '8px',
-        color:        'var(--text-muted)',
+        color:        '#8b8b9a',
         fontSize:     '13px',
       }}
     >
@@ -337,16 +338,16 @@ function LoadMoreButton({ onClick, loading }: { onClick: () => void; loading: bo
       onClick={onClick}
       disabled={loading}
       style={{
-        display:     'block',
-        margin:      'var(--space-3) auto 0',
-        background:  'none',
-        border:      '1px solid var(--border-subtle)',
+        display:      'block',
+        margin:       'var(--space-3) auto 0',
+        background:   '#1e1e24',
+        border:       '1px solid rgba(255,255,255,0.07)',
         borderRadius: '6px',
-        padding:     '6px 20px',
-        fontSize:    '12px',
-        color:       'var(--text-muted)',
-        cursor:      loading ? 'default' : 'pointer',
-        fontFamily:  'inherit',
+        padding:      '6px 20px',
+        fontSize:     '12px',
+        color:        '#8b8b9a',
+        cursor:       loading ? 'default' : 'pointer',
+        fontFamily:   'inherit',
       }}
     >
       {loading ? 'Loading…' : 'Load more'}
