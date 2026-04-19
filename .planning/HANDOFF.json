@@ -1,25 +1,45 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-16T20:20:19.673Z",
-  "phase": "10",
-  "phase_name": "network-graph-core",
-  "phase_dir": ".planning/phases/10-network-graph-core",
-  "status": "complete",
+  "timestamp": "2026-04-19T09:36:13Z",
+  "phase": null,
+  "phase_name": "abundant-seeking-tiger — 评分体系重构（制裁风险与真实性评分分离）",
+  "phase_dir": null,
+  "plan": null,
+  "task": null,
+  "total_tasks": 6,
+  "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "ICIJ confidence gate", "status": "done", "commit": "5587154"},
-    {"id": 2, "name": "fitView ETI-scoping", "status": "done", "commit": "5587154"},
-    {"id": 3, "name": "UAT 7/7 passed", "status": "done", "commit": "7294ef4"},
-    {"id": 4, "name": "VERIFICATION.md passed", "status": "done", "commit": "7294ef4"},
-    {"id": 5, "name": "fitView hidden-tab fix via useStore", "status": "done", "commit": "9972842"}
+    {"id": 1, "name": "scoring.ts — 删除 LISTED_BREAKDOWN 硬地板、unknown×0.7 乘数，riskLevel() 改为综合函数并导出", "status": "done"},
+    {"id": 2, "name": "gleif.ts — 删除 listed 硬地板块，调用 riskLevel(score, sanctionStatus)", "status": "done"},
+    {"id": 3, "name": "zefix.ts、opencorporates.ts — 删除硬地板，build 和 search result 均调用 riskLevel()", "status": "done"},
+    {"id": 4, "name": "repository.ts — ACRA/GLEIF 路径修复，4处扣分后补算 riskLevel（WR-05）", "status": "done"},
+    {"id": 5, "name": "companies-house.ts、acra.ts — 补漏调用方，全部改用 riskLevel()", "status": "done"},
+    {"id": 6, "name": "CLAUDE.md — 更新已废弃的 unknown×0.7 文档", "status": "done"}
   ],
   "remaining_tasks": [],
   "blockers": [],
-  "human_actions_pending": [],
-  "decisions": [
-    {"decision": "ICIJ network requires match_confidence=1.0", "rationale": "Name-similarity matches without registration number produce misleading offshore networks", "phase": "10"},
-    {"decision": "fitView via useStore(s.width/height) not fitView prop", "rationale": "fitView prop fires at mount when tab is hidden (display:none), container is 0x0", "phase": "10"}
+  "human_actions_pending": [
+    {
+      "action": "git commit 所有修改后触发 rescore（重启服务或 /api/admin/sync）",
+      "context": "所有改动未提交。重构完整后需要让制裁实体的真实性分数在 DB 中生效",
+      "blocking": false
+    }
   ],
-  "uncommitted_files": [],
-  "next_action": "Run /gsd-plan-phase to start Phase 11 (Coverage Expansion + PDF Export)",
-  "context_notes": "Phase 10 fully complete. All 7 UAT tests passed. Graph now auto-fits correctly when tab becomes visible."
+  "decisions": [
+    {"decision": "authenticity score 与 sanction risk 完全解耦", "rationale": "制裁实体可以是真实存在的，scoring 应反映真实性而非惩罚制裁", "phase": "abundant-seeking-tiger"},
+    {"decision": "riskLevel() 综合：listed→critical，unknown→cap at medium，not_listed→纯分数阈值", "rationale": "制裁状态是独立风险维度", "phase": "abundant-seeking-tiger"},
+    {"decision": "intelligence sanctions_hits 扣分保留在 communityReputation", "rationale": "情报命中与正式列名是不同概念，影响真实性合理", "phase": "abundant-seeking-tiger"}
+  ],
+  "uncommitted_files": [
+    "CLAUDE.md",
+    "src/lib/server/scoring.ts",
+    "src/lib/server/gleif.ts",
+    "src/lib/server/repository.ts",
+    "src/lib/server/sync/acra.ts",
+    "src/lib/server/sync/companies-house.ts",
+    "src/lib/server/sync/opencorporates.ts",
+    "src/lib/server/sync/zefix.ts"
+  ],
+  "next_action": "git commit 所有改动（feat: separate sanction risk from authenticity score），然后 rescore 现有实体",
+  "context_notes": "重构完整，三轮代码审查通过，type-check 通过，无硬编码 riskLevel 字面量残留。plan 文件在 ~/.claude/plans/peppy-moseying-cake.md"
 }
