@@ -593,28 +593,31 @@ function UploadZone({
   onDragOver,
   onDragLeave,
   onDrop,
+  disabled,
 }: {
   onFile: (f: File) => void
   isDragging: boolean
   onDragOver: (e: React.DragEvent) => void
   onDragLeave: () => void
   onDrop: (e: React.DragEvent) => void
+  disabled?: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onClick={() => inputRef.current?.click()}
+      onDragOver={disabled ? undefined : onDragOver}
+      onDragLeave={disabled ? undefined : onDragLeave}
+      onDrop={disabled ? undefined : onDrop}
+      onClick={() => { if (!disabled) inputRef.current?.click() }}
       style={{
         border: `1.5px dashed ${isDragging ? TOKEN.primary : 'rgba(255,255,255,0.12)'}`,
         borderRadius: '10px',
         minHeight: '160px',
         padding: '32px 24px',
         textAlign: 'center',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
         backgroundColor: isDragging ? 'rgba(99,102,241,0.08)' : 'rgba(0,0,0,0.2)',
         transition: 'all 0.15s ease',
         display: 'flex', flexDirection: 'column',
@@ -762,6 +765,7 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
+          disabled={panelState === 'loading'}
         />
 
         {file && (
