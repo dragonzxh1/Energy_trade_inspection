@@ -300,7 +300,7 @@ function PositionCard({ data }: { data: VesselAisData }) {
   const latDir = pos.lat >= 0 ? 'N' : 'S'
   const lonDir = pos.lon >= 0 ? 'E' : 'W'
 
-  const mtLink = `https://www.marinetraffic.com/en/ais/home/centerx:${pos.lon.toFixed(2)}/centery:${pos.lat.toFixed(2)}/zoom:10`
+  const mtLink = `https://www.marinetraffic.com/en/ais/details/ships/imo:${data.imo}`
 
   return (
     <div style={card}>
