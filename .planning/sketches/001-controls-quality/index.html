@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sketch 001: Controls Quality</title>
+  <link rel="stylesheet" href="../themes/default.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      font-size: var(--text-base);
+      line-height: 1.5;
+      padding-top: 48px;
+    }
+
+    /* ─── Variant Nav ─── */
+    #variant-nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: 8px 16px;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .variant-tab {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--color-text-muted);
+      padding: 5px 14px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-family: var(--font-sans);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .variant-tab:hover { color: var(--color-text); background: var(--color-elevated); }
+    .variant-tab.active {
+      background: var(--color-elevated-2);
+      border-color: var(--color-border-hover);
+      color: var(--color-text);
+    }
+    .variant-tab.winner { color: #eab308; }
+    .variant-nav-label {
+      color: var(--color-text-subtle);
+      font-size: var(--text-xs);
+      font-family: var(--font-sans);
+      margin-right: 8px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .variant { display: none; }
+    .variant.active { display: block; }
+
+    /* ─── Shared section layout ─── */
+    .sketch-page {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-10) var(--space-6);
+    }
+    .section-heading {
+      font-size: var(--text-sm);
+      color: var(--color-text-subtle);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .control-row {
+      display: flex; gap: var(--space-3); align-items: flex-start;
+      flex-wrap: wrap; margin-bottom: var(--space-6);
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: var(--radius-full);
+      font-size: var(--text-xs); font-weight: 500;
+    }
+    .pill-critical { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .pill-medium   { background: rgba(234,179,8,0.12);  color: #fbbf24; border: 1px solid rgba(234,179,8,0.25); }
+    .pill-low      { background: rgba(34,197,94,0.12);  color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+    .toast {
+      position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+      background: var(--color-elevated-2); color: var(--color-text);
+      border: 1px solid var(--color-border-hover);
+      padding: 10px 20px; border-radius: var(--radius-md);
+      font-size: var(--text-sm); box-shadow: var(--shadow-lg);
+      opacity: 0; transition: opacity 0.2s ease; pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.visible { opacity: 1; }
+
+    /* ─── Sketch Toolbar ─── */
+    #sketch-tools {
+      position: fixed; bottom: 12px; right: 12px; z-index: 9999;
+      font-family: system-ui; font-size: 12px;
+      background: rgba(0,0,0,0.75); color: white;
+      padding: 8px 12px; border-radius: 8px;
+      opacity: 0.4; transition: opacity 0.2s;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    #sketch-tools:hover { opacity: 1; }
+    #sketch-tools select, #sketch-tools button {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: white; padding: 3px 8px; border-radius: 4px;
+      font-size: 11px; cursor: pointer;
+    }
+    .tools-row { display: flex; gap: 4px; align-items: center; }
+    .tools-label { opacity: 0.6; font-size: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- ─── Variant Nav ─── -->
+<div id="variant-nav">
+  <span class="variant-nav-label">Sketch 001</span>
+  <button class="variant-tab" onclick="showVariant('a', this)">A: Sharp & Flat</button>
+  <button class="variant-tab" onclick="showVariant('b', this)">B: Textured & Dimensional</button>
+  <button class="variant-tab" onclick="showVariant('c', this)">C: Muted & Clinical</button>
+  <button class="variant-tab active winner" onclick="showVariant('d', this)">D: Synthesis ★ Selected</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     VARIANT A: Sharp & Flat
+     Clean borders, flat backgrounds, hover lift
+═══════════════════════════════════════════════════════════ -->
+<div id="variant-a" class="variant">
+  <div class="sketch-page">
+    <h2 style="font-size:var(--text-xl);font-weight:600;margin-bottom:var(--space-2)">Variant A — Sharp & Flat</h2>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-8)">Clean borders, flat color fills, buttons lift slightly on hover. Precise, minimal.</p>
+
+    <!-- Buttons -->
+    <p class="section-heading">Buttons</p>
+    <div class="control-row">
+      <button class="btn-a btn-primary-a" onclick="toast('Primary action')">Run Trade Check</button>
+      <button class="btn-a btn-secondary-a" onclick="toast('Secondary action')">Save Draft</button>
+      <button class="btn-a btn-ghost-a" onclick="toast('Ghost action')">Cancel</button>
+      <button class="btn-a btn-danger-a" onclick="toast('Danger action')">Revoke Access</button>
+    </div>
+    <div class="control-row">
+      <button class="btn-a btn-primary-a btn-sm-a" onclick="toast('Small primary')">Screen</button>
+      <button class="btn-a btn-secondary-a btn-sm-a" onclick="toast('Small secondary')">Export</button>
+      <button class="btn-a btn-primary-a" disabled style="opacity:0.35;cursor:not-allowed">Processing...</button>
+    </div>
+
+    <!-- Status Pills -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Status Badges</p>
+    <div class="control-row" style="align-items:center">
+      <span class="status-pill pill-critical">● Critical</span>
+      <span class="status-pill pill-medium">● Medium</span>
+      <span class="status-pill pill-low">● Low</span>
+    </div>
+
+    <!-- Inputs -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Form Inputs</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);max-width:600px">
+      <div class="form-group">
+        <label class="form-label">Seller Entity</label>
+        <input class="input-a" type="text" placeholder="e.g. Rosneft Trading SA" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">LEI Number</label>
+        <input class="input-a" type="text" placeholder="20-char identifier" style="font-family:var(--font-mono)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Commodity</label>
+        <select class="input-a">
+          <option value="">Select commodity...</option>
+          <option>Crude Oil</option>
+          <option>LNG</option>
+          <option>Coal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Port of Loading</label>
+        <input class="input-a" type="text" placeholder="e.g. Primorsk" />
+      </div>
+    </div>
+
+    <!-- Simulated form submit -->
+    <div style="margin-top:var(--space-8)">
+      <button class="btn-a btn-primary-a" style="min-width:160px" onclick="simulateSubmitA(this)">Run Trade Check</button>
+    </div>
+
+    <!-- Score display example -->
+    <div style="margin-top:var(--space-8);max-width:360px">
+      <p class="section-heading">Score Display</p>
+      <div class="score-card-a">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:4px">Authenticity Score</div>
+            <div class="score-number-a">72</div>
+          </div>
+          <span class="status-pill pill-medium" style="margin-top:4px">Medium Risk</span>
+        </div>
+        <div style="margin-top:var(--space-4);height:4px;background:var(--color-elevated-2);border-radius:2px;overflow:hidden">
+          <div style="width:72%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Variant A styles */
+    .btn-a {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-md);
+      font-size: var(--text-sm); font-weight: 500;
+      font-family: var(--font-sans); cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      letter-spacing: 0.01em;
+      line-height: 1;
+    }
+    .btn-primary-a {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: rgba(99,102,241,0.4);
+    }
+    .btn-primary-a:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(99,102,241,0.3);
+    }
+    .btn-primary-a:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+    .btn-secondary-a {
+      background: var(--color-elevated);
+      color: var(--color-text);
+      border-color: var(--color-border-hover);
+    }
+    .btn-secondary-a:hover { background: var(--color-elevated-2); border-color: rgba(255,255,255,0.2); transform: translateY(-1px); }
+    .btn-ghost-a {
+      background: transparent; color: var(--color-text-muted);
+      border-color: transparent;
+    }
+    .btn-ghost-a:hover { background: var(--color-elevated); color: var(--color-text); }
+    .btn-danger-a {
+      background: rgba(239,68,68,0.1); color: #f87171;
+      border-color: rgba(239,68,68,0.25);
+    }
+    .btn-danger-a:hover { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); }
+    .btn-sm-a { padding: 5px 12px; font-size: var(--text-xs); }
+
+    .input-a {
+      width: 100%;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-family: var(--font-sans);
+      transition: all 0.15s ease;
+      outline: none;
+    }
+    .input-a::placeholder { color: var(--color-text-subtle); }
+    .input-a:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+    }
+    .input-a:hover:not(:focus) { border-color: var(--color-border-hover); }
+
+    .score-card-a {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+    }
+    .score-number-a {
+      font-size: 2.5rem; font-weight: 600;
+      color: var(--color-primary); line-height: 1;
+    }
+  </style>
+  <script>
+    function simulateSubmitA(btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'Screening...';
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      setTimeout(() => {
+        btn.textContent = '✓ Complete';
+        btn.style.opacity = '1';
+        btn.style.background = 'rgba(34,197,94,0.2)';
+        btn.style.borderColor = 'rgba(34,197,94,0.4)';
+        btn.style.color = '#4ade80';
+        setTimeout(() => {
+          btn.textContent = orig;
+          btn.disabled = false;
+          btn.style = '';
+        }, 2000);
+      }, 1400);
+    }
+  </script>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     VARIANT B: Textured & Dimensional
+     Micro-gradient buttons, inset shadow inputs, elevated depth
+═══════════════════════════════════════════════════════════ -->
+<div id="variant-b" class="variant">
+  <div class="sketch-page">
+    <h2 style="font-size:var(--text-xl);font-weight:600;margin-bottom:var(--space-2)">Variant B — Textured & Dimensional</h2>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-8)">Micro-gradient on buttons, inset shadow on inputs, strong depth hierarchy. Feels expensive.</p>
+
+    <!-- Buttons -->
+    <p class="section-heading">Buttons</p>
+    <div class="control-row">
+      <button class="btn-b btn-primary-b" onclick="toast('Primary action')">Run Trade Check</button>
+      <button class="btn-b btn-secondary-b" onclick="toast('Secondary action')">Save Draft</button>
+      <button class="btn-b btn-ghost-b" onclick="toast('Ghost action')">Cancel</button>
+      <button class="btn-b btn-danger-b" onclick="toast('Danger action')">Revoke Access</button>
+    </div>
+    <div class="control-row">
+      <button class="btn-b btn-primary-b btn-sm-b" onclick="toast('Small primary')">Screen</button>
+      <button class="btn-b btn-secondary-b btn-sm-b" onclick="toast('Small secondary')">Export</button>
+      <button class="btn-b btn-primary-b" disabled style="opacity:0.35;cursor:not-allowed">Processing...</button>
+    </div>
+
+    <!-- Status Pills -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Status Badges</p>
+    <div class="control-row" style="align-items:center">
+      <span class="status-pill pill-critical">● Critical</span>
+      <span class="status-pill pill-medium">● Medium</span>
+      <span class="status-pill pill-low">● Low</span>
+    </div>
+
+    <!-- Inputs -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Form Inputs</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);max-width:600px">
+      <div class="form-group">
+        <label class="form-label">Seller Entity</label>
+        <input class="input-b" type="text" placeholder="e.g. Rosneft Trading SA" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">LEI Number</label>
+        <input class="input-b" type="text" placeholder="20-char identifier" style="font-family:var(--font-mono)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Commodity</label>
+        <select class="input-b">
+          <option value="">Select commodity...</option>
+          <option>Crude Oil</option>
+          <option>LNG</option>
+          <option>Coal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Port of Loading</label>
+        <input class="input-b" type="text" placeholder="e.g. Primorsk" />
+      </div>
+    </div>
+
+    <div style="margin-top:var(--space-8)">
+      <button class="btn-b btn-primary-b" style="min-width:160px" onclick="simulateSubmitB(this)">Run Trade Check</button>
+    </div>
+
+    <!-- Score display -->
+    <div style="margin-top:var(--space-8);max-width:360px">
+      <p class="section-heading">Score Display</p>
+      <div class="score-card-b">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:4px">Authenticity Score</div>
+            <div class="score-number-b">72</div>
+          </div>
+          <span class="status-pill pill-medium" style="margin-top:4px">Medium Risk</span>
+        </div>
+        <div style="margin-top:var(--space-4);height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.5)">
+          <div style="width:72%;height:100%;background:linear-gradient(90deg,#6366f1,#818cf8);transition:width 0.4s ease;box-shadow:0 0 8px rgba(99,102,241,0.5)"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Variant B styles */
+    .btn-b {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-md);
+      font-size: var(--text-sm); font-weight: 500;
+      font-family: var(--font-sans); cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      letter-spacing: 0.01em; line-height: 1;
+    }
+    .btn-primary-b {
+      background: linear-gradient(180deg, #7578f2 0%, #5558e8 100%);
+      color: #fff;
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 6px rgba(99,102,241,0.3);
+      text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    }
+    .btn-primary-b:hover:not(:disabled) {
+      background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.15) inset, 0 4px 12px rgba(99,102,241,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-primary-b:active:not(:disabled) {
+      background: linear-gradient(180deg, #5558e8 0%, #4f52d8 100%);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.1) inset;
+      transform: translateY(0);
+    }
+    .btn-secondary-b {
+      background: linear-gradient(180deg, #24242c 0%, #1a1a21 100%);
+      color: var(--color-text);
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.07) inset, 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .btn-secondary-b:hover {
+      background: linear-gradient(180deg, #2a2a34 0%, #212129 100%);
+      border-color: rgba(255,255,255,0.18);
+      transform: translateY(-1px);
+    }
+    .btn-ghost-b {
+      background: transparent; color: var(--color-text-muted);
+      border-color: transparent;
+    }
+    .btn-ghost-b:hover { background: rgba(255,255,255,0.05); color: var(--color-text); }
+    .btn-danger-b {
+      background: linear-gradient(180deg, rgba(239,68,68,0.18) 0%, rgba(239,68,68,0.1) 100%);
+      color: #f87171; border-color: rgba(239,68,68,0.3);
+      box-shadow: 0 2px 4px rgba(239,68,68,0.15);
+    }
+    .btn-danger-b:hover {
+      background: linear-gradient(180deg, rgba(239,68,68,0.28) 0%, rgba(239,68,68,0.2) 100%);
+      border-color: rgba(239,68,68,0.45);
+    }
+    .btn-sm-b { padding: 5px 12px; font-size: var(--text-xs); }
+
+    .input-b {
+      width: 100%;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-family: var(--font-sans);
+      transition: all 0.15s ease;
+      outline: none;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,0,0,0.2);
+    }
+    .input-b::placeholder { color: var(--color-text-subtle); }
+    .input-b:focus {
+      border-color: var(--color-primary);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 0 0 2px rgba(99,102,241,0.2), 0 0 8px rgba(99,102,241,0.1);
+    }
+    .input-b:hover:not(:focus) { border-color: var(--color-border-hover); }
+
+    .score-card-b {
+      background: linear-gradient(160deg, var(--color-surface-2) 0%, var(--color-surface) 100%);
+      border: 1px solid var(--color-border);
+      border-top-color: rgba(255,255,255,0.1);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .score-number-b {
+      font-size: 2.5rem; font-weight: 600; line-height: 1;
+      background: linear-gradient(135deg, #818cf8, #6366f1);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  </style>
+  <script>
+    function simulateSubmitB(btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'Screening...';
+      btn.disabled = true;
+      btn.style.opacity = '0.5';
+      setTimeout(() => {
+        btn.textContent = '✓ Complete';
+        btn.style.opacity = '1';
+        btn.style.background = 'linear-gradient(180deg,rgba(34,197,94,0.25) 0%,rgba(34,197,94,0.15) 100%)';
+        btn.style.borderColor = 'rgba(34,197,94,0.4)';
+        btn.style.color = '#4ade80';
+        btn.style.boxShadow = '0 2px 8px rgba(34,197,94,0.2)';
+        setTimeout(() => {
+          btn.textContent = orig; btn.disabled = false; btn.style = '';
+        }, 2000);
+      }, 1400);
+    }
+  </script>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     VARIANT C: Muted & Clinical
+     Softer buttons, strong border focus ring, ultra-precise
+═══════════════════════════════════════════════════════════ -->
+<div id="variant-c" class="variant">
+  <div class="sketch-page">
+    <h2 style="font-size:var(--text-xl);font-weight:600;margin-bottom:var(--space-2)">Variant C — Muted & Clinical</h2>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-8)">Understated buttons, focus-ring-driven inputs, near-zero visual noise. Bloomberg terminal energy.</p>
+
+    <!-- Buttons -->
+    <p class="section-heading">Buttons</p>
+    <div class="control-row">
+      <button class="btn-c btn-primary-c" onclick="toast('Primary action')">Run Trade Check</button>
+      <button class="btn-c btn-secondary-c" onclick="toast('Secondary action')">Save Draft</button>
+      <button class="btn-c btn-ghost-c" onclick="toast('Ghost action')">Cancel</button>
+      <button class="btn-c btn-danger-c" onclick="toast('Danger action')">Revoke Access</button>
+    </div>
+    <div class="control-row">
+      <button class="btn-c btn-primary-c btn-sm-c" onclick="toast('Small primary')">Screen</button>
+      <button class="btn-c btn-secondary-c btn-sm-c" onclick="toast('Small secondary')">Export</button>
+      <button class="btn-c btn-primary-c" disabled style="opacity:0.3;cursor:not-allowed">Processing...</button>
+    </div>
+
+    <!-- Status Pills -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Status Badges</p>
+    <div class="control-row" style="align-items:center">
+      <span class="status-pill pill-critical">● Critical</span>
+      <span class="status-pill pill-medium">● Medium</span>
+      <span class="status-pill pill-low">● Low</span>
+    </div>
+
+    <!-- Inputs -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Form Inputs</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);max-width:600px">
+      <div class="form-group">
+        <label class="form-label">Seller Entity</label>
+        <input class="input-c" type="text" placeholder="e.g. Rosneft Trading SA" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">LEI Number</label>
+        <input class="input-c" type="text" placeholder="20-char identifier" style="font-family:var(--font-mono)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Commodity</label>
+        <select class="input-c">
+          <option value="">Select commodity...</option>
+          <option>Crude Oil</option>
+          <option>LNG</option>
+          <option>Coal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Port of Loading</label>
+        <input class="input-c" type="text" placeholder="e.g. Primorsk" />
+      </div>
+    </div>
+
+    <div style="margin-top:var(--space-8)">
+      <button class="btn-c btn-primary-c" style="min-width:160px" onclick="simulateSubmitC(this)">Run Trade Check</button>
+    </div>
+
+    <!-- Score display -->
+    <div style="margin-top:var(--space-8);max-width:360px">
+      <p class="section-heading">Score Display</p>
+      <div class="score-card-c">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Authenticity Score</div>
+            <div class="score-number-c">72</div>
+          </div>
+          <span class="status-pill pill-medium" style="margin-top:4px">Medium Risk</span>
+        </div>
+        <div style="margin-top:var(--space-4);height:2px;background:var(--color-border);overflow:hidden">
+          <div style="width:72%;height:100%;background:var(--color-primary);transition:width 0.4s ease"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Variant C styles */
+    .btn-c {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 16px; border-radius: var(--radius-sm);
+      font-size: var(--text-sm); font-weight: 500;
+      font-family: var(--font-sans); cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      letter-spacing: 0.02em; line-height: 1;
+    }
+    .btn-primary-c {
+      background: rgba(99,102,241,0.15); color: #a5b4fc;
+      border-color: rgba(99,102,241,0.3);
+    }
+    .btn-primary-c:hover:not(:disabled) {
+      background: rgba(99,102,241,0.22); border-color: rgba(99,102,241,0.5);
+      color: #c7d2fe;
+    }
+    .btn-primary-c:focus-visible {
+      outline: 2px solid var(--color-primary); outline-offset: 2px;
+    }
+    .btn-secondary-c {
+      background: transparent; color: var(--color-text-muted);
+      border-color: var(--color-border);
+    }
+    .btn-secondary-c:hover { background: var(--color-elevated); color: var(--color-text); border-color: var(--color-border-hover); }
+    .btn-ghost-c {
+      background: transparent; color: var(--color-text-subtle); border-color: transparent;
+    }
+    .btn-ghost-c:hover { color: var(--color-text-muted); }
+    .btn-danger-c {
+      background: transparent; color: var(--color-critical);
+      border-color: rgba(239,68,68,0.2);
+    }
+    .btn-danger-c:hover { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35); }
+    .btn-sm-c { padding: 4px 12px; font-size: var(--text-xs); }
+
+    .input-c {
+      width: 100%;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-bottom-color: rgba(255,255,255,0.12);
+      color: var(--color-text);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: var(--text-sm);
+      font-family: var(--font-sans);
+      transition: all 0.12s ease;
+      outline: none;
+    }
+    .input-c::placeholder { color: var(--color-text-subtle); }
+    .input-c:focus {
+      border-color: var(--color-primary);
+      outline: 2px solid rgba(99,102,241,0.4);
+      outline-offset: 0;
+      box-shadow: none;
+    }
+    .input-c:hover:not(:focus) { border-color: var(--color-border-hover); }
+
+    .score-card-c {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: var(--space-5);
+    }
+    .score-number-c {
+      font-size: 2.5rem; font-weight: 600; line-height: 1;
+      color: var(--color-text); font-variant-numeric: tabular-nums;
+    }
+  </style>
+  <script>
+    function simulateSubmitC(btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'Screening...';
+      btn.disabled = true; btn.style.opacity = '0.4';
+      setTimeout(() => {
+        btn.textContent = '✓ Done';
+        btn.style.opacity = '1';
+        btn.style.background = 'rgba(34,197,94,0.1)';
+        btn.style.borderColor = 'rgba(34,197,94,0.3)';
+        btn.style.color = '#4ade80';
+        setTimeout(() => {
+          btn.textContent = orig; btn.disabled = false; btn.style = '';
+        }, 2000);
+      }, 1400);
+    }
+  </script>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     VARIANT D: Synthesis ★ WINNER
+     A's structure + B's gradient buttons + B's inset inputs
+     Score number: brand color (not gradient)
+═══════════════════════════════════════════════════════════ -->
+<div id="variant-d" class="variant active">
+  <div class="sketch-page">
+    <h2 style="font-size:var(--text-xl);font-weight:600;margin-bottom:var(--space-2)">Variant D — Synthesis <span style="color:#eab308">★ Selected</span></h2>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-8)">A의 구조 (hover lift, border-color focus) + B의 미세 그라디언트 버튼 + B의 인셋 inputs. 점수 숫자는 브랜드 색상.</p>
+
+    <!-- Buttons -->
+    <p class="section-heading">Buttons</p>
+    <div class="control-row">
+      <button class="btn-d btn-primary-d" onclick="toast('Primary action')">Run Trade Check</button>
+      <button class="btn-d btn-secondary-d" onclick="toast('Secondary action')">Save Draft</button>
+      <button class="btn-d btn-ghost-d" onclick="toast('Ghost action')">Cancel</button>
+      <button class="btn-d btn-danger-d" onclick="toast('Danger action')">Revoke Access</button>
+    </div>
+    <div class="control-row">
+      <button class="btn-d btn-primary-d btn-sm-d" onclick="toast('Small primary')">Screen</button>
+      <button class="btn-d btn-secondary-d btn-sm-d" onclick="toast('Small secondary')">Export</button>
+      <button class="btn-d btn-primary-d" disabled style="opacity:0.35;cursor:not-allowed">Processing...</button>
+    </div>
+
+    <!-- Status Pills -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Status Badges</p>
+    <div class="control-row" style="align-items:center">
+      <span class="status-pill pill-critical">● Critical</span>
+      <span class="status-pill pill-medium">● Medium Risk</span>
+      <span class="status-pill pill-low">● Low Risk</span>
+    </div>
+
+    <!-- Inputs -->
+    <p class="section-heading" style="margin-top:var(--space-6)">Form Inputs</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);max-width:600px">
+      <div class="form-group">
+        <label class="form-label">Seller Entity</label>
+        <input class="input-d" type="text" placeholder="e.g. Rosneft Trading SA" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">LEI Number</label>
+        <input class="input-d" type="text" placeholder="20-char identifier" style="font-family:var(--font-mono);letter-spacing:0.02em" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Commodity</label>
+        <select class="input-d">
+          <option value="">Select commodity...</option>
+          <option>Crude Oil</option>
+          <option>LNG</option>
+          <option>Coal</option>
+          <option>Refined Products</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Port of Loading</label>
+        <input class="input-d" type="text" placeholder="e.g. Primorsk" />
+      </div>
+    </div>
+
+    <!-- Submit simulation -->
+    <div style="margin-top:var(--space-8);display:flex;gap:var(--space-3);align-items:center">
+      <button class="btn-d btn-primary-d" style="min-width:160px" onclick="simulateSubmitD(this)">Run Trade Check</button>
+      <button class="btn-d btn-ghost-d" onclick="toast('Cancelled')">Cancel</button>
+    </div>
+
+    <!-- Score card -->
+    <div style="margin-top:var(--space-8);max-width:380px">
+      <p class="section-heading">Score Display</p>
+      <div class="score-card-d">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--space-4)">
+          <div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">Authenticity Score</div>
+            <div class="score-number-d">72</div>
+          </div>
+          <span class="status-pill pill-medium" style="margin-top:6px">Medium Risk</span>
+        </div>
+        <div style="height:4px;background:rgba(0,0,0,0.35);border-radius:2px;overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,0.4)">
+          <div style="width:72%;height:100%;background:var(--color-primary);transition:width 0.5s ease"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:var(--space-2)">
+          <span style="font-size:var(--text-xs);color:var(--color-text-subtle)">Critical</span>
+          <span style="font-size:var(--text-xs);color:var(--color-text-subtle)">Low</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* Variant D — Synthesis */
+    .btn-d {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: var(--radius-md);
+      font-size: var(--text-sm); font-weight: 500;
+      font-family: var(--font-sans); cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.12s ease;
+      letter-spacing: 0.01em; line-height: 1;
+    }
+    /* Primary: B's gradient + A's hover lift */
+    .btn-primary-d {
+      background: linear-gradient(180deg, #7578f2 0%, #5558e8 100%);
+      color: #fff;
+      border-color: rgba(99,102,241,0.45);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25);
+      text-shadow: 0 1px 1px rgba(0,0,0,0.15);
+    }
+    .btn-primary-d:hover:not(:disabled) {
+      background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35);
+      transform: translateY(-1px);
+    }
+    .btn-primary-d:active:not(:disabled) {
+      background: linear-gradient(180deg, #5558e8 0%, #4f52d8 100%);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2) inset;
+      transform: translateY(0);
+    }
+    /* Secondary: simpler than B, no heavy gradient */
+    .btn-secondary-d {
+      background: var(--color-elevated);
+      color: var(--color-text);
+      border-color: var(--color-border-hover);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .btn-secondary-d:hover {
+      background: var(--color-elevated-2);
+      border-color: rgba(255,255,255,0.18);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .btn-ghost-d {
+      background: transparent; color: var(--color-text-muted); border-color: transparent;
+    }
+    .btn-ghost-d:hover { background: var(--color-elevated); color: var(--color-text); }
+    .btn-danger-d {
+      background: rgba(239,68,68,0.1); color: #f87171;
+      border-color: rgba(239,68,68,0.25);
+    }
+    .btn-danger-d:hover {
+      background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.4);
+      transform: translateY(-1px);
+    }
+    .btn-sm-d { padding: 5px 12px; font-size: var(--text-xs); }
+
+    /* Inputs: B's inset shadow + A's border-color focus ring */
+    .input-d {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-family: var(--font-sans);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      outline: none;
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.35), inset 0 1px 0 rgba(0,0,0,0.15);
+    }
+    .input-d::placeholder { color: var(--color-text-subtle); }
+    .input-d:focus {
+      border-color: var(--color-primary);
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.35), 0 0 0 2px rgba(99,102,241,0.18);
+    }
+    .input-d:hover:not(:focus) { border-color: var(--color-border-hover); }
+
+    /* Score card: B's layered surface, A's solid brand-color number */
+    .score-card-d {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-top-color: rgba(255,255,255,0.09);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .score-number-d {
+      font-size: 2.75rem; font-weight: 600; line-height: 1;
+      color: var(--color-primary);
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+  <script>
+    function simulateSubmitD(btn) {
+      const orig = btn.textContent;
+      btn.textContent = 'Screening...';
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      setTimeout(() => {
+        btn.textContent = '✓ Complete';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.background = 'linear-gradient(180deg,rgba(34,197,94,0.22) 0%,rgba(34,197,94,0.14) 100%)';
+        btn.style.borderColor = 'rgba(34,197,94,0.4)';
+        btn.style.color = '#4ade80';
+        btn.style.boxShadow = '0 2px 6px rgba(34,197,94,0.18)';
+        setTimeout(() => { btn.textContent = orig; btn.style = ''; }, 2200);
+      }, 1400);
+    }
+  </script>
+</div>
+
+
+<!-- ─── Sketch Toolbar ─── -->
+<div id="sketch-tools"
+     onmouseenter="this.style.opacity='1'"
+     onmouseleave="this.style.opacity='0.4'">
+  <div class="tools-row"><span class="tools-label">SKETCH 001</span></div>
+  <div class="tools-row">
+    <span class="tools-label">Theme:</span>
+    <select onchange="document.querySelector('link[href*=themes]').href='../themes/'+this.value+'.css'">
+      <option value="default">Dark (Default)</option>
+      <option value="light">Light</option>
+    </select>
+  </div>
+  <div class="tools-row">
+    <span class="tools-label">View:</span>
+    <button onclick="setWidth(375)">Phone</button>
+    <button onclick="setWidth(768)">Tablet</button>
+    <button onclick="setWidth(null)">Desktop</button>
+  </div>
+</div>
+
+<script>
+  // Variant switching
+  function showVariant(id, btn) {
+    document.querySelectorAll('.variant').forEach(v => v.style.display = 'none');
+    document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+    const el = document.getElementById('variant-' + id);
+    if (el) el.style.display = 'block';
+    btn.classList.add('active');
+  }
+  document.querySelectorAll('.variant.active').forEach(v => v.style.display = 'block');
+
+  // Toast
+  let toastTimer;
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('visible'), 1800);
+  }
+
+  // Viewport
+  function setWidth(w) {
+    const pages = document.querySelectorAll('.sketch-page');
+    pages.forEach(p => {
+      if (w) { p.style.maxWidth = w + 'px'; }
+      else { p.style.maxWidth = '960px'; }
+    });
+  }
+</script>
+</body>
+</html>
