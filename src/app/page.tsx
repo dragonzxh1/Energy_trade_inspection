@@ -54,9 +54,9 @@ const FEATURES = [
 ]
 
 const SANCTION_COLOR: Record<SanctionStatus, string> = {
-  listed:     'var(--status-listed)',
-  not_listed: 'var(--status-clear)',
-  unknown:    'var(--text-muted)',
+  listed:     '#ef4444',
+  not_listed: '#22c55e',
+  unknown:    '#55556a',
 }
 
 const SANCTION_LABEL: Record<SanctionStatus, string> = {
@@ -66,10 +66,10 @@ const SANCTION_LABEL: Record<SanctionStatus, string> = {
 }
 
 const RISK_COLOR: Record<RiskLevel, string> = {
-  critical: 'var(--status-listed)',
+  critical: '#ef4444',
   high:     '#f97316',
-  medium:   '#eab308',
-  low:      'var(--status-clear)',
+  medium:   '#fbbf24',
+  low:      '#4ade80',
 }
 
 async function FeaturedEntities() {
@@ -102,10 +102,10 @@ async function FeaturedEntities() {
       >
         <p
           style={{
-            color: 'var(--text-muted)',
+            color: '#55556a',
             fontSize: '11px',
             fontWeight: 600,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.07em',
             textTransform: 'uppercase',
           }}
         >
@@ -113,7 +113,7 @@ async function FeaturedEntities() {
         </p>
         <Link
           href="/search"
-          style={{ color: 'var(--accent-primary)', fontSize: '12px', textDecoration: 'none' }}
+          style={{ color: '#6366f1', fontSize: '12px', textDecoration: 'none' }}
         >
           Browse all →
         </Link>
@@ -128,14 +128,14 @@ async function FeaturedEntities() {
               fontWeight: 600,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--status-listed)',
-              marginBottom: 'var(--space-2)',
-              paddingLeft: 'var(--space-1)',
+              color: '#ef4444',
+              marginBottom: '8px',
+              paddingLeft: '4px',
             }}
           >
             ⚠ High Risk
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {flagged.map((e) => {
               const href = e.entity_type === 'vessel' ? `/vessel/${e.imo}` : `/company/${e.slug}`
               return (
@@ -145,17 +145,20 @@ async function FeaturedEntities() {
                   className="home-tool-card"
                   style={{
                     display: 'block',
-                    backgroundColor: 'var(--bg-surface)',
+                    backgroundColor: '#111113',
                     border: '1px solid rgba(239,68,68,0.2)',
+                    borderTop: '1px solid rgba(239,68,68,0.25)',
                     borderRadius: '8px',
-                    padding: 'var(--space-3) var(--space-3)',
+                    padding: '12px',
                     textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    transition: 'border-top-color 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                     <p
                       style={{
-                        color: 'var(--text-primary)',
+                        color: '#f1f1f3',
                         fontSize: '12px',
                         fontWeight: 500,
                         lineHeight: '16px',
@@ -177,7 +180,7 @@ async function FeaturedEntities() {
                       {SANCTION_LABEL[e.sanction_status]}
                     </span>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
+                  <p style={{ color: '#8b8b9a', fontSize: '11px', marginTop: '2px' }}>
                     {e.jurisdiction_flag} {e.country} · Score {e.authenticity_score}
                   </p>
                 </Link>
@@ -194,14 +197,14 @@ async function FeaturedEntities() {
               fontWeight: 600,
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
-              color: 'var(--status-clear)',
-              marginBottom: 'var(--space-2)',
-              paddingLeft: 'var(--space-1)',
+              color: '#22c55e',
+              marginBottom: '8px',
+              paddingLeft: '4px',
             }}
           >
             ✓ Verified Clean
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {clean.map((e) => {
               const href = e.entity_type === 'vessel' ? `/vessel/${e.imo}` : `/company/${e.slug}`
               return (
@@ -211,17 +214,20 @@ async function FeaturedEntities() {
                   className="home-tool-card"
                   style={{
                     display: 'block',
-                    backgroundColor: 'var(--bg-surface)',
+                    backgroundColor: '#111113',
                     border: '1px solid rgba(34,197,94,0.15)',
+                    borderTop: '1px solid rgba(34,197,94,0.2)',
                     borderRadius: '8px',
-                    padding: 'var(--space-3) var(--space-3)',
+                    padding: '12px',
                     textDecoration: 'none',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                    transition: 'border-top-color 0.15s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--space-2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                     <p
                       style={{
-                        color: 'var(--text-primary)',
+                        color: '#f1f1f3',
                         fontSize: '12px',
                         fontWeight: 500,
                         lineHeight: '16px',
@@ -243,7 +249,7 @@ async function FeaturedEntities() {
                       {SANCTION_LABEL[e.sanction_status]}
                     </span>
                   </div>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
+                  <p style={{ color: '#8b8b9a', fontSize: '11px', marginTop: '2px' }}>
                     {e.jurisdiction_flag} {e.country} · Score {e.authenticity_score}
                   </p>
                 </Link>
@@ -259,11 +265,21 @@ async function FeaturedEntities() {
 export default function HomePage() {
   return (
     <>
+      <style>{`
+        .home-cta-btn:hover {
+          background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%) !important;
+          box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35) !important;
+          transform: translateY(-1px);
+        }
+        .home-tool-card:hover {
+          border-top-color: rgba(255,255,255,0.14) !important;
+        }
+      `}</style>
       <Header />
       <main
         style={{
           minHeight: '100vh',
-          backgroundColor: 'var(--bg-primary)',
+          backgroundColor: '#0a0a0d',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -282,7 +298,7 @@ export default function HomePage() {
         >
           <p
             style={{
-              color: 'var(--accent-primary)',
+              color: '#6366f1',
               fontSize: '12px',
               fontWeight: 600,
               letterSpacing: '0.08em',
@@ -294,7 +310,7 @@ export default function HomePage() {
           </p>
           <h1
             style={{
-              color: 'var(--text-primary)',
+              color: '#f1f1f3',
               marginBottom: 'var(--space-4)',
               fontSize: '40px',
               lineHeight: '48px',
@@ -304,7 +320,7 @@ export default function HomePage() {
           </h1>
           <p
             style={{
-              color: 'var(--text-secondary)',
+              color: '#8b8b9a',
               fontSize: '16px',
               lineHeight: '26px',
               marginBottom: 'var(--space-6)',
@@ -335,41 +351,62 @@ export default function HomePage() {
                 href={card.href}
                 className="home-tool-card"
                 style={{
-                  display: 'block',
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  backgroundColor: '#111113',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderTop: '1px solid rgba(255,255,255,0.09)',
                   borderRadius: '10px',
-                  padding: 'var(--space-4)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  padding: '24px',
                   textDecoration: 'none',
+                  transition: 'border-top-color 0.15s ease',
                 }}
               >
                 <span
-                  style={{ fontSize: '18px', display: 'block', marginBottom: 'var(--space-2)' }}
+                  style={{ fontSize: '18px', display: 'block' }}
                   aria-hidden="true"
                 >
                   {card.icon}
                 </span>
                 <p
                   style={{
-                    color: 'var(--text-primary)',
+                    color: '#f1f1f3',
                     fontSize: '13px',
                     fontWeight: 600,
-                    marginBottom: 'var(--space-2)',
+                    margin: 0,
                   }}
                 >
                   {card.title}
                 </p>
                 <p
                   style={{
-                    color: 'var(--text-muted)',
+                    color: '#8b8b9a',
                     fontSize: '12px',
                     lineHeight: '18px',
-                    marginBottom: 'var(--space-3)',
+                    margin: 0,
                   }}
                 >
                   {card.desc}
                 </p>
-                <span style={{ color: 'var(--accent-primary)', fontSize: '12px', fontWeight: 500 }}>
+                <span
+                  className="home-cta-btn"
+                  style={{
+                    display: 'inline-block',
+                    padding: '7px 14px',
+                    background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+                    color: '#fff',
+                    border: '1px solid rgba(99,102,241,0.45)',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+                    borderRadius: '7px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    transition: 'all 0.12s ease',
+                    cursor: 'pointer',
+                    alignSelf: 'flex-start',
+                  }}
+                >
                   {card.cta}
                 </span>
               </Link>
@@ -384,7 +421,7 @@ export default function HomePage() {
             maxWidth: '640px',
             width: '100%',
             marginTop: 'var(--space-12)',
-            borderTop: '1px solid var(--border-subtle)',
+            borderTop: '1px solid rgba(255,255,255,0.07)',
             paddingTop: 'var(--space-8)',
           }}
         >
@@ -392,7 +429,7 @@ export default function HomePage() {
             <div key={s.label}>
               <p
                 style={{
-                  color: 'var(--text-primary)',
+                  color: '#6366f1',
                   fontSize: '22px',
                   fontWeight: 700,
                   letterSpacing: '-0.02em',
@@ -401,10 +438,10 @@ export default function HomePage() {
               >
                 {s.value}
               </p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 500 }}>
+              <p style={{ color: '#8b8b9a', fontSize: '12px', fontWeight: 500 }}>
                 {s.label}
               </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>
+              <p style={{ color: '#55556a', fontSize: '11px', marginTop: '2px' }}>
                 {s.note}
               </p>
             </div>
@@ -425,10 +462,13 @@ export default function HomePage() {
               key={f.title}
               className="home-tool-card"
               style={{
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
+                backgroundColor: '#111113',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderTop: '1px solid rgba(255,255,255,0.09)',
                 borderRadius: '10px',
-                padding: 'var(--space-4)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+                padding: '20px',
+                transition: 'border-top-color 0.15s ease',
               }}
             >
               <span
@@ -436,7 +476,7 @@ export default function HomePage() {
                   fontSize: '18px',
                   display: 'block',
                   marginBottom: 'var(--space-2)',
-                  color: 'var(--accent-primary)',
+                  color: '#6366f1',
                 }}
                 aria-hidden="true"
               >
@@ -444,7 +484,7 @@ export default function HomePage() {
               </span>
               <p
                 style={{
-                  color: 'var(--text-primary)',
+                  color: '#f1f1f3',
                   fontSize: '13px',
                   fontWeight: 600,
                   marginBottom: 'var(--space-2)',
@@ -452,7 +492,7 @@ export default function HomePage() {
               >
                 {f.title}
               </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '12px', lineHeight: '18px' }}>
+              <p style={{ color: '#8b8b9a', fontSize: '12px', lineHeight: '18px' }}>
                 {f.desc}
               </p>
             </div>
@@ -472,13 +512,13 @@ export default function HomePage() {
             width: '100%',
             marginTop: 'var(--space-8)',
             textAlign: 'center',
-            color: 'var(--text-muted)',
+            color: '#55556a',
             fontSize: '12px',
           }}
         >
-          <Link href="/pricing" style={{ color: 'var(--accent-primary)' }}>View pricing</Link>
+          <Link href="/pricing" style={{ color: '#6366f1' }}>View pricing</Link>
           {' '}·{' '}
-          <Link href="/search" style={{ color: 'var(--accent-primary)' }}>Browse database</Link>
+          <Link href="/search" style={{ color: '#6366f1' }}>Browse database</Link>
         </div>
       </main>
     </>
