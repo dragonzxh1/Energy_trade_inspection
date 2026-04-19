@@ -271,7 +271,7 @@ Plans:
 Plans:
 - [x] 14-01-PLAN.md — ScreenClient.tsx 全量重写（Split Panel + TOKEN + GlowLoader→进度条 + 三态面板 + screen/page.tsx 去 maxWidth）(UI-POLISH-01)
 - [x] 14-02-PLAN.md — watchlist/page.tsx + ReportsClient.tsx 按钮/pill/surface 样式升级 (UI-POLISH-02, UI-POLISH-03)
-- [ ] 14-03-PLAN.md — page.tsx + account/page.tsx 样式升级 + 视觉验证 checkpoint (UI-POLISH-04, UI-POLISH-05)
+- [x] 14-03-PLAN.md — page.tsx + account/page.tsx 样式升级 + 视觉验证 checkpoint (UI-POLISH-04, UI-POLISH-05)
 **UI hint**: yes
 
 ---
