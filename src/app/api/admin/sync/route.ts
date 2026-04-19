@@ -175,6 +175,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // HKCR full sync: CSV batch download + import (in-process, completes within maxDuration)
+  if (source === 'hkcr:full') {
+    try {
+      const results = await runSync('hkcr:full')
+      const hasError = results.some((r) => !r.success)
+      return NextResponse.json({ results }, { status: hasError ? 207 : 200 })
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error)
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
   // Fraud alert sync: POST { source: 'fraud' } or { source: 'fraud:storagespoofing' } etc.
   if (source === 'fraud') {
     try {

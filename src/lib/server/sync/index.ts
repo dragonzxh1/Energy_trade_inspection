@@ -8,6 +8,7 @@ import { syncFraudAlerts, syncFraudSource, getFraudSyncStatus } from './fraud-al
 import { syncLegitDomains } from './legitimate-domains'
 import { syncRegulatoryWarnings } from './regulatory-warnings'
 import { syncLeiDelta, syncLeiLevel2, syncLeiLevel2Full, syncLeiExceptions, syncLeiExceptionsFull } from './gleif-golden-copy'
+import { syncHKCRFull } from './hkcr'
 import { db } from '@/lib/server/db'
 
 export type SyncSource =
@@ -23,6 +24,7 @@ export type SyncSource =
   | 'gleif:exceptions'
   | 'gleif:exceptions:full'
   | 'sanctions-gleif-link'
+  | 'hkcr:full'
   | 'all'
 
 export interface SyncResult {
@@ -166,6 +168,27 @@ export async function runSync(source: SyncSource): Promise<SyncResult[]> {
     } catch (err) {
       results.push({
         source: 'sanctions-gleif-link',
+        success: false,
+        error: String(err),
+        durationMs: Date.now() - start,
+      })
+    }
+  }
+
+  if (source === 'hkcr:full') {
+    const start = Date.now()
+    try {
+      const { inserted, errors } = await syncHKCRFull()
+      results.push({
+        source: 'hkcr:full',
+        success: errors === 0,
+        count: inserted,
+        durationMs: Date.now() - start,
+        error: errors > 0 ? `${errors} files failed` : undefined,
+      })
+    } catch (err) {
+      results.push({
+        source: 'hkcr:full',
         success: false,
         error: String(err),
         durationMs: Date.now() - start,
