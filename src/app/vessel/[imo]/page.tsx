@@ -606,7 +606,7 @@ export default async function VesselPage({ params }: PageProps) {
                 MarineTraffic
               </a>
               <a
-                href={`https://www.vesselfinder.com/vessels?name=${encodeURIComponent(vessel.name)}&imo=${vessel.imo}`}
+                href={`https://www.vesselfinder.com/vessels/details/${vessel.imo}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
