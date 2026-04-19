@@ -156,21 +156,22 @@ Plans:
 
 ---
 
-### Phase 999.4: 香港公司注册处 (Hong Kong CR) 接入 (BACKLOG)
+### Phase 999.4: 香港公司注册处 (Hong Kong CR) 接入 (PLANNED)
 
 **Goal:** 接入香港公司注册处 (Companies Registry) 注册数据
 **Priority:** P1（香港是能源贸易高频司法管辖区，当前仅有 SFC 警告，无注册局数据）
-**Requirements:** TBD
-**Plans:** 0 plans
+**Requirements:** D-01, D-02, D-03, D-04
+**Plans:** 2 plans
 
 Implementation notes:
-- 评估香港 CR 开放 API 可用性（cr.gov.hk）
-- 捕获：公司名、注册号、董事、公司秘书、注册日期、状态
-- 与 SFC Alert List 联动：注册实体 + 监管警告交叉验证
-- 可用 OpenCorporates hk 司法管辖区作为 fallback
+- data.gov.hk CKAN API 不提供可搜索的公司数据库（RESEARCH.md 已验证）
+- 使用 OpenCorporates HK jurisdiction 筛选作为主要数据源
+- hkcr.ts 作为 OC wrapper，筛选 jurisdiction_code === hk 的结果
+- HK 结果标记为 registrySource: hkcr，缓存到 non_lei_cache
 
 Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+- [ ] 999.4-01-PLAN.md — hkcr.ts 模块创建（searchHKCR + mightBeHKNumber + hkcrToSearchResult） (D-01, D-04)
+- [ ] 999.4-02-PLAN.md — repository.ts Tier 2 集成（Promise.all + 结果映射 + 缓存写入） (D-01, D-02, D-03)
 
 ---
 
