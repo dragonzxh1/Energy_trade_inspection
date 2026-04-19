@@ -158,20 +158,23 @@ Plans:
 
 ### Phase 999.4: 香港公司注册处 (Hong Kong CR) 接入 (PLANNED)
 
-**Goal:** 接入香港公司注册处 (Companies Registry) 注册数据
+**Goal:** 接入香港公司注册处 (Companies Registry) 注册数据，实现香港公司搜索和情报层集成
 **Priority:** P1（香港是能源贸易高频司法管辖区，当前仅有 SFC 警告，无注册局数据）
-**Requirements:** D-01, D-02, D-03, D-04
-**Plans:** 2 plans
+**Requirements:** D-01, D-02, D-03, D-04, D-05
+**Plans:** 3 plans
 
-Implementation notes:
-- data.gov.hk CKAN API 不提供可搜索的公司数据库（RESEARCH.md 已验证）
-- 使用 OpenCorporates HK jurisdiction 筛选作为主要数据源
-- hkcr.ts 作为 OC wrapper，筛选 jurisdiction_code === hk 的结果
-- HK 结果标记为 registrySource: hkcr，缓存到 non_lei_cache
+Implementation notes (strategy updated 2026-04-19):
+- **D-01 策略调整**：data.gov.hk CKAN API **不提供可搜索的公司数据库**（RESEARCH.md 已验证）
+- **新方案**：CSV 批量下载 + 本地缓存导入（类比 gleif-golden-copy.ts）
+- **数据源**：`hk-cr-crdata-list-newly-registered-companies-2526` 数据集（268 个每周新增 CSV 文件）
+- **本地缓存表**：`hkcr_cache`（类比 `lei_cache`）
+- **不使用** OpenCorporates（无免费层）、HK CR 官网（需 CAPTCHA）
+- **类比模块**：`gleif-golden-copy.ts`（批量导入），而非 `acra.ts`（实时搜索）
 
 Plans:
-- [ ] 999.4-01-PLAN.md — hkcr.ts 模块创建（searchHKCR + mightBeHKNumber + hkcrToSearchResult） (D-01, D-04)
-- [ ] 999.4-02-PLAN.md — repository.ts Tier 2 集成（Promise.all + 结果映射 + 缓存写入） (D-01, D-02, D-03)
+- [ ] 999.4-01-PLAN.md — Migration 038 创建 hkcr_cache 表 (D-05)
+- [ ] 999.4-02-PLAN.md — hkcr.ts sync 模块（syncHKCRFull + searchHKCRCache + mightBeHKNumber + hkcrToSearchResult） (D-01, D-02, D-04)
+- [ ] 999.4-03-PLAN.md — repository.ts Tier 2 集成 + sync/index.ts 注册 + admin API 扩展 (D-01, D-02, D-03)
 
 ---
 
