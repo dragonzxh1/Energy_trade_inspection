@@ -8,10 +8,13 @@
  *   communityReputation max 10  - what do external inspectors/screeners say?
  *   tradingTrackRecord  max 25  - Phase 2, always 0 for now.
  *
- * Sanction override:
- *   listed      -> hard floor: total <= 10 and all dimensions forced to minimum
- *   unknown     -> all computed sub-scores multiplied by 0.7
- *   not_listed  -> no adjustment
+ * Authenticity score is sanction-neutral: it measures how real/verifiable the
+ * entity is, independent of whether it appears on a sanctions list.
+ *
+ * riskLevel is a composite of authenticity + sanction status:
+ *   listed  -> always 'critical' regardless of authenticity score
+ *   unknown -> capped at 'medium' (sanction ambiguity prevents a 'low' verdict)
+ *   not_listed -> derived purely from the authenticity score thresholds
  */
 
 import type { VesselAisData } from '@/lib/ais-types'
@@ -73,7 +76,16 @@ function isHighRisk(country: string): boolean {
   return HIGH_RISK_CC.has((country ?? '').toLowerCase().slice(0, 2))
 }
 
-function riskLevel(score: number): RiskLevel {
+export function riskLevel(score: number, sanctionStatus: ScoringInputs['sanctionStatus']): RiskLevel {
+  if (sanctionStatus === 'listed') return 'critical'
+  if (sanctionStatus === 'unknown') {
+    // Sanction ambiguity caps the best possible verdict at 'medium' —
+    // a high-authenticity entity cannot be cleared as 'low' risk.
+    // Low-scoring unknown entities still reach 'high' or 'critical'.
+    if (score >= 60) return 'medium'
+    if (score >= 35) return 'high'
+    return 'critical'
+  }
   if (score >= 85) return 'low'
   if (score >= 60) return 'medium'
   if (score >= 35) return 'high'
@@ -232,20 +244,7 @@ function scoreTerminal(inputs: ScoringInputs) {
 
 // 鈹€鈹€ Public API 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-const LISTED_BREAKDOWN: ScoreBreakdown = {
-  entityExistence:     { score: 3,  maxScore: 25 },
-  assetReality:        { score: 3,  maxScore: 30 },
-  tradingTrackRecord:  { score: 0,  maxScore: 25 },
-  documentConsistency: { score: 1,  maxScore: 10 },
-  communityReputation: { score: 0,  maxScore: 10 },
-}
-
 export function computeScore(inputs: ScoringInputs): ScoreResult {
-  // Sanctioned entities get a hard floor
-  if (inputs.sanctionStatus === 'listed') {
-    return { breakdown: LISTED_BREAKDOWN, total: 7, riskLevel: 'critical', shellSignalEvidence: [] }
-  }
-
   let shellSignalEvidence: string[] = []
   let raw: { E: number; A: number; D: number; C: number }
 
@@ -259,11 +258,10 @@ export function computeScore(inputs: ScoringInputs): ScoreResult {
     raw = scoreTerminal(inputs)
   }
 
-  const mult = inputs.sanctionStatus === 'unknown' ? 0.7 : 1.0
-  const E = Math.round(raw.E * mult)
-  const A = Math.round(raw.A * mult)
-  const D = Math.round(raw.D * mult)
-  const C = Math.round(raw.C * mult)
+  const E = raw.E
+  const A = raw.A
+  const D = raw.D
+  const C = raw.C
 
   const total = E + A + D + C
 
@@ -276,7 +274,7 @@ export function computeScore(inputs: ScoringInputs): ScoreResult {
       communityReputation: { score: C, maxScore: 10 },
     },
     total,
-    riskLevel: riskLevel(total),
+    riskLevel: riskLevel(total, inputs.sanctionStatus),
     shellSignalEvidence,
   }
 }

@@ -4,6 +4,8 @@
  * 鏇存柊棰戠巼锛氭瘡鏈? * 璁稿彲锛氭柊鍔犲潯寮€鏀炬暟鎹鍙紝鍏佽鍟嗕笟浣跨敤
  */
 
+import { riskLevel } from '@/lib/server/scoring'
+
 const DATA_GOV_SG = 'https://data.gov.sg/api/action/datastore_search'
 
 // UEN 瀹炰綋鏁版嵁闆嗚祫婧?ID锛堝寘鍚墍鏈夋敞鍐屽疄浣擄級
@@ -157,7 +159,7 @@ export function acraToSearchResult(entity: ACRAEntity) {
     jurisdictionFlag: '🇸🇬',
     sanctionStatus: 'unknown' as const,
     authenticityScore,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, 'unknown'),
     registrationNumber: entity.uen,
     slug: entity.uen.toLowerCase().replace(/[^a-z0-9]/g, '-'),
   }

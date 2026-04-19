@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Design Resources
+
+- **Sketch findings for ETI** (design decisions, CSS patterns, visual direction) → `Skill("sketch-findings-Energy_trade_inspection")`
+
 ## Project Overview
 
 Energy Trade Inspection (ETI) is a B2B compliance and risk screening platform for energy traders. It screens companies, vessels, and terminals against sanctions lists (OFAC, EU FSF, UN), AIS data, corporate registries, and other intelligence sources to produce an **Authenticity Score** (0–100) and trade-level risk verdicts.
@@ -71,7 +75,7 @@ Authenticity Score dimensions (Phase 1, max 75 points):
 - **Document Consistency** (max 10): AIS vs. registry coherence
 - **Community Reputation** (max 10): PSC detention records
 
-**Sanction overrides:** `listed` → all dimensions zero, total ≤10. `unknown` → all ×0.7.
+**Sanction overrides:** `listed` → always `critical` riskLevel regardless of authenticity score. `unknown` → authenticity score unchanged; riskLevel capped at `medium` (cannot reach `low`). `not_listed` → riskLevel derived purely from authenticity score thresholds.
 
 **Risk level thresholds:** 85–100 Low | 60–84 Medium | 35–59 High | 0–34 Critical
 

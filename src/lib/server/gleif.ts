@@ -97,6 +97,7 @@ function jurisdictionToCountry(cc: string | null): string {
 }
 
 import type { SanctionStatus } from '@/lib/types'
+import { riskLevel } from '@/lib/server/scoring'
 import { db } from '@/lib/server/db'
 import type { LeiCacheRow } from '@/lib/server/sync/gleif-golden-copy'
 
@@ -224,22 +225,6 @@ export function buildGleifCompany(
     dataSource: ['GLEIF LEI Registry'],
   }
 
-  // Hard-floor for sanctioned entities — must match scoring.ts LISTED_BREAKDOWN
-  if (sanctionStatus === 'listed') {
-    return {
-      ...base,
-      authenticityScore: 7,
-      scoreBreakdown: {
-        entityExistence:     { score: 3, maxScore: 25 },
-        assetReality:        { score: 3, maxScore: 30 },
-        tradingTrackRecord:  { score: 0, maxScore: 25 },
-        documentConsistency: { score: 1, maxScore: 10 },
-        communityReputation: { score: 0, maxScore: 10 },
-      },
-      riskLevel: 'critical' as const,
-    }
-  }
-
   const entityExistence    = 10  // valid LEI = minimal existence signal
   const documentConsistency = record.initialRegistrationDate ? 5 : 0
   const communityReputation = sanctionStatus === 'not_listed' ? 8 : 0
@@ -262,7 +247,7 @@ export function buildGleifCompany(
       documentConsistency: { score: documentConsistency,      maxScore: 10 },
       communityReputation: { score: communityReputationFinal, maxScore: 10 },
     },
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, sanctionStatus),
   }
 }
 

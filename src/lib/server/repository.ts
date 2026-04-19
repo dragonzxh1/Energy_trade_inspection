@@ -1,5 +1,6 @@
 ﻿import { randomUUID } from 'node:crypto'
 import type { Company, RiskFlag, SearchResult, SanctionStatus, Terminal, Vessel } from '@/lib/types'
+import { riskLevel } from './scoring'
 import { db } from './db'
 import { normalizeEntityName } from './normalize'
 import { checkSanctions } from './sync/sanctions'
@@ -516,7 +517,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
       sanctionStatus:    'unknown' as const,
       // LEI existence = 10 pts; +5 if registration date known
       authenticityScore: 10 + (row.initial_registration_date ? 5 : 0),
-      riskLevel:         'medium' as const,
+      riskLevel:         riskLevel(10 + (row.initial_registration_date ? 5 : 0), 'unknown'),
       registrationNumber: row.lei,
       slug:              `lei-${row.lei.toLowerCase()}`,
     }))
@@ -578,7 +579,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
       jurisdictionFlag:  r.jurisdiction ?? '',
       sanctionStatus:    'unknown' as const,
       authenticityScore: 10 + (r.initialRegistrationDate ? 5 : 0),
-      riskLevel:         'medium' as const,
+      riskLevel:         riskLevel(10 + (r.initialRegistrationDate ? 5 : 0), 'unknown'),
       registrationNumber: r.lei,
       slug:              `lei-${r.lei.toLowerCase()}`,
     }))
@@ -900,14 +901,6 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
       )
       const { authenticityScore: acraScore, scoreBreakdown: acraBreakdown } =
         computeACRAScore(acraEntity, sanctionStatus)
-      const finalScore     = sanctionStatus === 'listed' ? 7 : acraScore
-      const finalBreakdown = sanctionStatus === 'listed' ? {
-        entityExistence:     { score: 3, maxScore: 25 },
-        assetReality:        { score: 3, maxScore: 30 },
-        tradingTrackRecord:  { score: 0, maxScore: 25 },
-        documentConsistency: { score: 1, maxScore: 10 },
-        communityReputation: { score: 0, maxScore: 10 },
-      } : acraBreakdown
       company = {
         id:                 `acra:${acraEntity.uen}`,
         type:               'company',
@@ -917,9 +910,9 @@ async function resolveGleifRecord(record: Awaited<ReturnType<typeof getGleifReco
         country:            'Singapore',
         jurisdictionFlag:   '🇸🇬',
         sanctionStatus,
-        authenticityScore:  finalScore,
-        scoreBreakdown:     finalBreakdown,
-        riskLevel:          sanctionStatus === 'listed' ? 'critical' : 'medium',
+        authenticityScore:  acraScore,
+        scoreBreakdown:     acraBreakdown,
+        riskLevel:          riskLevel(acraScore, sanctionStatus),
         riskFlags:          [],
         lastVerified:       new Date().toISOString(),
         dataSource:         ['ACRA Singapore'],
@@ -996,15 +989,6 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
         )
         const { authenticityScore: acraScore, scoreBreakdown: acraBreakdown } =
           computeACRAScore(acraEntity, sanctionStatus)
-        // Hard-floor for sanctioned entities — must match scoring.ts LISTED_BREAKDOWN
-        const finalScore = sanctionStatus === 'listed' ? 7 : acraScore
-        const finalBreakdown = sanctionStatus === 'listed' ? {
-          entityExistence:     { score: 3, maxScore: 25 },
-          assetReality:        { score: 3, maxScore: 30 },
-          tradingTrackRecord:  { score: 0, maxScore: 25 },
-          documentConsistency: { score: 1, maxScore: 10 },
-          communityReputation: { score: 0, maxScore: 10 },
-        } : acraBreakdown
         const company: Company = {
           id: `acra:${acraEntity.uen}`,
           type: 'company',
@@ -1014,9 +998,9 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           country: 'Singapore',
           jurisdictionFlag: '🇸🇬',
           sanctionStatus,
-          authenticityScore: finalScore,
-          scoreBreakdown: finalBreakdown,
-          riskLevel: sanctionStatus === 'listed' ? 'critical' : 'medium',
+          authenticityScore: acraScore,
+          scoreBreakdown: acraBreakdown,
+          riskLevel: riskLevel(acraScore, sanctionStatus),
           riskFlags: [],
           lastVerified: new Date().toISOString(),
           dataSource: ['ACRA Singapore'],
@@ -1115,6 +1099,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           if (deduction > 0) {
             company.scoreBreakdown.communityReputation.score = crScore - deduction
             company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+            company.riskLevel = riskLevel(company.authenticityScore, company.sanctionStatus)
           }
         }
         if (company) return company
@@ -1144,6 +1129,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
             if (deduction > 0) {
               company.scoreBreakdown.communityReputation.score = crScore - deduction
               company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+              company.riskLevel = riskLevel(company.authenticityScore, company.sanctionStatus)
             }
           }
           return company
@@ -1185,6 +1171,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
           if (deduction > 0) {
             company.scoreBreakdown.communityReputation.score = crScore - deduction
             company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+            company.riskLevel = riskLevel(company.authenticityScore, company.sanctionStatus)
           }
         }
         if (company) return company
@@ -1214,6 +1201,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
             if (deduction > 0) {
               company.scoreBreakdown.communityReputation.score = crScore - deduction
               company.authenticityScore = Math.max(0, company.authenticityScore - deduction)
+              company.riskLevel = riskLevel(company.authenticityScore, company.sanctionStatus)
             }
           }
           return company
@@ -1344,6 +1332,7 @@ export async function getEntityByKey(idOrSlugOrImo: string): Promise<Company | V
         entity.scoreBreakdown.communityReputation.score,
       )
     )
+    entity.riskLevel = riskLevel(entity.authenticityScore, entity.sanctionStatus)
   }
 
   // 鑻ュ埗瑁佺姸鎬佷负 unknown锛屽疄鏃跺仛涓€娆＄瓫鏌ュ苟鏇存柊

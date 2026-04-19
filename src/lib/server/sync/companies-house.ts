@@ -8,6 +8,8 @@
  * Env: COMPANIES_HOUSE_API_KEY
  */
 
+import { riskLevel } from '@/lib/server/scoring'
+
 const CH_BASE = 'https://api.company-information.service.gov.uk'
 
 function getApiKey(): string | null {
@@ -159,7 +161,7 @@ export function chToSearchResult(company: CHCompany) {
     jurisdictionFlag: '🇬🇧',
     sanctionStatus: 'unknown' as const,
     authenticityScore,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, 'unknown'),
     registrationNumber: company.company_number,
     slug: company.company_number.toLowerCase(),
   }
@@ -310,28 +312,12 @@ export function buildCHCompany(
     dataSource: ['Companies House UK'],
   }
 
-  // Hard-floor for sanctioned entities — must match scoring.ts LISTED_BREAKDOWN
-  if (sanctionStatus === 'listed') {
-    return {
-      ...base,
-      authenticityScore: 7,
-      scoreBreakdown: {
-        entityExistence:     { score: 3, maxScore: 25 },
-        assetReality:        { score: 3, maxScore: 30 },
-        tradingTrackRecord:  { score: 0, maxScore: 25 },
-        documentConsistency: { score: 1, maxScore: 10 },
-        communityReputation: { score: 0, maxScore: 10 },
-      },
-      riskLevel: 'critical' as const,
-    }
-  }
-
   const { authenticityScore, scoreBreakdown } = computeCHScore(company, sanctionStatus)
   return {
     ...base,
     authenticityScore,
     scoreBreakdown,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, sanctionStatus),
   }
 }
 

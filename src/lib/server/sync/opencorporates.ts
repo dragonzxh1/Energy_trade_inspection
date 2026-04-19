@@ -13,6 +13,7 @@
  */
 
 import type { SanctionStatus } from '@/lib/types'
+import { riskLevel } from '@/lib/server/scoring'
 
 const OC_BASE = 'https://api.opencorporates.com/v0.4'
 
@@ -205,7 +206,7 @@ export function ocToSearchResult(c: OCCompany) {
     jurisdictionFlag:   flag,
     sanctionStatus:     'unknown' as const,
     authenticityScore,
-    riskLevel:          'medium' as const,
+    riskLevel:          riskLevel(authenticityScore, 'unknown'),
     registrationNumber: c.company_number,
     slug:               `oc-${c.jurisdiction_code}-${c.company_number}`.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
   }
@@ -239,28 +240,12 @@ export function buildOCCompany(c: OCCompany, sanctionStatus: SanctionStatus) {
     dataSource:         [`OpenCorporates (${country})`],
   }
 
-  // Hard-floor for sanctioned entities — must match scoring.ts LISTED_BREAKDOWN
-  if (sanctionStatus === 'listed') {
-    return {
-      ...base,
-      authenticityScore: 7,
-      scoreBreakdown: {
-        entityExistence:     { score: 3, maxScore: 25 },
-        assetReality:        { score: 3, maxScore: 30 },
-        tradingTrackRecord:  { score: 0, maxScore: 25 },
-        documentConsistency: { score: 1, maxScore: 10 },
-        communityReputation: { score: 0, maxScore: 10 },
-      },
-      riskLevel: 'critical' as const,
-    }
-  }
-
   const { authenticityScore, scoreBreakdown } = computeOCScore(c, sanctionStatus)
   return {
     ...base,
     authenticityScore,
     scoreBreakdown,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, sanctionStatus),
   }
 }
 

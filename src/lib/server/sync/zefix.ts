@@ -6,6 +6,7 @@
  */
 
 import type { SanctionStatus } from '@/lib/types'
+import { riskLevel } from '@/lib/server/scoring'
 
 const ZEFIX_BASE = 'https://www.zefix.admin.ch/ZefixPublicREST/api/v1'
 
@@ -139,7 +140,7 @@ export function zefixToSearchResult(c: ZefixCompany) {
     jurisdictionFlag: '🇨🇭',
     sanctionStatus: 'unknown' as const,
     authenticityScore,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, 'unknown'),
     registrationNumber: c.uid,
     slug: c.uid.toLowerCase().replace(/[^a-z0-9]/g, '-'),
   }
@@ -165,29 +166,13 @@ export function buildZefixCompany(c: ZefixCompany, sanctionStatus: SanctionStatu
     dataSource: ['Zefix Swiss Commercial Register'],
   }
 
-  // Hard-floor for sanctioned entities — must match scoring.ts LISTED_BREAKDOWN
-  if (sanctionStatus === 'listed') {
-    return {
-      ...base,
-      authenticityScore: 7,
-      scoreBreakdown: {
-        entityExistence:     { score: 3, maxScore: 25 },
-        assetReality:        { score: 3, maxScore: 30 },
-        tradingTrackRecord:  { score: 0, maxScore: 25 },
-        documentConsistency: { score: 1, maxScore: 10 },
-        communityReputation: { score: 0, maxScore: 10 },
-      },
-      riskLevel: 'critical' as const,
-    }
-  }
-
   const { authenticityScore, scoreBreakdown } = computeZefixScore(c, sanctionStatus)
 
   return {
     ...base,
     authenticityScore,
     scoreBreakdown,
-    riskLevel: 'medium' as const,
+    riskLevel: riskLevel(authenticityScore, sanctionStatus),
   }
 }
 
