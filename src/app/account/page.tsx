@@ -57,17 +57,19 @@ export default async function AccountPage() {
   })
 
   const card: React.CSSProperties = {
-    backgroundColor: 'var(--bg-surface)',
-    border: '1px solid var(--border-subtle)',
-    borderRadius: '12px',
-    padding: 'var(--space-6)',
+    backgroundColor: '#111113',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderTop: '1px solid rgba(255,255,255,0.09)',
+    borderRadius: '10px',
+    padding: '24px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
   }
 
   const sectionLabel: React.CSSProperties = {
-    color: 'var(--text-muted)',
+    color: '#55556a',
     fontSize: '11px',
     fontWeight: 600,
-    letterSpacing: '0.08em',
+    letterSpacing: '0.07em',
     textTransform: 'uppercase',
     marginBottom: '4px',
   }
@@ -79,7 +81,7 @@ export default async function AccountPage() {
       <div style={{ maxWidth: '580px', margin: '0 auto', padding: 'var(--space-12) var(--space-4)' }}>
         <h1 style={{
           fontSize: '20px', fontWeight: 600,
-          color: 'var(--text-primary)', marginBottom: 'var(--space-8)',
+          color: '#f1f1f3', marginBottom: 'var(--space-8)',
         }}>
           Account
         </h1>
@@ -100,7 +102,7 @@ export default async function AccountPage() {
             ) : (
               <div style={{
                 width: '48px', height: '48px', borderRadius: '50%',
-                backgroundColor: 'var(--accent-primary)', color: '#fff',
+                backgroundColor: '#6366f1', color: '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '16px', fontWeight: 600, flexShrink: 0,
               }}>
@@ -108,10 +110,10 @@ export default async function AccountPage() {
               </div>
             )}
             <div>
-              <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 500 }}>
+              <p style={{ color: '#f1f1f3', fontSize: '15px', fontWeight: 500 }}>
                 {user.name ?? 'User'}
               </p>
-              <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
+              <p style={{ color: '#55556a', fontSize: '13px', marginTop: '2px' }}>
                 {user.email}
               </p>
             </div>
@@ -120,13 +122,23 @@ export default async function AccountPage() {
           {/* Plan row */}
           <div style={{
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border-subtle)',
+            paddingTop: 'var(--space-4)', borderTop: '1px solid rgba(255,255,255,0.07)',
           }}>
             <div>
               <p style={sectionLabel}>Plan</p>
-              <p style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500 }}>
+              <span style={{
+                fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em',
+                textTransform: 'uppercase' as const,
+                color: '#6366f1',
+                backgroundColor: 'rgba(99,102,241,0.12)',
+                border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: '4px',
+                padding: '2px 8px',
+                display: 'inline-block',
+                marginTop: '4px',
+              }}>
                 {PLAN_LABEL[plan] ?? plan}
-              </p>
+              </span>
             </div>
 
             {isPaid ? (
@@ -134,14 +146,17 @@ export default async function AccountPage() {
                 <button
                   type="submit"
                   style={{
-                    backgroundColor: 'transparent',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: '6px',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
+                    padding: '8px 16px',
+                    background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+                    color: '#fff',
+                    border: '1px solid rgba(99,102,241,0.45)',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+                    borderRadius: '7px',
                     fontSize: '13px',
+                    fontWeight: 500,
                     fontFamily: 'inherit',
-                    padding: '6px 14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.12s ease',
                   }}
                 >
                   Manage billing
@@ -151,13 +166,17 @@ export default async function AccountPage() {
               <Link
                 href="/pricing"
                 style={{
-                  backgroundColor: 'var(--accent-primary)',
+                  display: 'inline-block',
+                  padding: '8px 16px',
+                  background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
                   color: '#fff',
+                  border: '1px solid rgba(99,102,241,0.45)',
+                  boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+                  borderRadius: '7px',
                   fontSize: '13px',
                   fontWeight: 500,
                   textDecoration: 'none',
-                  padding: '6px 14px',
-                  borderRadius: '6px',
+                  transition: 'all 0.12s ease',
                 }}
               >
                 Upgrade plan
@@ -171,7 +190,7 @@ export default async function AccountPage() {
           <p style={{ ...sectionLabel, marginBottom: 'var(--space-4)' }}>Usage this month</p>
 
           {isUnlimited ? (
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+            <p style={{ color: '#8b8b9a', fontSize: '14px' }}>
               Unlimited sanction checks included in your {PLAN_LABEL[plan]} plan.
             </p>
           ) : (
@@ -180,33 +199,34 @@ export default async function AccountPage() {
                 display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
                 marginBottom: 'var(--space-2)',
               }}>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Sanction checks</span>
-                <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>
+                <span style={{ color: '#8b8b9a', fontSize: '13px' }}>Sanction checks</span>
+                <span style={{ color: '#f1f1f3', fontSize: '13px', fontWeight: 500 }}>
                   {quota.used} / {quota.limit}
                 </span>
               </div>
 
               {/* Progress bar */}
               <div style={{
-                height: '6px',
-                backgroundColor: 'var(--bg-elevated)',
-                borderRadius: '999px',
-                marginBottom: 'var(--space-3)',
+                height: '4px',
+                background: 'rgba(0,0,0,0.35)',
+                borderRadius: '2px',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
                 overflow: 'hidden',
+                marginBottom: 'var(--space-3)',
               }}>
                 <div style={{
                   height: '100%',
                   width: `${usedPercent}%`,
-                  backgroundColor: usedPercent >= 100 ? 'var(--status-listed)' : 'var(--accent-primary)',
-                  borderRadius: '999px',
+                  background: usedPercent >= 100 ? '#ef4444' : '#6366f1',
+                  borderRadius: '2px',
                   transition: 'width 0.3s ease',
                 }} />
               </div>
 
-              <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+              <p style={{ color: '#55556a', fontSize: '12px' }}>
                 Resets {resetLabel}
                 {quota.remaining === 0 && (
-                  <span style={{ color: 'var(--status-listed)', marginLeft: '8px' }}>· limit reached</span>
+                  <span style={{ color: '#ef4444', marginLeft: '8px' }}>· limit reached</span>
                 )}
               </p>
 
@@ -218,9 +238,9 @@ export default async function AccountPage() {
                   borderRadius: '8px',
                   border: '1px solid rgba(239, 68, 68, 0.2)',
                 }}>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '20px' }}>
+                  <p style={{ color: '#8b8b9a', fontSize: '13px', lineHeight: '20px' }}>
                     All free checks used for this month.{' '}
-                    <Link href="/pricing" style={{ color: 'var(--accent-primary)' }}>
+                    <Link href="/pricing" style={{ color: '#6366f1' }}>
                       Upgrade to Starter
                     </Link>{' '}
                     for 100 checks/month.
