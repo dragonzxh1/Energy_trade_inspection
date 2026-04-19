@@ -1,13 +1,41 @@
-﻿'use client'
+'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import type { ScreeningReport, EntityScreeningResult, TradeAssessmentResult } from '@/app/api/screen/route'
 import type { RiskLevel } from '@/lib/types'
-import GlowLoader from '@/components/ui/GlowLoader'
 
-// 鈹€鈹€ Helpers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── TOKEN (all hardcoded values live here; never scatter magic strings) ──────
+const TOKEN = {
+  surface:      '#111113',
+  elevated:     '#1e1e24',
+  elevated2:    '#26262e',
+  border:       'rgba(255,255,255,0.07)',
+  borderHover:  'rgba(255,255,255,0.14)',
+  primary:      '#6366f1',
+  text:         '#f1f1f3',
+  textMuted:    '#8b8b9a',
+  textSubtle:   '#55556a',
+} as const
+
+// ── Secondary button style ────────────────────────────────────────────────────
+const secondaryBtnStyle: React.CSSProperties = {
+  background: '#1e1e24',
+  color: '#8b8b9a',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '7px',
+  padding: '6px 14px',
+  fontSize: '13px',
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+  transition: 'all 0.12s ease',
+  textDecoration: 'none',
+  display: 'inline-block',
+}
+
+// ── Design tokens ─────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<RiskLevel, string> = {
   critical: '#ef4444',
@@ -43,211 +71,6 @@ const TYPE_LABEL: Record<string, string> = {
   vessel:  'Vessel',
 }
 
-function fmt(iso: string) {
-  try {
-    return new Date(iso).toLocaleString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-    })
-  } catch {
-    return iso
-  }
-}
-
-// 鈹€鈹€ Sanction badge 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-function SanctionBadge({ status }: { status: string }) {
-  const color =
-    status === 'listed'     ? '#ef4444' :
-    status === 'not_listed' ? '#22c55e' : 'var(--text-muted)'
-  const label =
-    status === 'listed'     ? 'SANCTIONED' :
-    status === 'not_listed' ? 'CLEAR'      : 'UNKNOWN'
-
-  return (
-    <span
-      style={{
-        fontSize: '10px',
-        fontWeight: 700,
-        letterSpacing: '0.05em',
-        color,
-        backgroundColor: `${color}18`,
-        border: `1px solid ${color}44`,
-        borderRadius: '4px',
-        padding: '2px 7px',
-      }}
-    >
-      {label}
-    </span>
-  )
-}
-
-// 鈹€鈹€ Risk badge 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-function RiskBadge({ level }: { level: RiskLevel }) {
-  return (
-    <span
-      style={{
-        fontSize: '10px',
-        fontWeight: 700,
-        letterSpacing: '0.05em',
-        color: RISK_COLOR[level],
-        backgroundColor: RISK_BG[level],
-        border: `1px solid ${RISK_BORDER[level]}`,
-        borderRadius: '4px',
-        padding: '2px 7px',
-      }}
-    >
-      {RISK_LABEL[level]}
-    </span>
-  )
-}
-
-// 鈹€鈹€ Entity result card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-function EntityCard({ result }: { result: EntityScreeningResult }) {
-  const { extracted, sanctionStatus, dbEntity, icijConnections, pscDeficiencyRate, riskLevel, needsManualReview } =
-    result
-  const icijCount = icijConnections?.length ?? 0
-  const href =
-    extracted.type === 'vessel' && (extracted.imo || dbEntity?.imo)
-      ? `/vessel/${extracted.imo ?? dbEntity?.imo}`
-      : extracted.type === 'company' && dbEntity?.slug
-      ? `/company/${dbEntity.slug}`
-      : null
-
-  return (
-    <div
-      style={{
-        backgroundColor: 'var(--bg-surface)',
-        borderRadius: '8px',
-        border: `1px solid ${
-          riskLevel === 'critical' ? RISK_BORDER.critical :
-          riskLevel === 'high'     ? RISK_BORDER.high     :
-          'var(--border-subtle)'
-        }`,
-        padding: 'var(--space-4)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-2)',
-      }}
-    >
-      {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          {/* Type pill */}
-          <span
-            style={{
-              fontSize: '10px',
-              fontWeight: 600,
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase' as const,
-              color: 'var(--text-muted)',
-              backgroundColor: 'var(--bg-elevated)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '4px',
-              padding: '1px 6px',
-              marginBottom: '6px',
-              display: 'inline-block',
-            }}
-          >
-            {TYPE_LABEL[extracted.type] ?? extracted.type}
-          </span>
-          {/* Name */}
-          <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-            {href ? (
-              <Link href={href} style={{ color: 'var(--text-primary)', textDecoration: 'none' }}>
-                  {extracted.name} →
-                </Link>
-            ) : (
-              extracted.name
-            )}
-          </div>
-          {/* Sub-info */}
-          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' as const, fontSize: '12px', color: 'var(--text-muted)' }}>
-            {extracted.imo && <span>IMO {extracted.imo}</span>}
-            {extracted.passport && <span>Passport: {extracted.passport}</span>}
-            {dbEntity && (
-              <span style={{ color: 'var(--text-secondary)' }}>
-                {dbEntity.jurisdictionFlag} {dbEntity.country}
-              </span>
-            )}
-          </div>
-        </div>
-        {/* Badges */}
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '6px', alignItems: 'flex-end', flexShrink: 0 }}>
-          <RiskBadge level={riskLevel} />
-          <SanctionBadge status={sanctionStatus} />
-        </div>
-      </div>
-
-      {/* Flags row */}
-      {(icijCount > 0 || pscDeficiencyRate != null) && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 'var(--space-3)',
-            flexWrap: 'wrap' as const,
-            paddingTop: 'var(--space-2)',
-            borderTop: '1px solid var(--border-subtle)',
-          }}
-        >
-          {icijCount > 0 && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12px', color: '#eab308' }}>
-                  ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
-              </span>
-              {needsManualReview && (
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    letterSpacing: '0.04em',
-                    color: '#eab308',
-                    backgroundColor: 'rgba(234,179,8,0.12)',
-                    border: '1px solid rgba(234,179,8,0.35)',
-                    borderRadius: '4px',
-                    padding: '1px 6px',
-                  }}
-                >
-                  VERIFY MANUALLY
-                </span>
-              )}
-            </span>
-          )}
-          {pscDeficiencyRate != null && (
-            <span
-              style={{
-                fontSize: '12px',
-                color: pscDeficiencyRate > 0.3 ? '#f97316' : 'var(--text-muted)',
-              }}
-            >
-              PSC deficiency rate: {Math.round(pscDeficiencyRate * 100)}%
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Context excerpt */}
-      {extracted.context && (
-        <p
-          style={{
-            fontSize: '11px',
-            color: 'var(--text-muted)',
-            fontStyle: 'italic',
-            margin: 0,
-            paddingTop: 'var(--space-1)',
-          }}
-        >
-          &ldquo;{extracted.context}&rdquo;
-        </p>
-      )}
-    </div>
-  )
-}
-
-// 鈹€鈹€ Trade assessment card 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
 const FLAG_LABEL: Record<string, string> = {
   NO_REGISTRY_MATCH:          'No Registry Match',
   SANCTION_EXPOSURE:          'Sanction Exposure',
@@ -262,66 +85,267 @@ const FLAG_LABEL: Record<string, string> = {
   OFFSHORE_HOLDING_STRUCTURE: 'Offshore Holding Structure',
 }
 
+function fmt(iso: string) {
+  try {
+    return new Date(iso).toLocaleString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    })
+  } catch {
+    return iso
+  }
+}
+
+// ── panelState type ───────────────────────────────────────────────────────────
+type PanelState = 'upload' | 'loading' | 'result' | 'error'
+
+// ── LoadingView (inline progress bar, replaces GlowLoader) ───────────────────
+
+function LoadingView({ filename, step }: { filename: string; step: string }) {
+  const barRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (barRef.current) barRef.current.style.width = '100%'
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      minHeight: '400px', gap: '16px',
+    }}>
+      <p style={{ fontSize: '14px', color: TOKEN.textMuted, margin: 0 }}>{step}</p>
+      <div style={{
+        width: '200px', height: '4px',
+        background: 'rgba(0,0,0,0.35)',
+        borderRadius: '2px', overflow: 'hidden',
+      }}>
+        <div ref={barRef} style={{
+          height: '100%', background: TOKEN.primary,
+          width: '0%', transition: 'width 1.4s ease',
+        }} />
+      </div>
+      <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>{filename}</p>
+    </div>
+  )
+}
+
+// ── Upload empty state (right panel) ─────────────────────────────────────────
+
+function UploadEmptyState() {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      minHeight: '400px', textAlign: 'center', gap: '12px',
+    }}>
+      <div style={{ fontSize: '28px', color: TOKEN.textSubtle }}>📄</div>
+      <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
+        Upload a document to see screening results
+      </p>
+      <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>
+        Parties are extracted automatically
+      </p>
+    </div>
+  )
+}
+
+// ── Sanction badge ────────────────────────────────────────────────────────────
+
+function SanctionBadge({ status }: { status: string }) {
+  const color =
+    status === 'listed'     ? '#ef4444' :
+    status === 'not_listed' ? '#22c55e' : TOKEN.textMuted
+  const label =
+    status === 'listed'     ? 'SANCTIONED' :
+    status === 'not_listed' ? 'CLEAR'      : 'UNKNOWN'
+
+  return (
+    <span style={{
+      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
+      color, backgroundColor: `${color}18`, border: `1px solid ${color}44`,
+      borderRadius: '4px', padding: '2px 7px',
+    }}>
+      {label}
+    </span>
+  )
+}
+
+// ── Risk badge ────────────────────────────────────────────────────────────────
+
+function RiskBadge({ level }: { level: RiskLevel }) {
+  return (
+    <span style={{
+      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
+      color: RISK_COLOR[level],
+      backgroundColor: RISK_BG[level],
+      border: `1px solid ${RISK_BORDER[level]}`,
+      borderRadius: '4px', padding: '2px 7px',
+    }}>
+      {RISK_LABEL[level]}
+    </span>
+  )
+}
+
+// ── Entity result card ────────────────────────────────────────────────────────
+
+function EntityCard({ result }: { result: EntityScreeningResult }) {
+  const { extracted, sanctionStatus, dbEntity, icijConnections, pscDeficiencyRate, riskLevel, needsManualReview } =
+    result
+  const icijCount = icijConnections?.length ?? 0
+  const href =
+    extracted.type === 'vessel' && (extracted.imo || dbEntity?.imo)
+      ? `/vessel/${extracted.imo ?? dbEntity?.imo}`
+      : extracted.type === 'company' && dbEntity?.slug
+      ? `/company/${dbEntity.slug}`
+      : null
+
+  return (
+    <div style={{
+      backgroundColor: TOKEN.elevated,
+      borderRadius: '8px',
+      border: `1px solid ${
+        riskLevel === 'critical' ? RISK_BORDER.critical :
+        riskLevel === 'high'     ? RISK_BORDER.high     :
+        TOKEN.border
+      }`,
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+    }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          {/* Type pill */}
+          <span style={{
+            fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
+            textTransform: 'uppercase' as const,
+            color: TOKEN.textMuted,
+            backgroundColor: TOKEN.elevated2,
+            border: `1px solid ${TOKEN.border}`,
+            borderRadius: '4px', padding: '1px 6px',
+            marginBottom: '6px', display: 'inline-block',
+          }}>
+            {TYPE_LABEL[extracted.type] ?? extracted.type}
+          </span>
+          {/* Name */}
+          <div style={{ fontSize: '14px', fontWeight: 600, color: TOKEN.text, marginBottom: '4px' }}>
+            {href ? (
+              <Link href={href} style={{ color: TOKEN.text, textDecoration: 'none' }}>
+                {extracted.name} →
+              </Link>
+            ) : (
+              extracted.name
+            )}
+          </div>
+          {/* Sub-info */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' as const, fontSize: '12px', color: TOKEN.textMuted }}>
+            {extracted.imo && <span>IMO {extracted.imo}</span>}
+            {extracted.passport && <span>Passport: {extracted.passport}</span>}
+            {dbEntity && (
+              <span style={{ color: TOKEN.textMuted }}>
+                {dbEntity.jurisdictionFlag} {dbEntity.country}
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Badges */}
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '6px', alignItems: 'flex-end', flexShrink: 0 }}>
+          <RiskBadge level={riskLevel} />
+          <SanctionBadge status={sanctionStatus} />
+        </div>
+      </div>
+
+      {/* Flags row */}
+      {(icijCount > 0 || pscDeficiencyRate != null) && (
+        <div style={{
+          display: 'flex', gap: '12px', flexWrap: 'wrap' as const,
+          paddingTop: '8px', borderTop: `1px solid ${TOKEN.border}`,
+        }}>
+          {icijCount > 0 && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '12px', color: '#eab308' }}>
+                ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
+              </span>
+              {needsManualReview && (
+                <span style={{
+                  fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em',
+                  color: '#eab308', backgroundColor: 'rgba(234,179,8,0.12)',
+                  border: '1px solid rgba(234,179,8,0.35)',
+                  borderRadius: '4px', padding: '1px 6px',
+                }}>
+                  VERIFY MANUALLY
+                </span>
+              )}
+            </span>
+          )}
+          {pscDeficiencyRate != null && (
+            <span style={{
+              fontSize: '12px',
+              color: pscDeficiencyRate > 0.3 ? '#f97316' : TOKEN.textMuted,
+            }}>
+              PSC deficiency rate: {Math.round(pscDeficiencyRate * 100)}%
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Context excerpt */}
+      {extracted.context && (
+        <p style={{
+          fontSize: '11px', color: TOKEN.textMuted, fontStyle: 'italic',
+          margin: 0, paddingTop: '4px',
+        }}>
+          &ldquo;{extracted.context}&rdquo;
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ── Trade assessment card ─────────────────────────────────────────────────────
+
 function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult }) {
   const { params, flags, overallRisk: risk, summary } = assessment
 
   return (
-    <div
-      style={{
-        backgroundColor: RISK_BG[risk],
-        border: `1px solid ${RISK_BORDER[risk]}`,
-        borderRadius: '10px',
-        padding: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-      }}
-    >
+    <div style={{
+      backgroundColor: RISK_BG[risk],
+      border: `1px solid ${RISK_BORDER[risk]}`,
+      borderRadius: '10px',
+      padding: '20px',
+      marginBottom: '24px',
+    }}>
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
-        }}
-      >
-        <p
-          style={{
-            fontSize: '11px',
-            fontWeight: 600,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            margin: 0,
-            flex: 1,
-          }}
-        >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <p style={{
+          fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
+          textTransform: 'uppercase', color: TOKEN.textMuted,
+          margin: 0, flex: 1,
+        }}>
           Trade Assessment
         </p>
-        <span
-          style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            color: RISK_COLOR[risk],
-            backgroundColor: `${RISK_COLOR[risk]}18`,
-            border: `1px solid ${RISK_COLOR[risk]}44`,
-            borderRadius: '4px',
-            padding: '2px 8px',
-          }}
-        >
+        <span style={{
+          fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
+          color: RISK_COLOR[risk],
+          backgroundColor: `${RISK_COLOR[risk]}18`,
+          border: `1px solid ${RISK_COLOR[risk]}44`,
+          borderRadius: '4px', padding: '2px 8px',
+        }}>
           {RISK_LABEL[risk]}
         </span>
       </div>
 
       {/* Extracted trade parameters */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-          gap: 'var(--space-3)',
-          marginBottom: 'var(--space-4)',
-        }}
-      >
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+        gap: '12px', marginBottom: '16px',
+      }}>
         {[
           { label: 'Seller',    value: params.seller },
           { label: 'Vessel',    value: params.vessel },
@@ -331,18 +355,11 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
         ]
           .filter((f) => f.value)
           .map(({ label, value }) => (
-            <div
-              key={label}
-              style={{
-                backgroundColor: 'var(--bg-elevated)',
-                borderRadius: '6px',
-                padding: 'var(--space-3)',
-              }}
-            >
-              <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            <div key={label} style={{ backgroundColor: TOKEN.elevated, borderRadius: '6px', padding: '12px' }}>
+              <p style={{ fontSize: '10px', color: TOKEN.textMuted, marginBottom: '3px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 {label}
               </p>
-              <p style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <p style={{ fontSize: '12px', color: TOKEN.text, fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {value}
               </p>
             </div>
@@ -350,57 +367,35 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
       </div>
 
       {/* Summary */}
-      <p
-        style={{
-          fontSize: '13px',
-          color: 'var(--text-secondary)',
-          lineHeight: '20px',
-          marginBottom: flags.length > 0 ? 'var(--space-4)' : 0,
-        }}
-      >
+      <p style={{ fontSize: '13px', color: TOKEN.textMuted, lineHeight: '20px', marginBottom: flags.length > 0 ? '16px' : 0 }}>
         {summary}
       </p>
 
       {/* Flags */}
       {flags.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {flags.map((flag, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                gap: 'var(--space-3)',
-                padding: 'var(--space-3)',
-                backgroundColor: 'var(--bg-elevated)',
-                borderRadius: '6px',
-                borderLeft: `3px solid ${RISK_COLOR[flag.severity]}`,
-              }}
-            >
+            <div key={i} style={{
+              display: 'flex', gap: '12px', padding: '12px',
+              backgroundColor: TOKEN.elevated, borderRadius: '6px',
+              borderLeft: `3px solid ${RISK_COLOR[flag.severity]}`,
+            }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: '4px' }}>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      color: RISK_COLOR[flag.severity],
-                      letterSpacing: '0.04em',
-                    }}
-                  >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 700,
+                    color: RISK_COLOR[flag.severity], letterSpacing: '0.04em',
+                  }}>
                     {flag.severity.toUpperCase()}
                   </span>
-                  <span
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 600,
-                      color: 'var(--text-muted)',
-                      fontFamily: 'var(--font-mono, monospace)',
-                      letterSpacing: '0.03em',
-                    }}
-                  >
+                  <span style={{
+                    fontSize: '10px', fontWeight: 600, color: TOKEN.textMuted,
+                    fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.03em',
+                  }}>
                     {FLAG_LABEL[flag.code] ?? flag.code}
                   </span>
                 </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: '18px' }}>
+                <p style={{ fontSize: '12px', color: TOKEN.textMuted, margin: 0, lineHeight: '18px' }}>
                   {flag.reason}
                 </p>
               </div>
@@ -410,21 +405,14 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
       )}
 
       {/* AIS disclaimer */}
-      <p
-        style={{
-          fontSize: '11px',
-          color: 'var(--text-muted)',
-          marginTop: 'var(--space-3)',
-          opacity: 0.7,
-        }}
-      >
+      <p style={{ fontSize: '11px', color: TOKEN.textMuted, marginTop: '12px', opacity: 0.7 }}>
         AIS tracking and draft risk not checked in screening mode. Run a full trade check for complete verification.
       </p>
     </div>
   )
 }
 
-// 鈹€鈹€ Overall risk banner 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Overall risk banner ───────────────────────────────────────────────────────
 
 function OverallRiskBanner({ report }: { report: ScreeningReport }) {
   const { overallRisk, entities, filename, screenedAt, tradeAssessment } = report
@@ -434,7 +422,6 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
   const highRiskCount = entities.filter((e) => e.riskLevel === 'high' || e.riskLevel === 'critical').length
   const fraudCount    = entities.filter((e) => (e.fraudAlerts?.length ?? 0) > 0).length
 
-  // Build a specific reason string so users understand what drove the overall score.
   function buildReason(): string {
     if (listedCount > 0)
       return `${listedCount} sanctioned entit${listedCount !== 1 ? 'ies' : 'y'} detected`
@@ -447,32 +434,27 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
     return 'Review entity profiles below'
   }
 
-  // Detect trade/entity disagreement: trade says low but entities drove a higher score.
   const tradeRisk = tradeAssessment?.overallRisk
   const entityDrivenRisk = (overallRisk === 'high' || overallRisk === 'critical') &&
     (tradeRisk === 'low' || tradeRisk === 'medium')
 
   return (
-    <div
-      style={{
-        backgroundColor: RISK_BG[overallRisk],
-        border: `1px solid ${RISK_BORDER[overallRisk]}`,
-        borderRadius: '10px',
-        padding: 'var(--space-5)',
-        marginBottom: 'var(--space-6)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+    <div style={{
+      backgroundColor: RISK_BG[overallRisk],
+      border: `1px solid ${RISK_BORDER[overallRisk]}`,
+      borderRadius: '10px', padding: '20px', marginBottom: '24px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
         <span style={{ fontSize: '20px', fontWeight: 700, color: RISK_COLOR[overallRisk] }}>
           {RISK_LABEL[overallRisk]}
         </span>
-        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-primary)' }}>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: TOKEN.text }}>
           {buildReason()}
         </span>
       </div>
-      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: '12px', color: TOKEN.textMuted }}>
         {entities.length} entit{entities.length !== 1 ? 'ies' : 'y'} extracted from{' '}
-        <strong style={{ color: 'var(--text-secondary)' }}>{filename}</strong>
+        <strong style={{ color: TOKEN.textMuted }}>{filename}</strong>
         {' '}· Screened {fmt(screenedAt)}
         {listedCount > 0 && (
           <span style={{ color: '#ef4444', marginLeft: '8px' }}>
@@ -485,13 +467,10 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
           </span>
         )}
       </div>
-      {/* Explain the discrepancy when trade assessment and entity risk disagree */}
       {entityDrivenRisk && (
         <p style={{
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          marginTop: 'var(--space-3)',
-          paddingTop: 'var(--space-3)',
+          fontSize: '12px', color: TOKEN.textMuted,
+          marginTop: '12px', paddingTop: '12px',
           borderTop: `1px solid ${RISK_BORDER[overallRisk]}`,
           lineHeight: '18px',
         }}>
@@ -504,27 +483,109 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
   )
 }
 
-// 鈹€鈹€ Loading state 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Result view (right panel) ─────────────────────────────────────────────────
 
-const LOADING_STEPS = [
-  { keyword: 'Parsing',    label: 'Parsing document...' },
-  { keyword: 'Extracting', label: 'Extracting entities with AI...' },
-  { keyword: 'Analyzing',  label: 'Extracting trade parameters...' },
-  { keyword: 'Screening',  label: 'Screening against sanctions lists...' },
-  { keyword: 'Checking',   label: 'Checking ICIJ offshore leaks database...' },
-  { keyword: 'Running',    label: 'Running trade rules engine...' },
-]
-
-function LoadingView({ filename }: { filename: string }) {
+function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () => void }) {
   return (
-    <GlowLoader
-      steps={LOADING_STEPS}
-      subtext={filename}
-    />
+    <>
+      <OverallRiskBanner report={report} />
+
+      {/* Actions */}
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: '20px',
+      }}>
+        <p style={{ fontSize: '13px', color: TOKEN.textMuted, margin: 0 }}>
+          {report.entities.length} entit{report.entities.length !== 1 ? 'ies' : 'y'} found and screened
+        </p>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button onClick={onReset} style={secondaryBtnStyle}>
+            Screen another
+          </button>
+          <a
+            href={`/api/screen/report?sessionId=${report.id}`}
+            style={{
+              ...secondaryBtnStyle,
+              background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+              color: '#fff',
+              border: '1px solid rgba(99,102,241,0.45)',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+            }}
+          >
+            Download PDF Report
+          </a>
+        </div>
+      </div>
+
+      {/* Trade assessment shown above entity list when trade params were extracted */}
+      {report.tradeAssessment && (
+        <TradeAssessmentCard assessment={report.tradeAssessment} />
+      )}
+
+      {/* Entity list */}
+      <p style={{
+        fontSize: '11px', fontWeight: 600, letterSpacing: '0.07em',
+        textTransform: 'uppercase', color: TOKEN.textSubtle,
+        marginBottom: '12px',
+      }}>
+        Entities Screened ({report.entities.length})
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {report.entities.map((result, i) => (
+          <EntityCard key={i} result={result} />
+        ))}
+      </div>
+
+      {/* Bottom download CTA */}
+      <div style={{
+        marginTop: '32px', textAlign: 'center', padding: '24px',
+        backgroundColor: TOKEN.elevated,
+        borderRadius: '10px', border: `1px solid ${TOKEN.border}`,
+      }}>
+        <p style={{ fontSize: '13px', color: TOKEN.textMuted, marginBottom: '12px' }}>
+          Download a formatted PDF compliance report for your records.
+        </p>
+        <a
+          href={`/api/screen/report?sessionId=${report.id}`}
+          style={{
+            fontSize: '14px', fontWeight: 600, color: '#fff',
+            background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+            borderRadius: '7px', padding: '10px 24px',
+            textDecoration: 'none', display: 'inline-block',
+            border: '1px solid rgba(99,102,241,0.45)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+          }}
+        >
+          Download PDF Report
+        </a>
+      </div>
+    </>
   )
 }
 
-// 鈹€鈹€ Upload zone 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ── Error view (right panel) ──────────────────────────────────────────────────
+
+function ErrorView({ message, onReset }: { message: string; onReset: () => void }) {
+  return (
+    <div style={{ padding: '32px 0' }}>
+      <div style={{
+        backgroundColor: 'rgba(239,68,68,0.08)',
+        border: '1px solid rgba(239,68,68,0.25)',
+        borderRadius: '8px', padding: '20px', marginBottom: '16px',
+      }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444', marginBottom: '8px' }}>
+          Screening failed
+        </p>
+        <p style={{ fontSize: '13px', color: TOKEN.textMuted, margin: 0 }}>{message}</p>
+      </div>
+      <button onClick={onReset} style={secondaryBtnStyle}>
+        Try another file
+      </button>
+    </div>
+  )
+}
+
+// ── Upload zone (left panel) ──────────────────────────────────────────────────
 
 function UploadZone({
   onFile,
@@ -548,13 +609,16 @@ function UploadZone({
       onDrop={onDrop}
       onClick={() => inputRef.current?.click()}
       style={{
-        border: `2px dashed ${isDragging ? 'var(--accent-primary)' : 'var(--border-subtle)'}`,
-        borderRadius: '12px',
-        padding: 'var(--space-12) var(--space-6)',
+        border: `1.5px dashed ${isDragging ? TOKEN.primary : 'rgba(255,255,255,0.12)'}`,
+        borderRadius: '10px',
+        minHeight: '160px',
+        padding: '32px 24px',
         textAlign: 'center',
         cursor: 'pointer',
-        backgroundColor: isDragging ? 'rgba(59,130,246,0.05)' : 'var(--bg-surface)',
+        backgroundColor: isDragging ? 'rgba(99,102,241,0.08)' : 'rgba(0,0,0,0.2)',
         transition: 'all 0.15s ease',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: '8px',
       }}
     >
       <input
@@ -567,42 +631,29 @@ function UploadZone({
           if (f) onFile(f)
         }}
       />
-              <div style={{ fontSize: '32px', marginBottom: 'var(--space-3)' }}>📄</div>
-      <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: 'var(--space-2)' }}>
-        Drop your contract here or click to upload
+      <div style={{ fontSize: '28px', color: isDragging ? TOKEN.primary : TOKEN.textSubtle }}>📄</div>
+      <p style={{ fontSize: '14px', fontWeight: 500, color: TOKEN.textMuted, margin: 0 }}>
+        Drop file here or click to browse
       </p>
-      <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: 'var(--space-4)' }}>
-              PDF, DOCX, or XLSX · Max 10 MB
+      <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>
+        PDF, DOCX, or XLSX · Max 10 MB
       </p>
-      <span
-        style={{
-          display: 'inline-block',
-          fontSize: '13px',
-          fontWeight: 500,
-          color: 'var(--accent-primary)',
-          backgroundColor: 'rgba(59,130,246,0.1)',
-          border: '1px solid rgba(59,130,246,0.3)',
-          borderRadius: '6px',
-          padding: '6px 16px',
-        }}
-      >
-        Select file
-      </span>
     </div>
   )
 }
 
-// 鈹€鈹€ Main component 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-type ViewState = 'upload' | 'loading' | 'results' | 'error'
+// ── Main component ────────────────────────────────────────────────────────────
 
 export default function ScreenClient({ initialSessionId }: { initialSessionId?: string }) {
-  const router                  = useRouter()
-  const [view, setView]         = useState<ViewState>('upload')
-  const [isDragging, setIsDrag] = useState(false)
-  const [filename, setFilename] = useState('')
-  const [report, setReport]     = useState<ScreeningReport | null>(null)
-  const [error, setError]       = useState('')
+  const router                        = useRouter()
+  const [panelState, setPanelState]   = useState<PanelState>('upload')
+  const [isDragging, setIsDrag]       = useState(false)
+  const [file, setFile]               = useState<File | null>(null)
+  const [report, setReport]           = useState<ScreeningReport | null>(null)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [loadingStep, setLoadingStep] = useState('Uploading\u2026')
+  const [isPrimaryHover, setIsPrimaryHover] = useState(false)
+  const [includeTradeAssessment, setIncludeTradeAssessment] = useState(true)
 
   // Restore a previous session on page load (e.g. when navigating back).
   useEffect(() => {
@@ -612,41 +663,45 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
       .then((data) => {
         if (data) {
           setReport(data as ScreeningReport)
-          setView('results')
+          setPanelState('result')
         }
       })
       .catch(() => {})
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialSessionId])
 
-  const handleFile = useCallback(async (file: File) => {
-    setFilename(file.name)
-    setView('loading')
-    setError('')
+  const handleFile = useCallback(async (f: File) => {
+    setFile(f)
+    setPanelState('loading')
+    setLoadingStep('Uploading\u2026')
+    setErrorMessage('')
 
     const form = new FormData()
-    form.append('file', file)
+    form.append('file', f)
+    if (!includeTradeAssessment) form.append('skipTradeAssessment', '1')
 
     try {
+      setLoadingStep('Extracting parties\u2026')
       const res = await fetch('/api/screen', { method: 'POST', body: form })
+      setLoadingStep('Screening entities\u2026')
       const json = await res.json()
 
       if (!res.ok) {
-        setError((json as { error?: string }).error ?? 'Screening failed.')
-        setView('error')
+        setErrorMessage((json as { error?: string }).error ?? 'Screening failed.')
+        setPanelState('error')
         return
       }
 
       const data = json as ScreeningReport
       setReport(data)
-      setView('results')
+      setPanelState('result')
       // Write sessionId into the URL so the user can navigate away and return.
       router.replace(`/screen?sessionId=${encodeURIComponent(data.id)}`)
     } catch {
-      setError('Network error. Please try again.')
-      setView('error')
+      setErrorMessage('Network error. Please try again.')
+      setPanelState('error')
     }
-  }, [router])
+  }, [router, includeTradeAssessment])
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -659,35 +714,48 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDrag(false)
-      const file = e.dataTransfer.files[0]
-      if (file) handleFile(file)
+      const f = e.dataTransfer.files[0]
+      if (f) handleFile(f)
     },
     [handleFile]
   )
 
-  return (
-    <div style={{ maxWidth: '720px', margin: '0 auto' }}>
-      {/* 鈹€鈹€ Page heading 鈹€鈹€ */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <h1
-          style={{
-            fontSize: '24px',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            marginBottom: 'var(--space-2)',
-          }}
-        >
-          Document Screening
-        </h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-          Upload a trade contract to automatically extract counterparties, directors,
-              and vessels — then screen them all against sanctions lists and ICIJ offshore
-          leak data in one step.
-        </p>
-      </div>
+  const handleReset = useCallback(() => {
+    setFile(null)
+    setReport(null)
+    setPanelState('upload')
+    router.replace('/screen')
+  }, [router])
 
-      {/* 鈹€鈹€ Upload state 鈹€鈹€ */}
-      {view === 'upload' && (
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault()
+    if (file && panelState !== 'loading') handleFile(file)
+  }, [file, panelState, handleFile])
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '420px 1fr',
+      minHeight: 'calc(100vh - 44px)',
+    }}>
+      {/* LEFT: upload zone + options */}
+      <div style={{
+        borderRight: `1px solid ${TOKEN.border}`,
+        padding: '32px 24px',
+        overflowY: 'auto',
+        background: TOKEN.surface,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+      }}>
+        <h2 style={{
+          fontSize: '11px', color: TOKEN.textSubtle,
+          textTransform: 'uppercase', letterSpacing: '0.07em',
+          margin: 0,
+        }}>
+          Screen Document
+        </h2>
+
         <UploadZone
           onFile={handleFile}
           isDragging={isDragging}
@@ -695,161 +763,70 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
           onDragLeave={onDragLeave}
           onDrop={onDrop}
         />
-      )}
 
-      {/* 鈹€鈹€ Loading state 鈹€鈹€ */}
-      {view === 'loading' && <LoadingView filename={filename} />}
-
-      {/* 鈹€鈹€ Error state 鈹€鈹€ */}
-      {view === 'error' && (
-        <div
-          style={{
-            backgroundColor: 'rgba(239,68,68,0.08)',
-            border: '1px solid rgba(239,68,68,0.25)',
-            borderRadius: '8px',
-            padding: 'var(--space-5)',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444', marginBottom: 'var(--space-2)' }}>
-            Screening failed
+        {file && (
+          <p style={{ fontSize: '12px', color: TOKEN.textMuted, margin: 0 }}>
+            Selected: {file.name}
           </p>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>{error}</p>
-        </div>
-      )}
-      {view === 'error' && (
-        <button
-          onClick={() => { setView('upload'); setReport(null); router.replace('/screen') }}
-          style={{
-            fontSize: '13px',
-            fontWeight: 500,
-            color: 'var(--accent-primary)',
-            backgroundColor: 'transparent',
-            border: '1px solid var(--accent-primary)',
-            borderRadius: '6px',
-            padding: '6px 16px',
-            cursor: 'pointer',
-          }}
-        >
-          Try another file
-        </button>
-      )}
+        )}
 
-      {/* 鈹€鈹€ Results state 鈹€鈹€ */}
-      {view === 'results' && report && (
-        <>
-          {/* Overall risk banner */}
-          <OverallRiskBanner report={report} />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Options */}
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            fontSize: '13px', color: TOKEN.textMuted, cursor: 'pointer',
+          }}>
+            <input
+              type="checkbox"
+              checked={includeTradeAssessment}
+              onChange={(e) => setIncludeTradeAssessment(e.target.checked)}
+              style={{ accentColor: TOKEN.primary }}
+            />
+            Include trade assessment
+          </label>
 
-          {/* Actions */}
-          <div
+          <button
+            type="submit"
+            disabled={!file || panelState === 'loading'}
+            onMouseEnter={() => setIsPrimaryHover(true)}
+            onMouseLeave={() => setIsPrimaryHover(false)}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 'var(--space-5)',
+              width: '100%',
+              padding: '11px 0',
+              background: isPrimaryHover
+                ? 'linear-gradient(180deg, #818cf8 0%, #6366f1 100%)'
+                : 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+              color: '#fff',
+              border: '1px solid rgba(99,102,241,0.45)',
+              boxShadow: isPrimaryHover
+                ? '0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35)'
+                : '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+              borderRadius: '7px', fontSize: '13px', fontWeight: 500,
+              fontFamily: 'inherit',
+              cursor: !file || panelState === 'loading' ? 'not-allowed' : 'pointer',
+              transition: 'all 0.12s ease',
+              transform: isPrimaryHover && !!file && panelState !== 'loading' ? 'translateY(-1px)' : 'none',
+              opacity: !file ? 0.5 : 1,
             }}
           >
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-              {report.entities.length} entit{report.entities.length !== 1 ? 'ies' : 'y'} found and screened
-            </p>
-            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-              <button
-                onClick={() => { setView('upload'); setReport(null); router.replace('/screen') }}
-                style={{
-                  fontSize: '13px',
-                  color: 'var(--text-muted)',
-                  backgroundColor: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '6px',
-                  padding: '6px 14px',
-                  cursor: 'pointer',
-                }}
-              >
-                Screen another
-              </button>
-              <a
-                href={`/api/screen/report?sessionId=${report.id}`}
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: '#fff',
-                  backgroundColor: 'var(--accent-primary)',
-                  border: '1px solid var(--accent-primary)',
-                  borderRadius: '6px',
-                  padding: '6px 14px',
-                  textDecoration: 'none',
-                  display: 'inline-block',
-                }}
-              >
-                Download PDF Report
-              </a>
-            </div>
-          </div>
+            {panelState === 'loading' ? 'Screening\u2026' : 'Screen Document \u2192'}
+          </button>
+        </form>
+      </div>
 
-            {/* Trade assessment shown above the entity list when trade params were extracted. */}
-          {report.tradeAssessment && (
-            <TradeAssessmentCard assessment={report.tradeAssessment} />
-          )}
-
-          {/* Entity list */}
-          <p
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              color: 'var(--text-muted)',
-              marginBottom: 'var(--space-3)',
-            }}
-          >
-            Entities Screened ({report.entities.length})
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-            {report.entities.map((result, i) => (
-              <EntityCard key={i} result={result} />
-            ))}
-          </div>
-
-          {/* Bottom download CTA */}
-          <div
-            style={{
-              marginTop: 'var(--space-8)',
-              textAlign: 'center',
-              padding: 'var(--space-6)',
-              backgroundColor: 'var(--bg-surface)',
-              borderRadius: '10px',
-              border: '1px solid var(--border-subtle)',
-            }}
-          >
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: 'var(--space-3)' }}>
-              Download a formatted PDF compliance report for your records.
-            </p>
-            <a
-              href={`/api/screen/report?sessionId=${report.id}`}
-              style={{
-                fontSize: '14px',
-                fontWeight: 600,
-                color: '#fff',
-                backgroundColor: 'var(--accent-primary)',
-                borderRadius: '8px',
-                padding: '10px 24px',
-                textDecoration: 'none',
-                display: 'inline-block',
-              }}
-            >
-              Download PDF Report
-            </a>
-          </div>
-        </>
-      )}
-
-      {/* Spin keyframe injected inline via the style tag. */}
-      {view === 'loading' && (
-        // eslint-disable-next-line react/no-danger
-        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
-      )}
+      {/* RIGHT: upload / loading / result / error */}
+      <div style={{ padding: '32px', overflowY: 'auto' }}>
+        {panelState === 'upload' && <UploadEmptyState />}
+        {panelState === 'loading' && (
+          <LoadingView filename={file?.name ?? ''} step={loadingStep} />
+        )}
+        {panelState === 'result' && report && (
+          <ResultView report={report} onReset={handleReset} />
+        )}
+        {panelState === 'error' && (
+          <ErrorView message={errorMessage} onReset={handleReset} />
+        )}
+      </div>
     </div>
   )
 }
-

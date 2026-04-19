@@ -36,13 +36,7 @@ export default async function ScreenPage({ searchParams }: PageProps) {
   return (
     <>
       <Header />
-      <main
-        style={{
-          maxWidth: 'var(--max-width)',
-          margin: '0 auto',
-          padding: 'var(--space-8) var(--space-4)',
-        }}
-      >
+      <main>
         {plan === 'free' ? (
           <UpgradePrompt />
         ) : (
