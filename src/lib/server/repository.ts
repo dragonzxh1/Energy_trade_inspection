@@ -35,6 +35,11 @@ import {
   buildOCCompany,
 } from './sync/opencorporates'
 import type { LeiCacheRow } from '@/lib/server/sync/gleif-golden-copy'
+import {
+  searchHKCRCache,
+  mightBeHKNumber,
+  hkcrToSearchResult,
+} from './sync/hkcr'
 
 interface EntityRow {
   id: string
@@ -557,18 +562,22 @@ export async function searchEntities(query: string, entityType?: string): Promis
     tier1Results.map((r) => r.registrationNumber).filter(Boolean) as string[],
   )
 
-  const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords] = await Promise.all([
+  const [acraEntities, chEntities, zefixEntities, ocEntities, gleifRecords, hkcrEntities] = await Promise.all([
     searchACRA(query, 5).catch(() => []),
     searchCompaniesHouse(query, 5).catch(() => []),
     searchZefix(query, 5).catch(() => []),
     searchOpenCorporates(query, 5).catch(() => []),
     searchGleifMultiple(query, 5).catch(() => []),
+    searchHKCRCache(query, 5),  // HKCR: LOCAL cache query (no catch needed - returns [])
   ])
 
   const acraResults  = acraEntities.filter((e) => !tier1RegNums.has(e.uen)).map(acraToSearchResult)
   const chResults    = chEntities.filter((c) => !tier1RegNums.has(c.company_number)).map(chToSearchResult)
   const zefixResults = zefixEntities.filter((c) => !tier1RegNums.has(c.uid)).map(zefixToSearchResult)
   const ocResults    = ocEntities.filter((c) => !tier1RegNums.has(c.company_number)).map(ocToSearchResult)
+  const hkcrResults  = hkcrEntities
+    .filter((c) => !tier1RegNums.has(c.company_number))
+    .map(hkcrToSearchResult)
 
   const allRegNums = new Set([
     ...tier1RegNums,
@@ -576,6 +585,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
     ...chResults.map((r) => r.registrationNumber).filter(Boolean),
     ...zefixResults.map((r) => r.registrationNumber).filter(Boolean),
     ...ocResults.map((r) => r.registrationNumber).filter(Boolean),
+    ...hkcrResults.map((r) => r.registrationNumber).filter(Boolean),
   ])
   const gleifTier2 = gleifRecords
     .filter((r) => !allRegNums.has(r.lei))
@@ -623,6 +633,13 @@ export async function searchEntities(query: string, entityType?: string): Promis
       jurisdiction:   null,
       result:         r,
     })),
+    ...hkcrResults.map((r) => ({
+      id:             `hkcr:${r.registrationNumber ?? r.id}`,
+      canonicalName:  r.name,
+      registrySource: 'hkcr',
+      jurisdiction:   'HK' as string | null,
+      result:         r,
+    })),
   ]
   if (toCache.length > 0) {
     writeNonLeiCache(toCache).catch(() => {})
@@ -635,6 +652,7 @@ export async function searchEntities(query: string, entityType?: string): Promis
     ...zefixResults,
     ...ocResults,
     ...gleifTier2,
+    ...hkcrResults,
   ].slice(0, 20)
 }
 
