@@ -373,15 +373,22 @@ function TradeSection({
     setLoading(true)
     try {
       const res  = await fetch(`/api/reports?type=trade&offset=${rows.length}&limit=${pageSize}`)
+      if (!res.ok) { setLoading(false); return }
       const data = await res.json() as { rows: TradeSessionRow[] }
-      setRows(prev => [...prev, ...data.rows])
+      if (Array.isArray(data.rows)) {
+        setRows(prev => [...prev, ...data.rows])
+      }
     } finally {
       setLoading(false)
     }
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/reports?type=trade&id=${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/reports?type=trade&id=${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      console.error('Delete failed', res.status)
+      return
+    }
     setRows(prev => prev.filter(r => r.id !== id))
   }
 
@@ -425,15 +432,22 @@ function ScreeningSection({
     setLoading(true)
     try {
       const res  = await fetch(`/api/reports?type=screening&offset=${rows.length}&limit=${pageSize}`)
+      if (!res.ok) { setLoading(false); return }
       const data = await res.json() as { rows: ScreeningSessionRow[] }
-      setRows(prev => [...prev, ...data.rows])
+      if (Array.isArray(data.rows)) {
+        setRows(prev => [...prev, ...data.rows])
+      }
     } finally {
       setLoading(false)
     }
   }
 
   async function handleDelete(id: string) {
-    await fetch(`/api/reports?type=screening&id=${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/reports?type=screening&id=${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      console.error('Delete failed', res.status)
+      return
+    }
     setRows(prev => prev.filter(r => r.id !== id))
   }
 
