@@ -452,11 +452,11 @@ export async function searchEntities(query: string, entityType?: string): Promis
       ? db
           .query<LeiCacheRow>(
             `SELECT * FROM lei_cache
-             WHERE SIMILARITY(legal_name, $1) > 0.45
+             WHERE SIMILARITY(legal_name, $1) > 0.55
                AND entity_status = 'ACTIVE'
              ORDER BY SIMILARITY(legal_name, $1) DESC
              LIMIT 10`,
-            [query],
+            [normalized],
           )
           .then((r) => r.rows)
           .catch(() => [] as LeiCacheRow[])
@@ -465,11 +465,11 @@ export async function searchEntities(query: string, entityType?: string): Promis
       ? db
           .query<{ id: string; data_json: SearchResult }>(
             `SELECT id, data_json FROM non_lei_cache
-             WHERE SIMILARITY(canonical_name, $1) > 0.45
+             WHERE SIMILARITY(canonical_name, $1) > 0.55
                AND expires_at > NOW()
              ORDER BY SIMILARITY(canonical_name, $1) DESC
              LIMIT 10`,
-            [query],
+            [normalized],
           )
           .then((r) => r.rows)
           .catch(() => [] as Array<{ id: string; data_json: SearchResult }>)
