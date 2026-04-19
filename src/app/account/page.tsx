@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import Header from '@/components/layout/Header'
 import { auth } from '@/auth'
 import { getQuotaStatus, UNLIMITED_QUOTA } from '@/lib/server/quota'
@@ -91,8 +92,7 @@ export default async function AccountPage() {
           {/* Avatar row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
             {user.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={user.image}
                 alt=""
                 width={48}
