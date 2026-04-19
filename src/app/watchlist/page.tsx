@@ -64,6 +64,13 @@ async function dismissAlert(alertId: string) {
   await dismissWatchlistAlert(session.user.id, alertId)
 }
 
+async function removeWatchedTradeAction(tradeId: string) {
+  'use server'
+  const s = await auth()
+  if (!s?.user) return
+  await removeWatchedTrade(s.user.id, tradeId)
+}
+
 // ── Helper: entity URL ────────────────────────────────────────────────────────────────────────────────────────────────
 
 function entityHref(type: string, key: string): string {
@@ -482,12 +489,7 @@ export default async function WatchlistPage() {
                 const TRADE_RISK_COLOR: Record<string, string> = {
                   critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e',
                 }
-                const removeAction = async () => {
-                  'use server'
-                  const s = await auth()
-                  if (!s?.user) return
-                  await removeWatchedTrade(s.user.id, t.id)
-                }
+                const removeAction = removeWatchedTradeAction.bind(null, t.id)
                 const tradeRiskColor = TRADE_RISK_COLOR[t.last_overall_risk] ?? '#55556a'
                 return (
                   <div
