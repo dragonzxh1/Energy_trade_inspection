@@ -538,13 +538,21 @@ export async function searchEntities(query: string, entityType?: string): Promis
 
   const tier1Results = [...localResults, ...gleifTier1, ...nonLeiTier1]
 
-  // If Tier 1 already provides enough results, skip external API calls entirely.
-  if (!shouldSearchCompanies || tier1Results.length >= 5) {
+  // Skip Tier 2 when Tier 1 already provides adequate coverage:
+  // - 5+ results (original threshold), OR
+  // - Any GLEIF match found (lei_cache has 2.3M records; if it matched, trust it), OR
+  // - 2+ total results (enough for UX; Tier 2 external APIs return unrelated companies)
+  //
+  // Tier 2 is expensive (5 parallel external HTTP calls, 1-5s each) and its results
+  // are unreliable — external APIs apply their own fuzzy matching, which can return
+  // completely unrelated companies (e.g. CH returning "AAA ENERGY" for "ZHENFU ENERGY").
+  if (!shouldSearchCompanies || tier1Results.length >= 5 || gleifTier1.length >= 1 || tier1Results.length >= 2) {
     return tier1Results.slice(0, 20)
   }
 
   // === Tier 2: External API calls (ACRA, CH, Zefix, OC, GLEIF live) ===
-  // Only reached when Tier 1 has fewer than 5 results.
+  // Only reached when Tier 1 found 0-1 results AND no GLEIF match — company is likely
+  // a small/private entity not in any local database.
   const tier1RegNums = new Set(
     tier1Results.map((r) => r.registrationNumber).filter(Boolean) as string[],
   )
