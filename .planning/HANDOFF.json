@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-20T02:45:00Z",
+  "phase": "999.4",
+  "phase_name": "hong-kong-companies-registry-integration",
+  "phase_dir": ".planning/phases/999.4-hong-kong-companies-registry-integration",
+  "plan": 4,
+  "task": 1,
+  "total_tasks": 1,
+  "status": "completed",
+  "completed_tasks": [
+    {"id": 1, "name": "Fix HKCR sync on production server", "status": "done", "commit": "a34017e"},
+    {"id": 2, "name": "Fix DD-MM-YYYY date format conversion", "status": "done", "commit": "5caa7ed"},
+    {"id": 3, "name": "Run sync and populate hkcr_cache", "status": "done", "progress": "278,796 records inserted"}
+  ],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Use AbortController + setTimeout instead of AbortSignal.timeout", "rationale": "AbortSignal.timeout was causing fetch failures on server; explicit AbortController with clearTimeout is more robust", "phase": "999.4"},
+    {"decision": "Add curl-like headers to fetch", "rationale": "curl works but Node.js fetch fails; mimicking curl headers (User-Agent: curl/8.0, Accept: */*) resolved the issue", "phase": "999.4"},
+    {"decision": "Convert DD-MM-YYYY to YYYY-MM-DD before PostgreSQL insert", "rationale": "HK CSV files use DD-MM-YYYY format which PostgreSQL cannot parse", "phase": "999.4"}
+  ],
+  "uncommitted_files": ["package-lock.json"],
+  "next_action": "Phase 999.4 HKCR integration complete. Server has 278,796 HK company records. Next: test UI search for HK companies.",
+  "context_notes": "Production deployment successful. Sync script created as sync_hkcr.mjs on server, should be deleted after sync. All fixes committed and pushed to GitHub."
+}
