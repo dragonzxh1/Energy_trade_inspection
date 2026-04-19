@@ -414,15 +414,25 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Section divider */}
+        <div style={{ maxWidth: '640px', width: '100%', marginTop: 'var(--space-12)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4))' }} />
+          <span style={{ color: '#55556a', fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Coverage</span>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(99,102,241,0.4), transparent)' }} />
+        </div>
+
         {/* Trust strip */}
         <div
           className="animate-fade-in-up-delay-1 home-trust-strip"
           style={{
             maxWidth: '640px',
             width: '100%',
-            marginTop: 'var(--space-12)',
-            borderTop: '1px solid rgba(255,255,255,0.07)',
-            paddingTop: 'var(--space-8)',
+            marginTop: 'var(--space-5)',
+            backgroundColor: '#111113',
+            border: '1px solid rgba(99,102,241,0.15)',
+            borderRadius: '12px',
+            padding: 'var(--space-6) var(--space-8)',
+            boxShadow: '0 2px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}
         >
           {TRUST_STATS.map((s) => (
@@ -448,13 +458,20 @@ export default function HomePage() {
           ))}
         </div>
 
+        {/* Section divider */}
+        <div style={{ maxWidth: '640px', width: '100%', marginTop: 'var(--space-10)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.4))' }} />
+          <span style={{ color: '#55556a', fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', flexShrink: 0 }}>Features</span>
+          <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(99,102,241,0.4), transparent)' }} />
+        </div>
+
         {/* Feature highlights */}
         <div
           className="animate-fade-in-up-delay-2 home-features"
           style={{
             maxWidth: '640px',
             width: '100%',
-            marginTop: 'var(--space-10)',
+            marginTop: 'var(--space-5)',
           }}
         >
           {FEATURES.map((f) => (

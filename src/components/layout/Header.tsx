@@ -205,13 +205,14 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                 <Link
                   href="/sign-up"
                   style={{
-                    color: 'var(--text-muted)',
+                    color: '#a5b4fc',
                     fontSize: '12px',
                     fontWeight: 500,
                     textDecoration: 'none',
                     padding: '5px 10px',
                     borderRadius: '6px',
-                    border: '1px solid var(--border-subtle)',
+                    border: '1px solid rgba(99,102,241,0.35)',
+                    backgroundColor: 'rgba(99,102,241,0.08)',
                   }}
                 >
                   Sign up
@@ -219,13 +220,15 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                 <Link
                   href="/sign-in"
                   style={{
-                    backgroundColor: 'var(--accent-primary)',
+                    background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
                     color: '#fff',
                     fontSize: '12px',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     textDecoration: 'none',
-                    padding: '5px 12px',
+                    padding: '5px 14px',
                     borderRadius: '6px',
+                    border: '1px solid rgba(99,102,241,0.5)',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 8px rgba(99,102,241,0.45)',
                   }}
                 >
                   Sign in
