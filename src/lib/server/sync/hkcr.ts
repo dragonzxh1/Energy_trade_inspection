@@ -138,32 +138,65 @@ export async function searchHKCRCache(query: string, limit = 5): Promise<HKCRCac
 // ── CSV batch sync (per D-01, gleif-golden-copy.ts pattern) ────────────────────
 
 /**
+ * Robust fetch with timeout - mimics curl behavior.
+ * Uses standard headers that curl sends by default.
+ */
+async function robustFetch(url: string, timeoutMs: number = 30000): Promise<string> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'curl/8.0',
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate, br',
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    return await response.text()
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs}ms`)
+    }
+    throw err
+  }
+}
+
+/**
  * Fetch CSV resource URLs from CKAN package_show API.
  * Returns list of CSV/XLSX file URLs for weekly newly registered companies.
  */
 async function fetchCSVResourceUrls(): Promise<string[]> {
-  const response = await fetch(CKAN_PACKAGE_URL, {
-    headers: { 'User-Agent': 'ETI-Bot/1.0' },
-    signal: AbortSignal.timeout(30000),
-  })
+  console.log(`[hkcr] Fetching CKAN package: ${CKAN_PACKAGE_URL}`)
+  const text = await robustFetch(CKAN_PACKAGE_URL, 30000)
+  console.log(`[hkcr] CKAN response length: ${text.length}`)
 
-  if (!response.ok) {
-    throw new Error(`CKAN package fetch failed: HTTP ${response.status}`)
-  }
-
-  const data = await response.json() as { success?: boolean; result?: { resources?: Array<{ format?: string; url?: string }> } }
+  const data = JSON.parse(text) as { success?: boolean; result?: { resources?: Array<{ format?: string; url?: string }> } }
   if (!data.success) {
     throw new Error('CKAN package fetch failed: success=false')
   }
 
   // Extract CSV/XLSX resource URLs
   const resources = data.result?.resources ?? []
-  return resources
+  const urls = resources
     .filter((r) =>
       r.format?.toUpperCase() === 'CSV' || r.format?.toUpperCase() === 'XLSX'
     )
     .map((r) => r.url)
     .filter((url): url is string => Boolean(url))
+
+  console.log(`[hkcr] Found ${urls.length} CSV/XLSX resources`)
+  return urls
 }
 
 /**
@@ -172,16 +205,10 @@ async function fetchCSVResourceUrls(): Promise<string[]> {
  */
 async function parseCSVFile(url: string): Promise<HKCRCacheRow[]> {
   try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(60000),
-    })
+    console.log(`[hkcr] Downloading CSV: ${url}`)
+    const text = await robustFetch(url, 60000)
+    console.log(`[hkcr] CSV response length: ${text.length}`)
 
-    if (!response.ok) {
-      console.error(`[hkcr] CSV download failed: ${url}`)
-      return []
-    }
-
-    const text = await response.text()
     const parser = parse(text, { columns: true, skip_empty_lines: true })
 
     const records: HKCRCacheRow[] = []
@@ -206,6 +233,7 @@ async function parseCSVFile(url: string): Promise<HKCRCacheRow[]> {
       records.push(normalized)
     }
 
+    console.log(`[hkcr] Parsed ${records.length} records from CSV`)
     return records
   } catch (err) {
     console.error(`[hkcr] CSV parse error for ${url}:`, err)
