@@ -90,6 +90,7 @@ export function hkcrToSearchResult(company: HKCRCacheRow) {
     riskLevel: riskLevel(authenticityScore, 'unknown'),
     registrationNumber: company.company_number,
     slug: `hk-${company.company_number}`,
+    dataSource: ['Hong Kong Companies Registry'],
   }
 }
 

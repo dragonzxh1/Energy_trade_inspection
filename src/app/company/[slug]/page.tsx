@@ -650,6 +650,7 @@ function SourcesPanel({ sources }: { sources: string[] }) {
     'Zefix Swiss Commercial Register': 'https://www.zefix.admin.ch',
     'GLEIF':                           'https://search.gleif.org',
     'OpenCorporates':                  'https://opencorporates.com',
+    'Hong Kong Companies Registry':    'https://www.cr.gov.hk',
   }
 
   return (
