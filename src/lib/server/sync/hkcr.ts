@@ -51,6 +51,24 @@ const CKAN_PACKAGE_URL = 'https://data.gov.hk/en-data/api/3/action/package_show?
 const HK_NUMBER_REGEX = /^\d{7,8}$/
 const BATCH_SIZE = 1000
 
+// ── Date format conversion ──────────────────────────────────────────────────────
+
+/**
+ * Convert DD-MM-YYYY to YYYY-MM-DD (ISO format for PostgreSQL).
+ * HK CSV files use DD-MM-YYYY format.
+ */
+function convertHKDate(dateStr: string | undefined): Date | undefined {
+  if (!dateStr) return undefined
+  const parts = dateStr.split('-')
+  if (parts.length === 3 && parts[2].length === 4) {
+    // DD-MM-YYYY -> YYYY-MM-DD
+    const isoDate = `${parts[2]}-${parts[1]}-${parts[0]}`
+    return new Date(isoDate)
+  }
+  // Fallback: try parsing as-is (may be ISO format already)
+  return new Date(dateStr)
+}
+
 // ── Registration number detection (D-04) ───────────────────────────────────────
 
 /** Detect 7-8 digit HK company BR registration number (no prefix letters). */
@@ -221,9 +239,7 @@ async function parseCSVFile(url: string): Promise<HKCRCacheRow[]> {
         company_name_chinese: raw['Current Company Name in Chinese'] ?? raw['Company Name (Chinese)'] ?? raw.company_name_chinese ?? undefined,
         company_type: undefined,  // Not provided in weekly CSV
         company_status: 'Live',   // Newly registered companies are Live by default
-        date_of_incorporation: raw['Date of Incorporation'] ?? raw.date_of_incorporation
-          ? new Date(raw['Date of Incorporation'] ?? raw.date_of_incorporation ?? '')
-          : undefined,
+        date_of_incorporation: convertHKDate(raw['Date of Incorporation'] ?? raw.date_of_incorporation),
         nature_of_business: undefined,  // Not provided in weekly CSV
       }
 
