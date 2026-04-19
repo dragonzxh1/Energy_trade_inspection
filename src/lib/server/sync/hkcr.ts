@@ -29,32 +29,31 @@ export interface HKCRCacheRow {
 
 /** CSV row format from data.gov.hk (column names may vary) */
 interface HKCRCSVRow {
+  // Actual CSV field names from data.gov.hk
+  'Current Company Name in English'?: string
+  'Current Company Name in Chinese'?: string
+  'BR Number'?: string          // HK registration number (8-digit)
+  'Date of Incorporation'?: string
+  'Date of Change of name'?: string
+  // Fallback variants
   'Company Number'?: string
   'Company Name'?: string
   'Company Name (Chinese)'?: string
-  'Company Type'?: string
-  'Company Status'?: string
-  'Date of Incorporation'?: string
-  'Nature of Business'?: string
-  // Lowercase variants (some files use different casing)
   'company_number'?: string
   'company_name'?: string
   'company_name_chinese'?: string
-  'company_type'?: string
-  'company_status'?: string
   'date_of_incorporation'?: string
-  'nature_of_business'?: string
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
 const CKAN_PACKAGE_URL = 'https://data.gov.hk/en-data/api/3/action/package_show?id=hk-cr-crdata-list-newly-registered-companies-2526'
-const HK_NUMBER_REGEX = /^\d{7}$/
+const HK_NUMBER_REGEX = /^\d{7,8}$/
 const BATCH_SIZE = 1000
 
 // ── Registration number detection (D-04) ───────────────────────────────────────
 
-/** Detect 7-digit HK company registration number (no prefix letters). */
+/** Detect 7-8 digit HK company BR registration number (no prefix letters). */
 export function mightBeHKNumber(s: string): boolean {
   return HK_NUMBER_REGEX.test(s.trim())
 }
@@ -187,17 +186,17 @@ async function parseCSVFile(url: string): Promise<HKCRCacheRow[]> {
     const records: HKCRCacheRow[] = []
     for await (const record of parser) {
       const raw = record as HKCRCSVRow
-      // Normalize CSV column names (may vary across files)
+      // Normalize CSV column names (actual fields from data.gov.hk)
       const normalized: HKCRCacheRow = {
-        company_number: raw['Company Number'] ?? raw.company_number ?? '',
-        company_name: raw['Company Name'] ?? raw.company_name ?? '',
-        company_name_chinese: raw['Company Name (Chinese)'] ?? raw.company_name_chinese ?? undefined,
-        company_type: raw['Company Type'] ?? raw.company_type ?? undefined,
-        company_status: raw['Company Status'] ?? raw.company_status ?? undefined,
+        company_number: raw['BR Number'] ?? raw['Company Number'] ?? raw.company_number ?? '',
+        company_name: raw['Current Company Name in English'] ?? raw['Company Name'] ?? raw.company_name ?? '',
+        company_name_chinese: raw['Current Company Name in Chinese'] ?? raw['Company Name (Chinese)'] ?? raw.company_name_chinese ?? undefined,
+        company_type: undefined,  // Not provided in weekly CSV
+        company_status: 'Live',   // Newly registered companies are Live by default
         date_of_incorporation: raw['Date of Incorporation'] ?? raw.date_of_incorporation
           ? new Date(raw['Date of Incorporation'] ?? raw.date_of_incorporation ?? '')
           : undefined,
-        nature_of_business: raw['Nature of Business'] ?? raw.nature_of_business ?? undefined,
+        nature_of_business: undefined,  // Not provided in weekly CSV
       }
 
       // Skip rows without required fields
