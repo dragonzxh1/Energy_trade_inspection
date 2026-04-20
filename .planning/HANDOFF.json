@@ -1,27 +1,42 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-20T02:45:00Z",
-  "phase": "999.4",
-  "phase_name": "hong-kong-companies-registry-integration",
-  "phase_dir": ".planning/phases/999.4-hong-kong-companies-registry-integration",
-  "plan": 4,
-  "task": 1,
-  "total_tasks": 1,
-  "status": "completed",
+  "timestamp": "2026-04-21T00:00:00.000Z",
+  "phase": null,
+  "phase_name": null,
+  "phase_dir": null,
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Fix HKCR sync on production server", "status": "done", "commit": "a34017e"},
-    {"id": 2, "name": "Fix DD-MM-YYYY date format conversion", "status": "done", "commit": "5caa7ed"},
-    {"id": 3, "name": "Run sync and populate hkcr_cache", "status": "done", "progress": "278,796 records inserted"}
+    {"id": 1, "name": "LinkedIn中文长文", "status": "done", "file": "linkedin-content/2026-04-21-sanctions-list-guide-zh.md"},
+    {"id": 2, "name": "LinkedIn英文长文", "status": "done", "file": "linkedin-content/2026-04-21-sanctions-list-guide-en.md"},
+    {"id": 3, "name": "小红书图文笔记", "status": "done", "file": "linkedin-content/2026-04-21-xiaohongshu-sanctions-redbook.md"},
+    {"id": 4, "name": "TikTok视频脚本", "status": "done", "file": "linkedin-content/2026-04-21-tiktok-script-sanctions.md"}
   ],
   "remaining_tasks": [],
   "blockers": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Use AbortController + setTimeout instead of AbortSignal.timeout", "rationale": "AbortSignal.timeout was causing fetch failures on server; explicit AbortController with clearTimeout is more robust", "phase": "999.4"},
-    {"decision": "Add curl-like headers to fetch", "rationale": "curl works but Node.js fetch fails; mimicking curl headers (User-Agent: curl/8.0, Accept: */*) resolved the issue", "phase": "999.4"},
-    {"decision": "Convert DD-MM-YYYY to YYYY-MM-DD before PostgreSQL insert", "rationale": "HK CSV files use DD-MM-YYYY format which PostgreSQL cannot parse", "phase": "999.4"}
+    {"decision": "创建linkedin-content目录存放社交媒体内容", "rationale": "持续发布需要按日期管理", "phase": null},
+    {"decision": "文件命名格式YYYY-MM-DD-主题-zh/en.md", "rationale": "便于追踪发布时间和语言版本", "phase": null},
+    {"decision": "扩展到小红书和TikTok格式", "rationale": "中文社交媒体更适合图文短视频形式", "phase": null}
   ],
-  "uncommitted_files": ["package-lock.json"],
-  "next_action": "Phase 999.4 HKCR integration complete. Server has 278,796 HK company records. Next: test UI search for HK companies.",
-  "context_notes": "Production deployment successful. Sync script created as sync_hkcr.mjs on server, should be deleted after sync. All fixes committed and pushed to GitHub."
+  "uncommitted_files": [
+    "linkedin-content/2026-04-21-sanctions-list-guide-zh.md",
+    "linkedin-content/2026-04-21-sanctions-list-guide-en.md",
+    "linkedin-content/2026-04-21-xiaohongshu-sanctions-redbook.md",
+    "linkedin-content/2026-04-21-tiktok-script-sanctions.md"
+  ],
+  "next_action": "用户可选择：发布LinkedIn文章、制作小红书配图、录制TikTok视频，或继续写第二篇文章（虚假供应商识别）",
+  "context_notes": "用户分享LinkedIn优化方案，我帮助创建社交媒体内容文件。这是个人品牌营销工作，非ETI技术开发。TikTok脚本中包含系列选题建议（6条后续内容）。",
+  "work_type": "marketing_content",
+  "series_planned": [
+    "制裁名单解读（已完成）",
+    "虚假供应商识别：3个信号识别皮包公司",
+    "幽灵船只识别：AIS暗黑期意味着什么",
+    "香港公司尽调：查什么？去哪查？",
+    "新加坡公司尽调：ACRA注册信息怎么看",
+    "制裁名单对比：OFAC vs EU vs UN区别"
+  ]
 }
