@@ -15,6 +15,12 @@ const PLAN_LABEL: Record<string, string> = {
   enterprise:   'Enterprise',
 }
 
+const SHIELD_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+  </svg>
+)
+
 export default async function Header({ entityName, sanctionStatus }: HeaderProps) {
   const session = await auth()
   const user    = session?.user
@@ -28,8 +34,8 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
         <div
           role="alert"
           style={{
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-            borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
+            backgroundColor: 'rgba(239, 68, 68, 0.12)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.25)',
             padding: 'var(--space-2) var(--space-4)',
             textAlign: 'center',
           }}
@@ -41,13 +47,12 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
       )}
 
       <header
+        className="glass-panel"
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          backgroundColor: 'rgba(15, 16, 17, 0.88)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--border-subtle)',
+          borderBottom: '1px solid var(--border-default)',
         }}
       >
         <div
@@ -55,7 +60,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
             maxWidth: 'var(--max-width)',
             margin: '0 auto',
             padding: '0 var(--space-4)',
-            height: '56px',
+            height: '64px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -67,19 +72,41 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
             <Link
               href="/"
               style={{
-                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
                 textDecoration: 'none',
-                fontSize: '14px',
-                fontWeight: 600,
-                letterSpacing: '-0.01em',
                 flexShrink: 0,
               }}
             >
-              ETI
+              <div
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  background: 'linear-gradient(135deg, var(--brand-400) 0%, var(--brand-600) 100%)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                }}
+              >
+                {SHIELD_ICON}
+              </div>
+              <span
+                style={{
+                  color: 'var(--text-primary)',
+                  fontSize: '18px',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                ETI <span style={{ color: 'var(--brand-400)' }}>Verify</span>
+              </span>
             </Link>
             {entityName && (
               <>
-                <span aria-hidden="true" style={{ color: 'var(--border-subtle)', fontSize: '16px' }}>/</span>
+                <span aria-hidden="true" style={{ color: 'var(--border-solid)', fontSize: '16px' }}>/</span>
                 <span
                   style={{
                     color: 'var(--text-secondary)',
@@ -99,11 +126,44 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
           {/* Nav */}
           <nav
             aria-label="Site navigation"
-            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', flexShrink: 0 }}
           >
+            {/* System status */}
+            <div
+              className="hidden sm:flex"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: '3px 10px',
+                borderRadius: '999px',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.15)',
+              }}
+            >
+              <span className="status-pulse" style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--status-clear)',
+                display: 'block',
+              }} />
+              <span className="mono" style={{ fontSize: '10px', color: 'var(--status-clear)', fontWeight: 500 }}>
+                SYSTEM ONLINE
+              </span>
+            </div>
+
+            <Link
+              href="/search"
+              className="nav-text-link hover-text-brand"
+              style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
+            >
+              Database
+            </Link>
+
             <Link
               href="/pricing"
-              className="nav-text-link"
+              className="nav-text-link hover-text-brand"
               style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
             >
               Pricing
@@ -112,7 +172,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
             {plan !== 'free' && (
               <Link
                 href="/screen"
-                className="nav-text-link"
+                className="nav-text-link hover-text-brand"
                 style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
               >
                 Screen
@@ -122,27 +182,17 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
             {plan !== 'free' && (
               <Link
                 href="/trade"
-                className="nav-text-link"
+                className="nav-text-link hover-text-brand"
                 style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
               >
                 Trade
               </Link>
             )}
 
-            {plan !== 'free' && (
-              <Link
-                href="/reports"
-                className="nav-text-link"
-                style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
-              >
-                Reports
-              </Link>
-            )}
-
             {(plan === 'professional' || plan === 'enterprise') && (
               <Link
                 href="/watchlist"
-                className="nav-text-link"
+                className="nav-text-link hover-text-brand"
                 style={{ color: 'var(--text-muted)', fontSize: '13px', textDecoration: 'none' }}
               >
                 Watchlist
@@ -160,8 +210,8 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                       fontWeight: 600,
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
-                      color: 'var(--accent-primary)',
-                      border: '1px solid var(--accent-primary)',
+                      color: 'var(--brand-400)',
+                      border: '1px solid var(--brand-400)',
                       borderRadius: '4px',
                       padding: '2px 6px',
                     }}
@@ -170,7 +220,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                   </span>
                 )}
 
-                {/* Avatar — links to account */}
+                {/* Avatar */}
                 <Link href="/account" style={{ textDecoration: 'none', flexShrink: 0, lineHeight: 0 }}>
                   <UserAvatar src={user.image} name={user.name} />
                 </Link>
@@ -187,13 +237,14 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                     style={{
                       background: 'none',
                       border: '1px solid var(--border-subtle)',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       color: 'var(--text-muted)',
                       cursor: 'pointer',
                       fontSize: '12px',
                       fontFamily: 'inherit',
-                      padding: '4px 8px',
+                      padding: '4px 10px',
                     }}
+                    className="hover-border-brand"
                   >
                     Sign out
                   </button>
@@ -205,33 +256,31 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                 <Link
                   href="/sign-up"
                   style={{
-                    color: '#a5b4fc',
-                    fontSize: '12px',
+                    color: 'var(--text-muted)',
+                    fontSize: '13px',
                     fontWeight: 500,
                     textDecoration: 'none',
-                    padding: '5px 10px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(99,102,241,0.35)',
-                    backgroundColor: 'rgba(99,102,241,0.08)',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-subtle)',
                   }}
+                  className="hover-border-brand"
                 >
                   Sign up
                 </Link>
                 <Link
                   href="/sign-in"
+                  className="gradient-btn"
                   style={{
-                    background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
-                    color: '#fff',
-                    fontSize: '12px',
+                    fontSize: '13px',
                     fontWeight: 600,
                     textDecoration: 'none',
-                    padding: '5px 14px',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(99,102,241,0.5)',
-                    boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 8px rgba(99,102,241,0.45)',
+                    padding: '6px 16px',
+                    borderRadius: '8px',
+                    display: 'inline-block',
                   }}
                 >
-                  Sign in
+                  Console Login
                 </Link>
               </div>
             )}

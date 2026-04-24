@@ -1,38 +1,48 @@
-/* Design tokens from DESIGN.md (Linear style) — single source of truth */
+/* ─── Design Tokens ──────────────────────────────────────────────── */
 :root {
-  /* Backgrounds — near-black, darkness as native medium */
-  --bg-primary:    #08090a;   /* Marketing black — deepest background */
-  --bg-surface:    #0f1011;   /* Panel/sidebar background */
-  --bg-elevated:   #191a1b;   /* Cards, dropdowns, elevated surfaces */
-  --bg-subtle:     #28282c;   /* Hover states, slightly elevated */
+  /* Backgrounds — deep navy-black */
+  --bg-primary:    #020617;
+  --bg-surface:    #0f172a;
+  --bg-elevated:   #1e293b;
+  --bg-subtle:     #334155;
 
   /* Text */
-  --text-primary:  #f7f8f8;   /* Near-white — default text */
-  --text-secondary:#d0d6e0;   /* Cool silver-gray — body, descriptions */
-  --text-muted:    #8a8f98;   /* Muted gray — placeholders, metadata */
-  --text-faint:    #62666d;   /* Timestamps, disabled states */
+  --text-primary:  #f1f5f9;
+  --text-secondary:#94a3b8;
+  --text-muted:    #64748b;
+  --text-faint:    #475569;
+  --text-on-accent: #fff;
 
-  /* Status (semantic, not decorative) */
-  --status-clear:  #10b981;   /* NOT LISTED — emerald */
-  --status-listed: #ef4444;   /* LISTED/Sanctioned — red */
-  --status-unknown:#8a8f98;   /* Unknown — muted gray */
+  /* Brand — cyan/blue */
+  --brand-50:  #f0f9ff;
+  --brand-100: #e0f2fe;
+  --brand-400: #38bdf8;
+  --brand-500: #0ea5e9;
+  --brand-600: #0284c7;
+  --brand-900: #0c4a6e;
+
+  /* Status (semantic) */
+  --status-clear:  #10b981;
+  --status-listed: #ef4444;
+  --status-unknown:#8a8f98;
 
   /* Risk levels */
-  --risk-low:      #27a644;   /* Low risk — green */
-  --risk-medium:   #f59e0b;   /* Medium risk — amber */
-  --risk-high:     #f97316;   /* High risk — orange */
-  --risk-critical: #ef4444;   /* Critical — red */
+  --risk-low:      #22c55e;
+  --risk-medium:   #f59e0b;
+  --risk-high:     #f97316;
+  --risk-critical: #ef4444;
 
-  /* Accent — brand indigo-violet (the ONLY chromatic color in chrome) */
-  --accent-primary: #5e6ad2;  /* Brand indigo — CTAs, brand marks */
-  --accent-hover:   #828fff;  /* Hover state on accent elements */
-  --accent-violet:  #7170ff;  /* Links, active states */
-  --accent-amber:   #f59e0b;  /* Amber — warnings, Phase 2 pending */
+  /* Accent — brand cyan/blue (replacing old indigo) */
+  --accent-primary: #0ea5e9;
+  --accent-secondary: #22d3ee;
+  --accent-hover:   #38bdf8;
+  --accent-violet:  #38bdf8;
+  --accent-amber:   #f59e0b;
 
-  /* Borders — semi-transparent white, never solid dark-on-dark */
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-subtle:  rgba(255, 255, 255, 0.05);
-  --border-solid:   #23252a;   /* Solid dark border for prominent separations */
+  /* Borders */
+  --border-default: rgba(56, 189, 248, 0.1);
+  --border-subtle:  rgba(56, 189, 248, 0.06);
+  --border-solid:   #1e293b;
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -70,7 +80,6 @@ html {
 
 body {
   font-family: var(--font-sans);
-  /* Linear signature: OpenType features for cleaner, more geometric Inter */
   font-feature-settings: "cv01", "ss03";
   font-size: 14px;
   line-height: 22px;
@@ -81,12 +90,70 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Typography — Linear's three-tier weight system: 400 (read) / 510 (emphasize) / 590 (announce) */
+/* ─── New Design System Utilities ──────────────────────────────── */
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+}
+
+.glow-border {
+  box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-btn {
+  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
+  border: 1px solid rgba(14, 165, 233, 0.4);
+  color: #fff;
+  transition: all 0.15s ease;
+}
+
+.gradient-btn:hover {
+  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 100%);
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35);
+  transform: translateY(-1px);
+}
+
+.status-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.data-row:nth-child(even) {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.entity-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.entity-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(14, 165, 233, 0.2);
+}
+
+/* ─── Typography ────────────────────────────────────────────────── */
+
 h1 {
   font-size: 32px;
   line-height: 40px;
-  font-weight: 590;
-  letter-spacing: -0.704px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 h2 {
@@ -99,7 +166,7 @@ h2 {
 h3 {
   font-size: 20px;
   line-height: 28px;
-  font-weight: 590;
+  font-weight: 600;
   letter-spacing: -0.24px;
 }
 
@@ -166,14 +233,14 @@ table {
   border-collapse: collapse;
 }
 
-/* Home page tool cards (Check a Trade / Screen a Document) */
+/* Home page tool cards */
 .home-tool-card {
   transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
 
 .home-tool-card:hover {
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  background-color: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+  background-color: rgba(15, 23, 42, 0.9) !important;
   transform: translateY(-1px);
   text-decoration: none;
 }
@@ -194,8 +261,8 @@ table {
 }
 
 .search-result-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(56, 189, 248, 0.2);
+  background-color: rgba(15, 23, 42, 0.8);
   transform: translateY(-1px);
   text-decoration: none;
 }
@@ -207,8 +274,8 @@ table {
 }
 
 .vessel-link:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(56, 189, 248, 0.2);
+  background-color: rgba(15, 23, 42, 0.8);
   text-decoration: none;
 }
 
@@ -254,11 +321,11 @@ table {
   width: 100%;
   height: 100%;
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(94, 106, 210, 0.95) 0%, transparent 50%),
-    radial-gradient(circle at 45% 45%, rgba(113, 112, 255, 0.85) 0%, transparent 45%),
-    radial-gradient(circle at 55% 55%, rgba(130, 143, 255, 0.85) 0%, transparent 45%),
-    radial-gradient(circle at 45% 55%, rgba(94, 106, 210, 0.75) 0%, transparent 45%),
-    radial-gradient(circle at 55% 45%, rgba(94, 106, 210, 0.75) 0%, transparent 45%);
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent-primary) 95%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 45% 45%, color-mix(in srgb, var(--accent-primary) 85%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 55% 55%, color-mix(in srgb, var(--accent-secondary, #22d3ee) 85%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 45% 55%, color-mix(in srgb, var(--accent-primary) 75%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 55% 45%, color-mix(in srgb, var(--accent-primary) 75%, transparent) 0%, transparent 45%);
   mask: radial-gradient(
     circle at 50% 50%,
     transparent 0%,
@@ -294,7 +361,7 @@ table {
   0% { opacity: 0; }
   5% {
     opacity: 1;
-    text-shadow: 0 0 6px rgba(94, 106, 210, 0.9), 0 0 14px rgba(94, 106, 210, 0.5);
+    text-shadow: 0 0 6px color-mix(in srgb, var(--accent-primary) 90%, transparent), 0 0 14px color-mix(in srgb, var(--accent-primary) 50%, transparent);
     transform: scale(1.1) translateY(-2px);
   }
   20%  { opacity: 0.2; }
@@ -312,6 +379,11 @@ table {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 /* Subtle pulse glow for "not listed" sanction status */
@@ -356,6 +428,11 @@ table {
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
+}
+
+@keyframes scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* ─── Animation utility classes ──────────────────────────────────── */
@@ -430,9 +507,9 @@ table {
   background: linear-gradient(
     to right,
     transparent,
-    rgba(94, 106, 210, 0.12),
-    rgba(94, 106, 210, 0.35),
-    rgba(94, 106, 210, 0.12),
+    rgba(14, 165, 233, 0.12),
+    rgba(14, 165, 233, 0.35),
+    rgba(14, 165, 233, 0.12),
     transparent
   );
   animation: scanLine 4s linear infinite;
@@ -529,4 +606,28 @@ table {
   .nav-text-link {
     display: none;
   }
+}
+
+/* ─── Hover utilities (for Server Components) ────────────────────── */
+
+.hover-border-brand {
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.hover-border-brand:hover {
+  border-color: var(--brand-400) !important;
+  color: var(--brand-400) !important;
+}
+
+.hover-text-brand {
+  transition: color 0.15s ease;
+}
+.hover-text-brand:hover {
+  color: var(--brand-400) !important;
+}
+
+.hover-text-muted {
+  transition: color 0.15s ease;
+}
+.hover-text-muted:hover {
+  color: var(--text-muted) !important;
 }

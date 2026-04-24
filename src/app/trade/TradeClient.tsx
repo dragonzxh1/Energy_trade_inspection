@@ -17,7 +17,7 @@ const TOKEN = {
   elevated2:    '#26262e',
   border:       'rgba(255,255,255,0.07)',
   borderHover:  'rgba(255,255,255,0.14)',
-  primary:      '#6366f1',
+  primary:      'var(--accent-primary)',
   text:         '#f1f1f3',
   textMuted:    '#8b8b9a',
   textSubtle:   '#55556a',
@@ -214,7 +214,7 @@ function inputStyleNew(key: string, focused: string | null, hasError?: boolean):
     background: 'rgba(0,0,0,0.28)',
     border: `1px solid ${
       hasError    ? 'rgba(239,68,68,0.5)' :
-      isFocused   ? '#6366f1'             :
+      isFocused   ? 'var(--accent-primary)'             :
                     TOKEN.border
     }`,
     boxShadow: isFocused
@@ -299,7 +299,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           style={btnHover ? {
             width: '100%',
             padding: '11px 0',
-            background: 'linear-gradient(180deg, #818cf8 0%, #6366f1 100%)',
+            background: 'linear-gradient(180deg, var(--brand-500) 0%, var(--accent-primary) 100%)',
             color: '#fff',
             border: '1px solid rgba(99,102,241,0.45)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35)',
@@ -314,7 +314,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           } : {
             width: '100%',
             padding: '11px 0',
-            background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+            background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
             color: '#fff',
             border: '1px solid rgba(99,102,241,0.45)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
@@ -739,7 +739,7 @@ function SaveTradeWatchButton({ result }: { result: TradeCheckResult }) {
     <button
       onClick={toggle}
       style={state === 'watching'
-        ? { ...secondaryBtnStyle, color: '#6366f1', borderColor: '#6366f1' }
+        ? { ...secondaryBtnStyle, color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }
         : secondaryBtnStyle
       }
     >

@@ -100,7 +100,7 @@ export default function PricingPage() {
             name="Starter"
             price="$99"
             period="mo"
-      annualNote="$990/year — save 2 months"
+            annualNote="$990/year — save 2 months"
             description="100 queries/month. Full profiles for independent traders and small teams."
             features={ALL_FEATURES.map((label, i) => ({ label, included: i < 8 }))}
           >
@@ -114,7 +114,7 @@ export default function PricingPage() {
             name="Professional"
             price="$299"
             period="mo"
-      annualNote="$2,988/year — save 2 months"
+            annualNote="$2,988/year — save 2 months"
             description="Unlimited queries, AIS data, legal records, and contract analysis for compliance teams."
             highlighted
             badge="Most popular"
@@ -211,7 +211,7 @@ function PlanCard({
           style={{
             position: 'absolute', top: '-12px', left: '50%',
             transform: 'translateX(-50%)',
-            backgroundColor: 'var(--accent-primary)', color: '#fff',
+            backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)',
             fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em',
             textTransform: 'uppercase', padding: '3px 10px',
             borderRadius: '999px', whiteSpace: 'nowrap',

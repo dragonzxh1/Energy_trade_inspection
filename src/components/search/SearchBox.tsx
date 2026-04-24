@@ -7,97 +7,198 @@ export default function SearchBox() {
   const searchParams = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') ?? '')
   const [loading, setLoading] = useState(false)
+  const [focused, setFocused] = useState(false)
   const router = useRouter()
 
-  // Reset loading when navigation completes (e.g. back button)
   useEffect(() => {
     setLoading(false)
   }, [searchParams])
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent, type?: string, requireInput = true) {
     e.preventDefault()
     const trimmed = query.trim()
-    if (!trimmed) return
+    if (requireInput && !trimmed) return
     setLoading(true)
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
+    const params = new URLSearchParams()
+    if (trimmed) params.set('q', trimmed)
+    if (type) params.set('type', type)
+    router.push(`/search?${params.toString()}`)
   }
 
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={(e) => handleSubmit(e)}
       role="search"
       aria-label="Search for companies, vessels, domains, or emails"
     >
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        <label htmlFor="search-input" className="sr-only">
-          Search by company name, registration number, IMO number, domain, or email
-        </label>
-        <input
-          id="search-input"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Company name, IMO number, domain, or email…"
-          autoComplete="off"
-          autoCorrect="off"
-          spellCheck={false}
-          disabled={loading}
-          style={{
-            flexGrow: 1,
-            backgroundColor: 'var(--bg-elevated)',
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            borderColor: 'var(--border-subtle)',
-            borderRadius: '8px',
-            color: 'var(--text-primary)',
-            fontSize: '15px',
-            fontFamily: 'inherit',
-            paddingTop: 'var(--space-3)',
-            paddingBottom: 'var(--space-3)',
-            paddingLeft: 'var(--space-4)',
-            paddingRight: 'var(--space-4)',
-            outlineStyle: 'none',
-            transitionProperty: 'border-color, box-shadow',
-            transitionDuration: '0.2s',
-            transitionTimingFunction: 'ease',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = 'var(--accent-primary)'
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.15)'
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border-subtle)'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        />
-        <button
-          type="submit"
-          disabled={loading || !query.trim()}
-          aria-label="Search"
-          className="btn-ripple"
-          style={{
-            backgroundColor: 'var(--accent-primary)',
-            borderWidth: 0,
-            borderStyle: 'none',
-            borderRadius: '8px',
-            color: '#fff',
-            cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontFamily: 'inherit',
-            fontWeight: 500,
-            opacity: loading || !query.trim() ? 0.6 : 1,
-            paddingTop: 'var(--space-3)',
-            paddingBottom: 'var(--space-3)',
-            paddingLeft: 'var(--space-5)',
-            paddingRight: 'var(--space-5)',
-            transitionProperty: 'opacity',
-            transitionDuration: '0.15s',
-            transitionTimingFunction: 'ease',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {loading ? 'Searching…' : 'Search'}
-        </button>
+      <div
+        className="glass-panel glow-border"
+        style={{
+          borderRadius: '16px',
+          padding: '8px',
+          transition: 'box-shadow 0.2s ease',
+          boxShadow: focused
+            ? '0 0 30px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.3)'
+            : '0 0 20px rgba(14, 165, 233, 0.15)',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 'var(--space-2)' }}>
+            {/* Search icon + input */}
+            <div
+              style={{
+                flex: 1,
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <svg
+                style={{
+                  position: 'absolute',
+                  left: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '20px',
+                  height: '20px',
+                  color: 'var(--text-muted)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <label htmlFor="search-input" className="sr-only">
+                Search by company name, registration number, IMO number, domain, or email
+              </label>
+              <input
+                id="search-input"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by company name, IMO number, email domain, or vessel name..."
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                disabled={loading}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px 14px 48px',
+                  backgroundColor: 'rgba(2, 6, 23, 0.5)',
+                  border: '1px solid var(--border-solid)',
+                  borderRadius: '12px',
+                  color: 'var(--text-primary)',
+                  fontSize: '15px',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!focused) {
+                    e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.2)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!focused) {
+                    e.currentTarget.style.borderColor = 'var(--border-solid)'
+                  }
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !query.trim()}
+              aria-label="Search"
+              className="gradient-btn btn-ripple"
+              style={{
+                padding: '14px 28px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                cursor: loading || !query.trim() ? 'not-allowed' : 'pointer',
+                opacity: loading || !query.trim() ? 0.6 : 1,
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                border: 'none',
+              }}
+            >
+              <svg
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              {loading ? 'Searching…' : 'Screen Now'}
+            </button>
+          </div>
+
+          {/* Type filters */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 'var(--space-2)',
+              padding: '0 4px 4px',
+            }}
+          >
+            {[
+              { label: 'Company', type: 'company' as const },
+              { label: 'Vessel / Terminal', type: 'vessel' as const },
+              { label: 'Domain Risk', type: undefined, requiresInput: false },
+              { label: 'Email Verify', type: undefined, requiresInput: false },
+            ].map((f) => (
+              <button
+                key={f.label}
+                type="button"
+                onClick={(e) =>
+                  handleSubmit(
+                    e as unknown as React.FormEvent,
+                    f.type,
+                    f.requiresInput !== false,
+                  )
+                }
+                disabled={loading}
+                className="hover-border-brand"
+                style={{
+                  padding: '5px 12px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  backgroundColor: 'var(--bg-surface)',
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-solid)',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </form>
   )

@@ -7,10 +7,10 @@ import type { TradeSessionRow, ScreeningSessionRow } from '@/lib/server/report-h
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<string, string> = {
-  critical: '#ef4444',
-  high:     '#f97316',
-  medium:   '#f59e0b',
-  low:      '#4ade80',
+  critical: 'var(--status-listed)',
+  high:     'var(--risk-high)',
+  medium:   'var(--accent-amber)',
+  low:      'var(--status-clear)',
 }
 
 const RISK_LABEL: Record<string, string> = {
@@ -21,9 +21,9 @@ const RISK_LABEL: Record<string, string> = {
 }
 
 const secondaryBtnStyle: React.CSSProperties = {
-  background: '#1e1e24',
-  color: '#8b8b9a',
-  border: '1px solid rgba(255,255,255,0.07)',
+  background: 'var(--bg-elevated)',
+  color: 'var(--text-muted)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: '7px',
   padding: '6px 14px',
   fontSize: '13px',
@@ -38,8 +38,8 @@ const secondaryBtnStyle: React.CSSProperties = {
 
 const dangerBtnStyle: React.CSSProperties = {
   ...secondaryBtnStyle,
-  color: '#ef4444',
-  border: '1px solid rgba(239,68,68,0.4)',
+  color: 'var(--status-listed)',
+  border: '1px solid color-mix(in srgb, var(--status-listed) 40%, transparent)',
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function formatDate(iso: string): string {
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function RiskBadge({ risk }: { risk: string }) {
-  const color = RISK_COLOR[risk] ?? '#55556a'
+  const color = RISK_COLOR[risk] ?? 'var(--text-muted)'
   const label = RISK_LABEL[risk] ?? risk.toUpperCase()
   return (
     <span
@@ -65,8 +65,8 @@ function RiskBadge({ risk }: { risk: string }) {
         letterSpacing:   '0.04em',
         textTransform:   'uppercase',
         color,
-        backgroundColor: `${color}18`,
-        border:          `1px solid ${color}44`,
+        backgroundColor: 'color-mix(in srgb, ' + color + ' 10%, transparent)',
+        border:          '1px solid color-mix(in srgb, ' + color + ' 25%, transparent)',
         borderRadius:    '4px',
         padding:         '2px 7px',
         flexShrink:      0,
@@ -88,9 +88,9 @@ function RowShell({ children }: { children: React.ReactNode }) {
         alignItems:      'center',
         gap:             '16px',
         padding:         '12px 16px',
-        backgroundColor: hovered ? '#1e1e24' : '#111113',
-        border:          '1px solid rgba(255,255,255,0.07)',
-        borderTop:       '1px solid rgba(255,255,255,0.09)',
+        backgroundColor: hovered ? 'var(--bg-elevated)' : 'var(--bg-surface)',
+        border:          '1px solid var(--border-subtle)',
+        borderTop:       '1px solid var(--border-default)',
         borderRadius:    '10px',
         boxShadow:       '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
         transition:      'background 0.1s ease',
@@ -115,7 +115,7 @@ function DeleteConfirm({
 }) {
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-      <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
         {pending ? 'Deleting…' : 'Delete?'}
       </span>
       {!pending && (
@@ -149,7 +149,7 @@ function TradeRow({
 
   return (
     <RowShell>
-      <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0, minWidth: '90px' }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0, minWidth: '90px' }}>
         {formatDate(row.created_at)}
       </span>
 
@@ -158,19 +158,19 @@ function TradeRow({
           {input.seller}
         </span>
         {input.vessel && (
-          <span style={{ fontSize: '13px', color: '#8b8b9a' }}>
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
             {' · '}{input.vessel}
           </span>
         )}
         {(input.loadingPort || input.commodity) && (
-          <span style={{ fontSize: '12px', color: '#8b8b9a', display: 'block' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>
             {[input.loadingPort, input.commodity].filter(Boolean).join(' · ')}
           </span>
         )}
       </div>
 
       {row.flag_count > 0 && (
-        <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0 }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>
           {row.flag_count} flag{row.flag_count !== 1 ? 's' : ''}
         </span>
       )}
@@ -195,7 +195,7 @@ function TradeRow({
               background:  'none',
               border:      'none',
               cursor:      'pointer',
-              color:       '#8b8b9a',
+              color:       'var(--text-muted)',
               fontSize:    '14px',
               padding:     '4px 6px',
               flexShrink:  0,
@@ -230,7 +230,7 @@ function ScreeningRow({
 
   return (
     <RowShell>
-      <span style={{ fontSize: '12px', color: '#8b8b9a', flexShrink: 0, minWidth: '90px' }}>
+      <span style={{ fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0, minWidth: '90px' }}>
         {formatDate(row.created_at)}
       </span>
 
@@ -250,7 +250,7 @@ function ScreeningRow({
           {row.filename}
         </span>
         {row.entity_count > 0 && (
-          <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
             {row.entity_count} entit{row.entity_count !== 1 ? 'ies' : 'y'} screened
           </span>
         )}
@@ -276,7 +276,7 @@ function ScreeningRow({
               background:  'none',
               border:      'none',
               cursor:      'pointer',
-              color:       '#8b8b9a',
+              color:       'var(--text-muted)',
               fontSize:    '14px',
               padding:     '4px 6px',
               flexShrink:  0,
@@ -299,7 +299,7 @@ function SectionHeading({ label, count }: { label: string; count: number }) {
       style={{
         fontSize:      '11px',
         fontWeight:    600,
-        color:         '#55556a',
+        color:         'var(--text-muted)',
         textTransform: 'uppercase',
         letterSpacing: '0.07em',
         marginBottom:  '12px',
@@ -340,12 +340,12 @@ function LoadMoreButton({ onClick, loading }: { onClick: () => void; loading: bo
       style={{
         display:      'block',
         margin:       'var(--space-3) auto 0',
-        background:   '#1e1e24',
-        border:       '1px solid rgba(255,255,255,0.07)',
+        background:   'var(--bg-elevated)',
+        border:       '1px solid var(--border-subtle)',
         borderRadius: '6px',
         padding:      '6px 20px',
         fontSize:     '12px',
-        color:        '#8b8b9a',
+        color:        'var(--text-muted)',
         cursor:       loading ? 'default' : 'pointer',
         fontFamily:   'inherit',
       }}

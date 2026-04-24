@@ -291,7 +291,7 @@ function BeneficialOwnersPanel({ company }: { company: Company }) {
                     {offshore && (
                       <span style={{
                         fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
-                        letterSpacing: '0.06em', color: '#f97316',
+                        letterSpacing: '0.06em', color: 'var(--risk-high)',
                         backgroundColor: 'rgba(249,115,22,0.1)',
                         padding: '1px 6px', borderRadius: '4px',
                       }}>
@@ -377,8 +377,8 @@ function VesselsPanel({ company }: { company: Company }) {
 function RiskFlagsPanel({ company }: { company: Company }) {
   const SEVERITY_COLOR: Record<string, string> = {
     critical: 'var(--status-listed)',
-    high:     '#f97316',
-    medium:   '#eab308',
+    high:     'var(--risk-high)',
+    medium:   'var(--accent-amber)',
     low:      'var(--text-muted)',
   }
 
@@ -454,11 +454,11 @@ const DATASET_LABEL: Record<string, string> = {
 }
 
 const DATASET_COLOR: Record<string, string> = {
-  panama_papers:   '#ef4444',
-  pandora_papers:  '#f97316',
-  offshore_leaks:  '#eab308',
-  bahamas_leaks:   '#8b5cf6',
-  paradise_papers: '#3b82f6',
+  panama_papers:   'var(--status-listed)',
+  pandora_papers:  'var(--risk-high)',
+  offshore_leaks:  'var(--accent-amber)',
+  bahamas_leaks:   'var(--accent-violet)',
+  paradise_papers: 'var(--accent-primary)',
 }
 
 function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
@@ -486,7 +486,7 @@ function OffshoreLeaksPanel({ matches }: { matches: IcijMatch[] }) {
                   <p style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 500 }}>{m.name}</p>
                   <span style={{
                     fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em',
-                    color: '#fff', backgroundColor: DATASET_COLOR[m.dataset] ?? 'var(--text-muted)',
+                    color: 'var(--text-on-accent)', backgroundColor: DATASET_COLOR[m.dataset] ?? 'var(--text-muted)',
                     padding: '1px 6px', borderRadius: '4px',
                   }}>
                     {DATASET_LABEL[m.dataset] ?? m.dataset}
@@ -594,7 +594,7 @@ function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
             <span style={{
               width: '6px', height: '6px', borderRadius: '50%',
-              backgroundColor: '#f97316', flexShrink: 0,
+              backgroundColor: 'var(--risk-high)', flexShrink: 0,
             }} />
             <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>
               {officer.name}
@@ -619,7 +619,7 @@ function IcijOfficerNetworkPanel({ links }: { links: IcijOfficerLink[] }) {
                 </div>
                 <span style={{
                   fontSize: '10px', fontWeight: 600, textTransform: 'uppercase',
-                  letterSpacing: '0.06em', color: '#f97316',
+                  letterSpacing: '0.06em', color: 'var(--risk-high)',
                   backgroundColor: 'rgba(249,115,22,0.1)',
                   padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginLeft: '8px',
                 }}>
@@ -715,7 +715,7 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
             href="/pricing"
             style={{
               display: 'inline-block',
-              backgroundColor: 'var(--accent-primary)', color: '#fff',
+              backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)',
               padding: 'var(--space-3) var(--space-6)', borderRadius: '8px',
               fontSize: '14px', fontWeight: 500, textDecoration: 'none',
             }}
@@ -903,7 +903,7 @@ export default async function CompanyPage({ params }: PageProps) {
                 border: '1px solid rgba(59,130,246,0.2)',
                 borderRadius: '6px',
               }}>
-                <span style={{ color: '#3b82f6', fontSize: '11px', lineHeight: '16px', display: 'block' }}>
+                <span style={{ color: 'var(--accent-primary)', fontSize: '11px', lineHeight: '16px', display: 'block' }}>
               External registry — some fields may be incomplete.
                 </span>
               </div>

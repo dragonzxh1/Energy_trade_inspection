@@ -1,5 +1,5 @@
 ﻿/**
- * Entity extractor using the Qwen LLM through the DashScope OpenAI-compatible API.
+ * Entity extractor using the Qwen 3.6-plus LLM through the DashScope OpenAI-compatible API.
  * to extract structured entities (companies, persons, vessels) from contract text.
  */
 
@@ -36,7 +36,7 @@ export interface ExtractedTradeParams {
   confidence: 'high' | 'medium' | 'low'
 }
 
-const qwen = new OpenAI({
+export const qwen = new OpenAI({
   apiKey: process.env.QWEN_API_KEY!,
   baseURL: process.env.QWEN_BASE_URL!,
 })
@@ -115,7 +115,7 @@ export async function extractTradeParams(text: string): Promise<ExtractedTradePa
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response = await qwen.chat.completions.create(
       {
-        model: 'qwen3.5-plus',
+        model: 'qwen3.6-plus',
         messages: [
           { role: 'system', content: TRADE_PARAMS_PROMPT },
           {
@@ -178,7 +178,7 @@ export async function extractEntities(text: string): Promise<ExtractedEntity[]> 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     response = await qwen.chat.completions.create(
       {
-        model: 'qwen3.5-plus',
+        model: 'qwen3.6-plus',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           {

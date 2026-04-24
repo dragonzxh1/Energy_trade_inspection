@@ -68,10 +68,10 @@ async function runDomainCheck(domain: string): Promise<DomainCheckResult | null>
 // ── Domain risk card ──────────────────────────────────────────────────────────
 
 const SEVERITY_COLOR: Record<string, string> = {
-  critical: '#ef4444',
-  high:     '#f97316',
-  medium:   '#eab308',
-  low:      '#22c55e',
+  critical: 'var(--status-listed)',
+  high:     'var(--risk-high)',
+  medium:   'var(--accent-amber)',
+  low:      'var(--status-clear)',
 }
 
 function DomainCheckCard({ result }: { result: DomainCheckResult }) {

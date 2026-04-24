@@ -36,7 +36,7 @@ export default async function ScreenPage({ searchParams }: PageProps) {
   return (
     <>
       <Header />
-      <main>
+      <main style={{ maxWidth: 'var(--max-width)', margin: '0 auto', padding: 'var(--space-8) var(--space-4)', minHeight: '60vh' }}>
         {plan === 'free' ? (
           <UpgradePrompt />
         ) : (
@@ -82,19 +82,18 @@ function UpgradePrompt() {
       </p>
       <Link
         href="/pricing"
+        className="gradient-btn"
         style={{
           display: 'inline-block',
           fontSize: '14px',
           fontWeight: 600,
-          color: '#fff',
-          backgroundColor: 'var(--accent-primary)',
-          borderRadius: '8px',
           padding: '10px 24px',
+          borderRadius: '8px',
           textDecoration: 'none',
         }}
       >
-                Upgrade to Starter →
-              </Link>
+        Upgrade to Starter →
+      </Link>
     </div>
   )
 }

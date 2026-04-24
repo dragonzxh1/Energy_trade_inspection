@@ -38,6 +38,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
+  // SEO case study pages
+  let casePages: MetadataRoute.Sitemap = []
+  try {
+    const caseResult = await db.query<{ slug: string; updated_at: string }>(`
+      SELECT slug, updated_at
+      FROM seo_content
+      WHERE content_type = 'case_study' AND published = true
+      ORDER BY updated_at DESC
+      LIMIT 200
+    `)
+    casePages = caseResult.rows.map((row) => ({
+      url: `${APP_URL}/case/${row.slug}`,
+      lastModified: new Date(row.updated_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }))
+  } catch {
+    // Skip case pages if DB unavailable at build time
+  }
+
   // Dynamic entity pages from DB
   let entityPages: MetadataRoute.Sitemap = []
   let terminalPages: MetadataRoute.Sitemap = []
@@ -83,7 +103,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // If the database is unavailable at build time, return static entries only.
   }
 
-  return [...staticPages, ...entityPages, ...terminalPages]
+  return [...staticPages, ...casePages, ...entityPages, ...terminalPages]
 }
 
 

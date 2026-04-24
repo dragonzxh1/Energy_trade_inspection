@@ -43,7 +43,7 @@ export default function ResetPasswordForm() {
         <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: 'var(--space-6)' }}>
           Your new password has been set. You can now sign in.
         </p>
-        <Link href="/sign-in" style={{ display: 'inline-block', backgroundColor: 'var(--accent-primary)', color: '#fff', textDecoration: 'none', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}>
+        <Link href="/sign-in" style={{ display: 'inline-block', backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)', textDecoration: 'none', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}>
           Sign in
         </Link>
       </div>
@@ -92,7 +92,7 @@ export default function ResetPasswordForm() {
           <label htmlFor="password2" style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 'var(--space-1)' }}>Confirm password</label>
           <input id="password2" type="password" autoComplete="new-password" required value={password2} onChange={(e) => setPassword2(e.target.value)} style={inputStyle} placeholder="Re-enter password" />
         </div>
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--accent-primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Saving...' : 'Save new password'}
         </button>
       </form>

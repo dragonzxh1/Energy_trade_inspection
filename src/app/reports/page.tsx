@@ -96,7 +96,7 @@ function UpgradePrompt() {
         href="/pricing"
         style={{
           backgroundColor: 'var(--accent-primary)',
-          color:           '#fff',
+          color:           'var(--text-on-accent)',
           textDecoration:  'none',
           padding:         '8px 20px',
           borderRadius:    '6px',

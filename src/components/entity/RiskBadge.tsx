@@ -24,7 +24,7 @@ const CONFIG: Record<RiskLevel, { label: string; color: string; background: stri
   },
   critical: {
     label: 'Critical Risk',
-    color: '#fff',
+    color: 'var(--text-on-accent)',
     background: 'var(--risk-critical)',
   },
 }

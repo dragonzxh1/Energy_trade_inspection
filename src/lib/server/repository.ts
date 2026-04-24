@@ -678,7 +678,8 @@ export async function getBrowseEntities(entityType?: string): Promise<BrowseResu
         ORDER BY
           CASE sanction_status WHEN 'listed' THEN 0 WHEN 'unknown' THEN 1 ELSE 2 END,
           CASE risk_level WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END,
-          authenticity_score ASC
+          authenticity_score ASC,
+          id ASC
         LIMIT 100
       `,
       [browseType]

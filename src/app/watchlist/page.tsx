@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 const STATUS_COLOR: Record<string, string> = {
   listed:     '#ef4444',
   not_listed: '#22c55e',
-  unknown:    '#55556a',
+  unknown:    'var(--text-faint)',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -36,16 +36,15 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const secondaryBtn: React.CSSProperties = {
-  background: '#1e1e24',
-  color: '#8b8b9a',
-  border: '1px solid rgba(255,255,255,0.07)',
-  borderRadius: '7px',
+  background: 'var(--bg-elevated)',
+  color: 'var(--text-muted)',
+  border: '1px solid var(--border-solid)',
+  borderRadius: '8px',
   padding: '6px 14px',
   fontSize: '13px',
   fontFamily: 'inherit',
   cursor: 'pointer',
-  boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
-  transition: 'all 0.12s ease',
+  transition: 'all 0.15s ease',
 }
 
 // ── Server actions ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -141,13 +140,13 @@ function AlertsSection({ alerts }: { alerts: AlertRow[] }) {
                 </span>
               </p>
               <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                <span style={{ color: STATUS_COLOR[alert.old_value ?? ''] ?? '#55556a' }}>
+                <span style={{ color: STATUS_COLOR[alert.old_value ?? ''] ?? 'var(--text-faint)' }}>
                   {STATUS_LABEL[alert.old_value ?? ''] ?? alert.old_value ?? '-'}
                 </span>
               {' →'}
                 <span
                   style={{
-                    color: STATUS_COLOR[alert.new_value ?? ''] ?? '#55556a',
+                    color: STATUS_COLOR[alert.new_value ?? ''] ?? 'var(--text-faint)',
                     fontWeight: 600,
                   }}
                 >
@@ -212,11 +211,11 @@ export default async function WatchlistPage() {
             </p>
             <Link
               href="/pricing"
+              className="gradient-btn"
               style={{
                 display: 'inline-block',
-                backgroundColor: 'var(--accent-primary)', color: '#fff',
                 padding: 'var(--space-3) var(--space-6)', borderRadius: '8px',
-                fontSize: '14px', fontWeight: 500, textDecoration: 'none',
+                fontSize: '14px', fontWeight: 600, textDecoration: 'none',
               }}
             >
               Upgrade to Professional
@@ -281,12 +280,10 @@ export default async function WatchlistPage() {
         {rows.length === 0 ? (
           /* Empty state */
           <div style={{
-            backgroundColor: '#111113',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderTop: '1px solid rgba(255,255,255,0.09)',
-            borderRadius: '10px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-            padding: 'var(--space-12)',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-solid)',
+                        borderRadius: '12px',
+                        padding: 'var(--space-12)',
             textAlign: 'center',
           }}>
             <p style={{ fontSize: '32px', marginBottom: 'var(--space-4)' }}>👀</p>
@@ -298,11 +295,11 @@ export default async function WatchlistPage() {
             </p>
             <Link
               href="/"
+              className="gradient-btn"
               style={{
                 display: 'inline-block',
-                backgroundColor: 'var(--accent-primary)', color: '#fff',
-                padding: 'var(--space-2) var(--space-5)', borderRadius: '6px',
-                fontSize: '13px', fontWeight: 500, textDecoration: 'none',
+                padding: 'var(--space-2) var(--space-5)', borderRadius: '8px',
+                fontSize: '13px', fontWeight: 600, textDecoration: 'none',
               }}
             >
               Search entities
@@ -311,24 +308,22 @@ export default async function WatchlistPage() {
         ) : (
           /* Watchlist table */
           <div style={{
-            backgroundColor: '#111113',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderTop: '1px solid rgba(255,255,255,0.09)',
-            borderRadius: '10px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-            overflow: 'hidden',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-solid)',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
           }}>
             {/* Column headers */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 80px 130px 80px 70px',
               padding: 'var(--space-3) var(--space-5)',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
+              borderBottom: '1px solid var(--border-solid)',
               backgroundColor: '#1e1e24',
             }}>
               {['Entity', 'Type', 'Status', 'Added', ''].map((h) => (
                 <span key={h} style={{
-                  color: '#55556a', fontSize: '11px',
+                  color: 'var(--text-faint)', fontSize: '11px',
                   fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
                 }}>
                   {h}
@@ -341,7 +336,7 @@ export default async function WatchlistPage() {
               const isLast = idx === rows.length - 1
               const removeAction = removeFromWatchlist.bind(null, item.id)
               const statusChanged = item.current_sanction_status !== item.sanction_status
-              const statusColor = STATUS_COLOR[item.current_sanction_status] ?? '#55556a'
+              const statusColor = STATUS_COLOR[item.current_sanction_status] ?? 'var(--text-faint)'
 
               return (
                 <div
@@ -351,7 +346,7 @@ export default async function WatchlistPage() {
                     display: 'grid',
                     gridTemplateColumns: '1fr 80px 130px 80px 70px',
                     padding: 'var(--space-4) var(--space-5)',
-                    borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.07)',
+                    borderBottom: isLast ? 'none' : '1px solid var(--border-solid)',
                     alignItems: 'center',
                     transition: 'background 0.1s ease',
                     backgroundColor: statusChanged
@@ -373,7 +368,7 @@ export default async function WatchlistPage() {
 
                   {/* Type */}
                   <span style={{
-                    color: '#8b8b9a', fontSize: '12px',
+                    color: 'var(--text-muted)', fontSize: '12px',
                     textTransform: 'capitalize',
                   }}>
                     {item.entity_type}
@@ -402,7 +397,7 @@ export default async function WatchlistPage() {
                   </span>
 
                   {/* Added date */}
-                  <span style={{ color: '#8b8b9a', fontSize: '12px' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
                     {new Date(item.added_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
 
@@ -422,7 +417,7 @@ export default async function WatchlistPage() {
           </div>
         )}
 
-        <p style={{ marginTop: 'var(--space-5)', color: '#8b8b9a', fontSize: '12px', textAlign: 'center' }}>
+        <p style={{ marginTop: 'var(--space-5)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
           Status is compared against live data in our database. Click &ldquo;Refresh status&rdquo; to check for changes.
         </p>
 
@@ -436,7 +431,7 @@ export default async function WatchlistPage() {
               <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
                 Watched Trades
               </h2>
-              <p style={{ color: '#8b8b9a', fontSize: '13px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
                 {tradeRows.length} trade{tradeRows.length !== 1 ? 's' : ''} monitored
               </p>
             </div>
@@ -447,37 +442,33 @@ export default async function WatchlistPage() {
 
           {tradeRows.length === 0 ? (
             <div style={{
-              backgroundColor: '#111113',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderTop: '1px solid rgba(255,255,255,0.09)',
-              borderRadius: '10px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-              padding: 'var(--space-8)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-solid)',
+                            borderRadius: '12px',
+                            padding: 'var(--space-8)',
               textAlign: 'center',
             }}>
-              <p style={{ color: '#8b8b9a', fontSize: '13px', lineHeight: '20px' }}>
+              <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px' }}>
                 No trades watched yet. Run a <Link href="/trade" style={{ color: 'var(--accent-primary)', textDecoration: 'none' }}>trade check</Link> and click &ldquo;Watch trade&rdquo; to monitor it.
               </p>
             </div>
           ) : (
             <div style={{
-              backgroundColor: '#111113',
-              border: '1px solid rgba(255,255,255,0.07)',
-              borderTop: '1px solid rgba(255,255,255,0.09)',
-              borderRadius: '10px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
-              overflow: 'hidden',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-solid)',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
             }}>
               {/* Column headers */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr 90px 100px 80px 70px',
                 padding: 'var(--space-3) var(--space-5)',
-                borderBottom: '1px solid rgba(255,255,255,0.07)',
+                borderBottom: '1px solid var(--border-solid)',
                 backgroundColor: '#1e1e24',
               }}>
                 {['Seller', 'Vessel', 'Risk', 'Flags', 'Saved', ''].map(h => (
                   <span key={h} style={{
-                    color: '#55556a', fontSize: '11px',
+                    color: 'var(--text-faint)', fontSize: '11px',
                     fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
                   }}>{h}</span>
                 ))}
@@ -490,7 +481,7 @@ export default async function WatchlistPage() {
                   critical: '#ef4444', high: '#f97316', medium: '#eab308', low: '#22c55e',
                 }
                 const removeAction = removeWatchedTradeAction.bind(null, t.id)
-                const tradeRiskColor = TRADE_RISK_COLOR[t.last_overall_risk] ?? '#55556a'
+                const tradeRiskColor = TRADE_RISK_COLOR[t.last_overall_risk] ?? 'var(--text-faint)'
                 return (
                   <div
                     key={t.id}
@@ -498,7 +489,7 @@ export default async function WatchlistPage() {
                     style={{
                       display: 'grid', gridTemplateColumns: '1fr 1fr 90px 100px 80px 70px',
                       padding: 'var(--space-4) var(--space-5)',
-                      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.07)',
+                      borderBottom: isLast ? 'none' : '1px solid var(--border-solid)',
                       alignItems: 'center',
                       transition: 'background 0.1s ease',
                       backgroundColor: alerts > 0 ? 'rgba(249,115,22,0.04)' : undefined,
@@ -514,10 +505,10 @@ export default async function WatchlistPage() {
                       )}
                     </span>
                     {/* Vessel */}
-                    <span style={{ fontSize: '13px', color: '#8b8b9a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {t.vessel_name}
                       {t.vessel_imo && (
-                        <span style={{ marginLeft: '6px', fontSize: '11px', color: '#55556a', fontFamily: 'monospace' }}>
+                        <span style={{ marginLeft: '6px', fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'monospace' }}>
                           {t.vessel_imo}
                         </span>
                       )}
@@ -536,11 +527,11 @@ export default async function WatchlistPage() {
                       {t.last_overall_risk.toUpperCase()}
                     </span>
                     {/* Flags */}
-                    <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {t.last_flag_count} flag{t.last_flag_count !== 1 ? 's' : ''}
                     </span>
                     {/* Saved date */}
-                    <span style={{ fontSize: '12px', color: '#8b8b9a' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                     {/* Remove */}
@@ -559,7 +550,7 @@ export default async function WatchlistPage() {
             </div>
           )}
 
-          <p style={{ marginTop: 'var(--space-4)', color: '#8b8b9a', fontSize: '12px', textAlign: 'center' }}>
+          <p style={{ marginTop: 'var(--space-4)', color: 'var(--text-muted)', fontSize: '12px', textAlign: 'center' }}>
             Refresh checks sanctions and PSC detention status for each saved trade.
           </p>
         </div>

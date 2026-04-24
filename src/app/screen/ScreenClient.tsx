@@ -8,22 +8,22 @@ import type { RiskLevel } from '@/lib/types'
 
 // ── TOKEN (all hardcoded values live here; never scatter magic strings) ──────
 const TOKEN = {
-  surface:      '#111113',
-  elevated:     '#1e1e24',
-  elevated2:    '#26262e',
-  border:       'rgba(255,255,255,0.07)',
-  borderHover:  'rgba(255,255,255,0.14)',
-  primary:      '#6366f1',
-  text:         '#f1f1f3',
-  textMuted:    '#8b8b9a',
-  textSubtle:   '#55556a',
+  surface:      'var(--bg-surface)',
+  elevated:     'var(--bg-elevated)',
+  elevated2:    'color-mix(in srgb, var(--bg-elevated) 80%, var(--bg-primary))',
+  border:       'var(--border-subtle)',
+  borderHover:  'color-mix(in srgb, var(--accent-primary) 40%, var(--border-subtle))',
+  primary:      'var(--accent-primary)',
+  text:         'var(--text-primary)',
+  textMuted:    'var(--text-muted)',
+  textSubtle:   'var(--text-faint)',
 } as const
 
 // ── Secondary button style ────────────────────────────────────────────────────
 const secondaryBtnStyle: React.CSSProperties = {
-  background: '#1e1e24',
-  color: '#8b8b9a',
-  border: '1px solid rgba(255,255,255,0.07)',
+  background: 'var(--bg-elevated)',
+  color: 'var(--text-muted)',
+  border: '1px solid var(--border-subtle)',
   borderRadius: '7px',
   padding: '6px 14px',
   fontSize: '13px',
@@ -38,24 +38,24 @@ const secondaryBtnStyle: React.CSSProperties = {
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<RiskLevel, string> = {
-  critical: '#ef4444',
-  high:     '#f97316',
-  medium:   '#eab308',
-  low:      '#22c55e',
+  critical: 'var(--status-listed)',
+  high:     'var(--risk-high)',
+  medium:   'var(--accent-amber)',
+  low:      'var(--status-clear)',
 }
 
 const RISK_BG: Record<RiskLevel, string> = {
-  critical: 'rgba(239,68,68,0.10)',
-  high:     'rgba(249,115,22,0.08)',
-  medium:   'rgba(234,179,8,0.08)',
-  low:      'rgba(34,197,94,0.08)',
+  critical: 'color-mix(in srgb, var(--status-listed) 10%, transparent)',
+  high:     'color-mix(in srgb, var(--risk-high) 8%, transparent)',
+  medium:   'color-mix(in srgb, var(--accent-amber) 8%, transparent)',
+  low:      'color-mix(in srgb, var(--status-clear) 8%, transparent)',
 }
 
 const RISK_BORDER: Record<RiskLevel, string> = {
-  critical: 'rgba(239,68,68,0.30)',
-  high:     'rgba(249,115,22,0.25)',
-  medium:   'rgba(234,179,8,0.25)',
-  low:      'rgba(34,197,94,0.25)',
+  critical: 'color-mix(in srgb, var(--status-listed) 30%, transparent)',
+  high:     'color-mix(in srgb, var(--risk-high) 25%, transparent)',
+  medium:   'color-mix(in srgb, var(--accent-amber) 25%, transparent)',
+  low:      'color-mix(in srgb, var(--status-clear) 25%, transparent)',
 }
 
 const RISK_LABEL: Record<RiskLevel, string> = {
@@ -157,8 +157,8 @@ function UploadEmptyState() {
 
 function SanctionBadge({ status }: { status: string }) {
   const color =
-    status === 'listed'     ? '#ef4444' :
-    status === 'not_listed' ? '#22c55e' : TOKEN.textMuted
+    status === 'listed'     ? 'var(--status-listed)' :
+    status === 'not_listed' ? 'var(--status-clear)' : TOKEN.textMuted
   const label =
     status === 'listed'     ? 'SANCTIONED' :
     status === 'not_listed' ? 'CLEAR'      : 'UNKNOWN'
@@ -166,7 +166,7 @@ function SanctionBadge({ status }: { status: string }) {
   return (
     <span style={{
       fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
-      color, backgroundColor: `${color}18`, border: `1px solid ${color}44`,
+      color, backgroundColor: 'color-mix(in srgb, ' + color + ' 10%, transparent)', border: `1px solid color-mix(in srgb, ` + color + ` 25%, transparent)`,
       borderRadius: '4px', padding: '2px 7px',
     }}>
       {label}
@@ -268,14 +268,14 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
         }}>
           {icijCount > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '12px', color: '#eab308' }}>
+              <span style={{ fontSize: '12px', color: 'var(--accent-amber)' }}>
                 ⚠ {icijCount} ICIJ offshore connection{icijCount !== 1 ? 's' : ''}
               </span>
               {needsManualReview && (
                 <span style={{
                   fontSize: '10px', fontWeight: 600, letterSpacing: '0.04em',
-                  color: '#eab308', backgroundColor: 'rgba(234,179,8,0.12)',
-                  border: '1px solid rgba(234,179,8,0.35)',
+                  color: 'var(--accent-amber)', backgroundColor: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',
+                  border: '1px solid color-mix(in srgb, var(--accent-amber) 35%, transparent)',
                   borderRadius: '4px', padding: '1px 6px',
                 }}>
                   VERIFY MANUALLY
@@ -286,7 +286,7 @@ function EntityCard({ result }: { result: EntityScreeningResult }) {
           {pscDeficiencyRate != null && (
             <span style={{
               fontSize: '12px',
-              color: pscDeficiencyRate > 0.3 ? '#f97316' : TOKEN.textMuted,
+              color: pscDeficiencyRate > 0.3 ? 'var(--risk-high)' : TOKEN.textMuted,
             }}>
               PSC deficiency rate: {Math.round(pscDeficiencyRate * 100)}%
             </span>
@@ -332,8 +332,8 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
         <span style={{
           fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
           color: RISK_COLOR[risk],
-          backgroundColor: `${RISK_COLOR[risk]}18`,
-          border: `1px solid ${RISK_COLOR[risk]}44`,
+          backgroundColor: 'color-mix(in srgb, ' + RISK_COLOR[risk] + ' 10%, transparent)',
+          border: `1px solid color-mix(in srgb, ` + RISK_COLOR[risk] + ` 25%, transparent)`,
           borderRadius: '4px', padding: '2px 8px',
         }}>
           {RISK_LABEL[risk]}
@@ -457,12 +457,12 @@ function OverallRiskBanner({ report }: { report: ScreeningReport }) {
         <strong style={{ color: TOKEN.textMuted }}>{filename}</strong>
         {' '}· Screened {fmt(screenedAt)}
         {listedCount > 0 && (
-          <span style={{ color: '#ef4444', marginLeft: '8px' }}>
+          <span style={{ color: 'var(--status-listed)', marginLeft: '8px' }}>
             · {listedCount} sanction hit{listedCount !== 1 ? 's' : ''}
           </span>
         )}
         {icijCount > 0 && (
-          <span style={{ color: '#f97316', marginLeft: '8px' }}>
+          <span style={{ color: 'var(--risk-high)', marginLeft: '8px' }}>
             · {icijCount} ICIJ flag{icijCount !== 1 ? 's' : ''}
           </span>
         )}
@@ -506,7 +506,7 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
             href={`/api/screen/report?sessionId=${report.id}`}
             style={{
               ...secondaryBtnStyle,
-              background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+              background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
               color: '#fff',
               border: '1px solid rgba(99,102,241,0.45)',
               boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
@@ -549,7 +549,7 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
           href={`/api/screen/report?sessionId=${report.id}`}
           style={{
             fontSize: '14px', fontWeight: 600, color: '#fff',
-            background: 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+            background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
             borderRadius: '7px', padding: '10px 24px',
             textDecoration: 'none', display: 'inline-block',
             border: '1px solid rgba(99,102,241,0.45)',
@@ -573,7 +573,7 @@ function ErrorView({ message, onReset }: { message: string; onReset: () => void 
         border: '1px solid rgba(239,68,68,0.25)',
         borderRadius: '8px', padding: '20px', marginBottom: '16px',
       }}>
-        <p style={{ fontSize: '14px', fontWeight: 500, color: '#ef4444', marginBottom: '8px' }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--status-listed)', marginBottom: '8px' }}>
           Screening failed
         </p>
         <p style={{ fontSize: '13px', color: TOKEN.textMuted, margin: 0 }}>{message}</p>

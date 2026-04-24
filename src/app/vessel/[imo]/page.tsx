@@ -170,8 +170,8 @@ function VesselDetailsPanel({ vessel }: { vessel: Vessel }) {
 function RiskFlagsPanel({ vessel }: { vessel: Vessel }) {
   const SEVERITY_COLOR: Record<string, string> = {
     critical: 'var(--status-listed)',
-    high:     '#f97316',
-    medium:   '#eab308',
+    high:     'var(--risk-high)',
+    medium:   'var(--accent-amber)',
     low:      'var(--text-muted)',
   }
 
@@ -242,7 +242,7 @@ function RiskFlagsPanel({ vessel }: { vessel: Vessel }) {
 function PscSummaryPanel({ summary }: { summary: PscSummary }) {
   const resultColor = (result: string | null) => {
     if (result === 'detained')      return 'var(--status-listed)'
-    if (result === 'deficiency')    return '#f97316'
+    if (result === 'deficiency')    return 'var(--risk-high)'
     if (result === 'no_deficiency') return 'var(--status-clear)'
     return 'var(--text-muted)'
   }
@@ -290,7 +290,7 @@ function PscSummaryPanel({ summary }: { summary: PscSummary }) {
 function PscInspectionsPanel({ inspections }: { inspections: PscInspection[] }) {
   const RESULT_COLOR: Record<string, string> = {
     detained:      'var(--status-listed)',
-    deficiency:    '#f97316',
+    deficiency:    'var(--risk-high)',
     no_deficiency: 'var(--status-clear)',
   }
   const RESULT_LABEL: Record<string, string> = {

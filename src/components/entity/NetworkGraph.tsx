@@ -46,8 +46,8 @@ const NODE_RADIUS: Record<string, number> = {
 
 const NODE_STYLES: Record<string, React.CSSProperties> = {
   root: {
-    backgroundColor: 'rgba(94,106,210,0.25)',
-    border:          '2px solid #5e6ad2',
+    backgroundColor: 'var(--bg-surface)',
+    border:          '2px solid var(--accent-primary)',
     color:           '#f7f8f8',
   },
   sanctioned: {

@@ -62,7 +62,7 @@ export default function GlobalError({ error, reset }: ErrorProps) {
           backgroundColor: 'var(--accent-primary)',
           border: 'none',
           borderRadius: '8px',
-          color: '#fff',
+          color: 'var(--text-on-accent)',
           cursor: 'pointer',
           fontSize: '14px',
           fontFamily: 'inherit',

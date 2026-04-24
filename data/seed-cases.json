@@ -1,0 +1,2585 @@
+[
+  {
+    "slug": "asia-fuel-pte-ltd-iranian-petroleum-network-2023",
+    "type": "case_seed",
+    "title": "Asia Fuel Pte Ltd Iranian Petroleum Network 2023",
+    "year": 2023,
+    "entities": [
+      "Asia Fuel Pte. Ltd.",
+      "Triliance"
+    ],
+    "industry_focus": "energy/petroleum/trade intermediary",
+    "amount_usd": null,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://home.treasury.gov/news/press-releases/jy1257"
+    ],
+    "verified_facts": [
+      "OFAC 2023 press release designated Asia Fuel Pte. Ltd. in connection with a Triliance-linked Iranian petroleum network."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "trade_intermediary"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "sense-shipping-and-trading-sdn-bhd-triliance-front-company-2023",
+    "type": "case_seed",
+    "title": "Sense Shipping and Trading SDN BHD Triliance Front Company 2023",
+    "year": 2023,
+    "entities": [
+      "Sense Shipping and Trading SDN. BHD.",
+      "Triliance"
+    ],
+    "industry_focus": "energy/petrochemical/shipping",
+    "amount_usd": null,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://home.treasury.gov/news/press-releases/jy1257"
+    ],
+    "verified_facts": [
+      "OFAC 2023 press release described Sense Shipping and Trading SDN. BHD. as a Kuala Lumpur-based front company for Triliance."
+    ],
+    "risk_types": [
+      "energy",
+      "petrochemical",
+      "shipping"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "unicious-energy-pte-ltd-iranian-petroleum-payments-2023",
+    "type": "case_seed",
+    "title": "Unicious Energy Pte Ltd Iranian Petroleum Payments 2023",
+    "year": 2023,
+    "entities": [
+      "Unicious Energy Pte. Ltd.",
+      "Triliance"
+    ],
+    "industry_focus": "energy/petroleum/payments",
+    "amount_usd": null,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://home.treasury.gov/news/press-releases/jy1257"
+    ],
+    "verified_facts": [
+      "OFAC 2023 press release stated Unicious Energy Pte. Ltd. coordinated petroleum-related payments in a Triliance-linked network."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "payments"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "essentra-fze-north-korea-trade-sanctions-2020",
+    "type": "case_seed",
+    "title": "Essentra FZE North Korea Trade Sanctions 2020",
+    "year": 2020,
+    "entities": [
+      "Essentra FZE"
+    ],
+    "industry_focus": "trade/front companies/sanctions",
+    "amount_usd": 665112,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20200716_33"
+    ],
+    "verified_facts": [
+      "OFAC announced a USD 665,112 settlement with Essentra FZE related to apparent North Korea sanctions violations."
+    ],
+    "risk_types": [
+      "trade",
+      "front_companies",
+      "sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "zte-corporation-iran-sanctions-export-control-2017",
+    "type": "case_seed",
+    "title": "ZTE Corporation Iran Sanctions Export Control 2017",
+    "year": 2017,
+    "entities": [
+      "ZTE Corporation"
+    ],
+    "industry_focus": "industrial goods/export control/Iran trade",
+    "amount_usd": 430488798,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://www.justice.gov/archives/opa/pr/zte-corporation-agrees-plead-guilty-and-pay-over-4304-million-violating-us-sanctions-sending"
+    ],
+    "verified_facts": [
+      "DOJ stated ZTE agreed to plead guilty and pay over USD 430.4 million for violating U.S. sanctions by sending U.S.-origin items to Iran."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_control",
+      "iran_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "epsilon-electronics-iran-third-party-transshipment",
+    "type": "case_seed",
+    "title": "Epsilon Electronics Iran Third Party Transshipment",
+    "year": 2018,
+    "entities": [
+      "Epsilon Electronics Inc."
+    ],
+    "industry_focus": "trade/transshipment/Iran sanctions",
+    "amount_usd": null,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20140725"
+    ],
+    "verified_facts": [
+      "OFAC records identify the Epsilon Electronics case as involving third-party exports alleged to be intended for Iran."
+    ],
+    "risk_types": [
+      "trade",
+      "transshipment",
+      "iran_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "cobham-aeroflex-metelics-ofac-50-percent-rule-2018",
+    "type": "case_seed",
+    "title": "Cobham Aeroflex Metelics OFAC 50 Percent Rule 2018",
+    "year": 2018,
+    "entities": [
+      "Cobham Holdings, Inc.",
+      "Aeroflex/Metelics"
+    ],
+    "industry_focus": "industrial goods/ownership screening/export",
+    "amount_usd": 87507,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20181127_33"
+    ],
+    "verified_facts": [
+      "OFAC announced a USD 87,507 settlement involving indirect exports and OFAC's 50 Percent Rule."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "ownership_screening",
+      "export"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "british-american-tobacco-north-korea-trade-settlement-2023",
+    "type": "case_seed",
+    "title": "British American Tobacco North Korea Trade Settlement 2023",
+    "year": 2023,
+    "entities": [
+      "British American Tobacco p.l.c.",
+      "BAT Singapore"
+    ],
+    "industry_focus": "trade/tobacco/North Korea sanctions",
+    "amount_usd": 508612492,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20230425"
+    ],
+    "verified_facts": [
+      "OFAC announced a USD 508,612,492 settlement with British American Tobacco p.l.c. involving North Korea sanctions."
+    ],
+    "risk_types": [
+      "trade",
+      "tobacco",
+      "north_korea_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "toll-holdings-logistics-sanctions-payments-2022",
+    "type": "case_seed",
+    "title": "Toll Holdings Logistics Sanctions Payments 2022",
+    "year": 2022,
+    "entities": [
+      "Toll Holdings Limited"
+    ],
+    "industry_focus": "logistics/shipping/payments",
+    "amount_usd": 6131855,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20220425"
+    ],
+    "verified_facts": [
+      "OFAC announced a USD 6,131,855 settlement with Toll Holdings Limited involving logistics-related payments and sanctions programs."
+    ],
+    "risk_types": [
+      "logistics",
+      "shipping",
+      "payments"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "sojitz-hong-kong-iranian-origin-hdpe-payment-2022",
+    "type": "case_seed",
+    "title": "Sojitz Hong Kong Iranian Origin HDPE Payment 2022",
+    "year": 2022,
+    "entities": [
+      "Sojitz (Hong Kong) Limited"
+    ],
+    "industry_focus": "commodity trade/plastics/Iran origin",
+    "amount_usd": 5228298,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20220111_33"
+    ],
+    "verified_facts": [
+      "OFAC announced a USD 5,228,298 settlement with Sojitz (Hong Kong) Limited involving Iranian-origin high density polyethylene resin."
+    ],
+    "risk_types": [
+      "commodity_trade",
+      "plastics",
+      "iran_origin"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "fracht-fwo-inc-ofac-freight-forwarding-2025",
+    "type": "case_seed",
+    "title": "Fracht FWO Inc OFAC Freight Forwarding 2025",
+    "year": 2025,
+    "entities": [
+      "Fracht FWO Inc."
+    ],
+    "industry_focus": "freight forwarding/logistics/trade",
+    "amount_usd": 1610775,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2025-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2025 lists Fracht FWO Inc. with penalties/settlement total USD 1,610,775."
+    ],
+    "risk_types": [
+      "freight_forwarding",
+      "logistics",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "harman-international-industries-ofac-industrial-goods-2025",
+    "type": "case_seed",
+    "title": "Harman International Industries OFAC Industrial Goods 2025",
+    "year": 2025,
+    "entities": [
+      "Harman International Industries, Inc."
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 1454145,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2025-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2025 lists Harman International Industries, Inc. with penalties/settlement total USD 1,454,145."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "key-holding-llc-ofac-trade-related-enforcement-2025",
+    "type": "case_seed",
+    "title": "Key Holding LLC OFAC Trade Related Enforcement 2025",
+    "year": 2025,
+    "entities": [
+      "Key Holding, LLC"
+    ],
+    "industry_focus": "trade/sanctions enforcement",
+    "amount_usd": 608825,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2025-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2025 lists Key Holding, LLC with penalties/settlement total USD 608,825."
+    ],
+    "risk_types": [
+      "trade",
+      "sanctions_enforcement"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "unicat-catalyst-technologies-ofac-industrial-goods-2025",
+    "type": "case_seed",
+    "title": "Unicat Catalyst Technologies OFAC Industrial Goods 2025",
+    "year": 2025,
+    "entities": [
+      "Unicat Catalyst Technologies, LLC"
+    ],
+    "industry_focus": "industrial goods/chemicals/trade",
+    "amount_usd": 3882797,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2025-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2025 lists Unicat Catalyst Technologies, LLC with penalties/settlement total USD 3,882,797."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "chemicals",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "haas-automation-ofac-industrial-goods-2025",
+    "type": "case_seed",
+    "title": "Haas Automation OFAC Industrial Goods 2025",
+    "year": 2025,
+    "entities": [
+      "Haas Automation, Inc."
+    ],
+    "industry_focus": "machine tools/industrial goods/export",
+    "amount_usd": 1044781,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2025-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2025 lists Haas Automation, Inc. with penalties/settlement total USD 1,044,781."
+    ],
+    "risk_types": [
+      "machine_tools",
+      "industrial_goods",
+      "export"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "skygeek-logistics-ofac-2024",
+    "type": "case_seed",
+    "title": "SkyGeek Logistics OFAC 2024",
+    "year": 2024,
+    "entities": [
+      "SkyGeek Logistics, Inc."
+    ],
+    "industry_focus": "logistics/aviation parts/trade",
+    "amount_usd": 22172,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2024-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2024 lists SkyGeek Logistics, Inc. with penalties/settlement total USD 22,172."
+    ],
+    "risk_types": [
+      "logistics",
+      "aviation_parts",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "c-h-robinson-international-ofac-freight-forwarding-2024",
+    "type": "case_seed",
+    "title": "C H Robinson International OFAC Freight Forwarding 2024",
+    "year": 2024,
+    "entities": [
+      "C.H. Robinson International, Inc."
+    ],
+    "industry_focus": "freight forwarding/logistics/trade",
+    "amount_usd": 257690,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2024-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2024 lists C.H. Robinson International, Inc. with penalties/settlement total USD 257,690."
+    ],
+    "risk_types": [
+      "freight_forwarding",
+      "logistics",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "aiotec-gmbh-ofac-industrial-goods-iran-2024",
+    "type": "case_seed",
+    "title": "Aiotec GmbH OFAC Industrial Goods Iran 2024",
+    "year": 2024,
+    "entities": [
+      "Aiotec GmbH"
+    ],
+    "industry_focus": "industrial goods/Iran trade",
+    "amount_usd": 14550000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2024-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2024 lists Aiotec GmbH with penalties/settlement total USD 14,550,000."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "iran_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "vietnam-beverage-company-ofac-trade-2024",
+    "type": "case_seed",
+    "title": "Vietnam Beverage Company OFAC Trade 2024",
+    "year": 2024,
+    "entities": [
+      "Vietnam Beverage Company Limited"
+    ],
+    "industry_focus": "commodity trade/beverages/sanctions",
+    "amount_usd": 860000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2024-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2024 lists Vietnam Beverage Company Limited with penalties/settlement total USD 860,000."
+    ],
+    "risk_types": [
+      "commodity_trade",
+      "beverages",
+      "sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "scg-plastics-ofac-iran-commodity-trade-2024",
+    "type": "case_seed",
+    "title": "SCG Plastics OFAC Iran Commodity Trade 2024",
+    "year": 2024,
+    "entities": [
+      "SCG Plastics Co., Ltd."
+    ],
+    "industry_focus": "petrochemicals/plastics/Iran trade",
+    "amount_usd": 20000000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2024-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2024 lists SCG Plastics Co., Ltd. with penalties/settlement total USD 20,000,000."
+    ],
+    "risk_types": [
+      "petrochemicals",
+      "plastics",
+      "iran_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "3m-company-ofac-trade-enforcement-2023",
+    "type": "case_seed",
+    "title": "3M Company OFAC Trade Enforcement 2023",
+    "year": 2023,
+    "entities": [
+      "3M Company"
+    ],
+    "industry_focus": "industrial goods/trade sanctions",
+    "amount_usd": 9618477,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2023-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2023 lists 3M Company with penalties/settlement total USD 9,618,477."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "trade_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "construction-specialties-ofac-construction-materials-2023",
+    "type": "case_seed",
+    "title": "Construction Specialties OFAC Construction Materials 2023",
+    "year": 2023,
+    "entities": [
+      "Construction Specialties Inc."
+    ],
+    "industry_focus": "construction materials/export trade",
+    "amount_usd": 660954,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2023-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2023 lists Construction Specialties Inc. with penalties/settlement total USD 660,954."
+    ],
+    "risk_types": [
+      "construction_materials",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "murad-ofac-consumer-goods-iran-trade-2023",
+    "type": "case_seed",
+    "title": "Murad OFAC Consumer Goods Iran Trade 2023",
+    "year": 2023,
+    "entities": [
+      "Murad, LLC"
+    ],
+    "industry_focus": "consumer goods/Iran trade",
+    "amount_usd": 3509286,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2023-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2023 lists Murad, LLC with penalties/settlement total USD 3,509,286."
+    ],
+    "risk_types": [
+      "consumer_goods",
+      "iran_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "godfrey-phillips-india-ofac-tobacco-trade-2023",
+    "type": "case_seed",
+    "title": "Godfrey Phillips India OFAC Tobacco Trade 2023",
+    "year": 2023,
+    "entities": [
+      "Godfrey Phillips India Limited"
+    ],
+    "industry_focus": "tobacco trade/sanctions",
+    "amount_usd": 332500,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2023-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2023 lists Godfrey Phillips India Limited with penalties/settlement total USD 332,500."
+    ],
+    "risk_types": [
+      "tobacco_trade",
+      "sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "danfoss-as-ofac-industrial-goods-2022",
+    "type": "case_seed",
+    "title": "Danfoss AS OFAC Industrial Goods 2022",
+    "year": 2022,
+    "entities": [
+      "Danfoss A/S"
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 4379810,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2022-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2022 lists Danfoss A/S with penalties/settlement total USD 4,379,810."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "chisu-international-corporation-ofac-trade-2022",
+    "type": "case_seed",
+    "title": "Chisu International Corporation OFAC Trade 2022",
+    "year": 2022,
+    "entities": [
+      "Chisu International Corporation"
+    ],
+    "industry_focus": "trade/sanctions enforcement",
+    "amount_usd": 45908,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2022-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2022 lists Chisu International Corporation with penalties/settlement total USD 45,908."
+    ],
+    "risk_types": [
+      "trade",
+      "sanctions_enforcement"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "newmont-corporation-ofac-mining-trade-2022",
+    "type": "case_seed",
+    "title": "Newmont Corporation OFAC Mining Trade 2022",
+    "year": 2022,
+    "entities": [
+      "Newmont Corporation"
+    ],
+    "industry_focus": "mining/commodity trade",
+    "amount_usd": 141442,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2022-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2022 lists Newmont Corporation with penalties/settlement total USD 141,442."
+    ],
+    "risk_types": [
+      "mining",
+      "commodity_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "cameron-international-corporation-ofac-oilfield-services-2021",
+    "type": "case_seed",
+    "title": "Cameron International Corporation OFAC Oilfield Services 2021",
+    "year": 2021,
+    "entities": [
+      "Cameron International Corporation"
+    ],
+    "industry_focus": "oilfield services/energy trade",
+    "amount_usd": 1423766,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Cameron International Corporation with penalties/settlement total USD 1,423,766."
+    ],
+    "risk_types": [
+      "oilfield_services",
+      "energy_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "schlumberger-rod-lift-ofac-oilfield-services-2021",
+    "type": "case_seed",
+    "title": "Schlumberger Rod Lift OFAC Oilfield Services 2021",
+    "year": 2021,
+    "entities": [
+      "Schlumberger Rod Lift, Inc."
+    ],
+    "industry_focus": "oilfield services/energy trade",
+    "amount_usd": 160000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Schlumberger Rod Lift, Inc. with penalties/settlement total USD 160,000."
+    ],
+    "risk_types": [
+      "oilfield_services",
+      "energy_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "newtek-ofac-technology-export-2021",
+    "type": "case_seed",
+    "title": "NewTek OFAC Technology Export 2021",
+    "year": 2021,
+    "entities": [
+      "NewTek, Inc."
+    ],
+    "industry_focus": "technology/export trade",
+    "amount_usd": 189483,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists NewTek, Inc. with penalties/settlement total USD 189,483."
+    ],
+    "risk_types": [
+      "technology",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "alfa-laval-inc-ofac-industrial-goods-2021",
+    "type": "case_seed",
+    "title": "Alfa Laval Inc OFAC Industrial Goods 2021",
+    "year": 2021,
+    "entities": [
+      "Alfa Laval Inc."
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 16875,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Alfa Laval Inc. with penalties/settlement total USD 16,875."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "alfa-laval-middle-east-ofac-industrial-goods-2021",
+    "type": "case_seed",
+    "title": "Alfa Laval Middle East OFAC Industrial Goods 2021",
+    "year": 2021,
+    "entities": [
+      "Alfa Laval Middle East Ltd."
+    ],
+    "industry_focus": "industrial goods/Middle East trade",
+    "amount_usd": 415695,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Alfa Laval Middle East Ltd. with penalties/settlement total USD 415,695."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "middle_east_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "alliance-steel-ofac-steel-trade-2021",
+    "type": "case_seed",
+    "title": "Alliance Steel OFAC Steel Trade 2021",
+    "year": 2021,
+    "entities": [
+      "Alliance Steel, Inc."
+    ],
+    "industry_focus": "steel/commodity trade",
+    "amount_usd": 435003,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Alliance Steel, Inc. with penalties/settlement total USD 435,003."
+    ],
+    "risk_types": [
+      "steel",
+      "commodity_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "nordgas-ofac-energy-equipment-2021",
+    "type": "case_seed",
+    "title": "Nordgas OFAC Energy Equipment 2021",
+    "year": 2021,
+    "entities": [
+      "Nordgas, S.r.l."
+    ],
+    "industry_focus": "energy equipment/industrial goods",
+    "amount_usd": 950000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists Nordgas, S.r.l. with penalties/settlement total USD 950,000."
+    ],
+    "risk_types": [
+      "energy_equipment",
+      "industrial_goods"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "unicontrol-ofac-industrial-goods-2021",
+    "type": "case_seed",
+    "title": "UniControl OFAC Industrial Goods 2021",
+    "year": 2021,
+    "entities": [
+      "UniControl, Inc."
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 216464,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists UniControl, Inc. with penalties/settlement total USD 216,464."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "pt-bukit-muria-jaya-ofac-trade-2021",
+    "type": "case_seed",
+    "title": "PT Bukit Muria Jaya OFAC Trade 2021",
+    "year": 2021,
+    "entities": [
+      "PT Bukit Muria Jaya"
+    ],
+    "industry_focus": "trade/supply chain/sanctions",
+    "amount_usd": 1016000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2021-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2021 lists PT Bukit Muria Jaya with penalties/settlement total USD 1,016,000."
+    ],
+    "risk_types": [
+      "trade",
+      "supply_chain",
+      "sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "berkshire-hathaway-ofac-industrial-group-2020",
+    "type": "case_seed",
+    "title": "Berkshire Hathaway OFAC Industrial Group 2020",
+    "year": 2020,
+    "entities": [
+      "Berkshire Hathaway, Inc."
+    ],
+    "industry_focus": "industrial goods/corporate group trade",
+    "amount_usd": 4144651,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Berkshire Hathaway, Inc. with penalties/settlement total USD 4,144,651."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "corporate_group_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "keysight-technologies-ofac-technology-export-2020",
+    "type": "case_seed",
+    "title": "Keysight Technologies OFAC Technology Export 2020",
+    "year": 2020,
+    "entities": [
+      "Keysight Technologies Inc."
+    ],
+    "industry_focus": "technology/export trade",
+    "amount_usd": 473157,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Keysight Technologies Inc. with penalties/settlement total USD 473,157."
+    ],
+    "risk_types": [
+      "technology",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "comtech-telecommunications-ofac-export-trade-2020",
+    "type": "case_seed",
+    "title": "Comtech Telecommunications OFAC Export Trade 2020",
+    "year": 2020,
+    "entities": [
+      "Comtech Telecommunications Corp."
+    ],
+    "industry_focus": "telecommunications/export trade",
+    "amount_usd": 894111,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Comtech Telecommunications Corp. with penalties/settlement total USD 894,111."
+    ],
+    "risk_types": [
+      "telecommunications",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "whitford-worldwide-ofac-industrial-coatings-2020",
+    "type": "case_seed",
+    "title": "Whitford Worldwide OFAC Industrial Coatings 2020",
+    "year": 2020,
+    "entities": [
+      "Whitford Worldwide Company, LLC"
+    ],
+    "industry_focus": "industrial goods/coatings trade",
+    "amount_usd": 824314,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Whitford Worldwide Company, LLC with penalties/settlement total USD 824,314."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "coatings_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "biomin-america-ofac-agriculture-trade-2020",
+    "type": "case_seed",
+    "title": "BIOMIN America OFAC Agriculture Trade 2020",
+    "year": 2020,
+    "entities": [
+      "BIOMIN America, Inc."
+    ],
+    "industry_focus": "agriculture/animal nutrition trade",
+    "amount_usd": 257862,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists BIOMIN America, Inc. with penalties/settlement total USD 257,862."
+    ],
+    "risk_types": [
+      "agriculture",
+      "animal_nutrition_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "sita-scrl-ofac-aviation-trade-2020",
+    "type": "case_seed",
+    "title": "SITA SCRL OFAC Aviation Trade 2020",
+    "year": 2020,
+    "entities": [
+      "Société Internationale de Télécommunications Aéronautiques SCRL"
+    ],
+    "industry_focus": "aviation/telecommunications/trade services",
+    "amount_usd": 7829640,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Société Internationale de Télécommunications Aéronautiques SCRL with penalties/settlement total USD 7,829,640."
+    ],
+    "risk_types": [
+      "aviation",
+      "telecommunications",
+      "trade_services"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "eagle-shipping-international-ofac-shipping-2020",
+    "type": "case_seed",
+    "title": "Eagle Shipping International OFAC Shipping 2020",
+    "year": 2020,
+    "entities": [
+      "Eagle Shipping International (USA) LLC"
+    ],
+    "industry_focus": "shipping/maritime trade",
+    "amount_usd": 1125000,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2020-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2020 lists Eagle Shipping International (USA) LLC with penalties/settlement total USD 1,125,000."
+    ],
+    "risk_types": [
+      "shipping",
+      "maritime_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "apollo-aviation-group-ofac-aviation-2019",
+    "type": "case_seed",
+    "title": "Apollo Aviation Group OFAC Aviation 2019",
+    "year": 2019,
+    "entities": [
+      "Apollo Aviation Group, LLC"
+    ],
+    "industry_focus": "aviation/aircraft leasing/trade",
+    "amount_usd": 210600,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists Apollo Aviation Group, LLC with penalties/settlement total USD 210,600."
+    ],
+    "risk_types": [
+      "aviation",
+      "aircraft_leasing",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "general-electric-company-ofac-industrial-goods-2019",
+    "type": "case_seed",
+    "title": "General Electric Company OFAC Industrial Goods 2019",
+    "year": 2019,
+    "entities": [
+      "The General Electric Company"
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 2718581,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists The General Electric Company with penalties/settlement total USD 2,718,581."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "atradius-trade-credit-insurance-ofac-2019",
+    "type": "case_seed",
+    "title": "Atradius Trade Credit Insurance OFAC 2019",
+    "year": 2019,
+    "entities": [
+      "Atradius Trade Credit Insurance, Inc."
+    ],
+    "industry_focus": "trade credit insurance/trade finance",
+    "amount_usd": 345315,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists Atradius Trade Credit Insurance, Inc. with penalties/settlement total USD 345,315."
+    ],
+    "risk_types": [
+      "trade_credit_insurance",
+      "trade_finance"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "paccar-ofac-automotive-trade-2019",
+    "type": "case_seed",
+    "title": "PACCAR OFAC Automotive Trade 2019",
+    "year": 2019,
+    "entities": [
+      "PACCAR Inc."
+    ],
+    "industry_focus": "automotive/truck trade",
+    "amount_usd": 1709325,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists PACCAR Inc. with penalties/settlement total USD 1,709,325."
+    ],
+    "risk_types": [
+      "automotive",
+      "truck_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "mid-ship-group-ofac-shipping-2019",
+    "type": "case_seed",
+    "title": "MID SHIP Group OFAC Shipping 2019",
+    "year": 2019,
+    "entities": [
+      "MID-SHIP Group"
+    ],
+    "industry_focus": "shipping/maritime trade",
+    "amount_usd": 871837,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists MID-SHIP Group with penalties/settlement total USD 871,837."
+    ],
+    "risk_types": [
+      "shipping",
+      "maritime_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "acteon-group-ofac-offshore-services-2019",
+    "type": "case_seed",
+    "title": "Acteon Group OFAC Offshore Services 2019",
+    "year": 2019,
+    "entities": [
+      "Acteon Group"
+    ],
+    "industry_focus": "offshore energy services/trade",
+    "amount_usd": 441366,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists Acteon Group with penalties/settlement total USD 441,366."
+    ],
+    "risk_types": [
+      "offshore_energy_services",
+      "trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "stanley-black-and-decker-ofac-industrial-goods-2019",
+    "type": "case_seed",
+    "title": "Stanley Black and Decker OFAC Industrial Goods 2019",
+    "year": 2019,
+    "entities": [
+      "Stanley Black and Decker"
+    ],
+    "industry_focus": "industrial goods/export trade",
+    "amount_usd": 1869144,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists Stanley Black and Decker with penalties/settlement total USD 1,869,144."
+    ],
+    "risk_types": [
+      "industrial_goods",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "applichem-ofac-chemicals-trade-2019",
+    "type": "case_seed",
+    "title": "AppliChem OFAC Chemicals Trade 2019",
+    "year": 2019,
+    "entities": [
+      "AppliChem"
+    ],
+    "industry_focus": "chemicals/trade sanctions",
+    "amount_usd": 5512564,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists AppliChem with penalties/settlement total USD 5,512,564."
+    ],
+    "risk_types": [
+      "chemicals",
+      "trade_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "kollmorgen-ofac-industrial-automation-2019",
+    "type": "case_seed",
+    "title": "Kollmorgen OFAC Industrial Automation 2019",
+    "year": 2019,
+    "entities": [
+      "KollMorgen"
+    ],
+    "industry_focus": "industrial automation/export trade",
+    "amount_usd": 13381,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists KollMorgen with penalties/settlement total USD 13,381."
+    ],
+    "risk_types": [
+      "industrial_automation",
+      "export_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "e-l-f-cosmetics-ofac-supply-chain-2019",
+    "type": "case_seed",
+    "title": "e l f Cosmetics OFAC Supply Chain 2019",
+    "year": 2019,
+    "entities": [
+      "e.l.f. Cosmetics"
+    ],
+    "industry_focus": "consumer goods/supply chain trade",
+    "amount_usd": 996080,
+    "source_kind": "official",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/civil-penalties-and-enforcement-information/2019-enforcement-information"
+    ],
+    "verified_facts": [
+      "OFAC Civil Penalties Information Chart for 2019 lists e.l.f. Cosmetics with penalties/settlement total USD 996,080."
+    ],
+    "risk_types": [
+      "consumer_goods",
+      "supply_chain_trade"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "iranian-oil-trafficking-network-irgc-doj-seizures-2024",
+    "type": "case_seed",
+    "title": "Iranian Oil Trafficking Network IRGC DOJ Seizures 2024",
+    "year": 2024,
+    "entities": [
+      "IRGC oil trafficking network",
+      "China Oil & Petroleum Company Limited"
+    ],
+    "industry_focus": "energy/oil trafficking/front companies",
+    "amount_usd": null,
+    "source_kind": "DOJ press release",
+    "source_level": "official",
+    "source_urls": [
+      "https://www.justice.gov/archives/opa/pr/justice-department-announces-terrorism-and-sanctions-evasion-charges-and-seizures-linked"
+    ],
+    "verified_facts": [
+      "DOJ announced charges and seizures linked to an illicit global oil trafficking network financing the IRGC, including over USD 108 million and over 500,000 barrels of fuel."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_trafficking",
+      "front_companies"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "suez-rajan-iranian-crude-oil-criminal-resolution-2023",
+    "type": "case_seed",
+    "title": "Suez Rajan Iranian Crude Oil Criminal Resolution 2023",
+    "year": 2023,
+    "entities": [
+      "Suez Rajan Limited",
+      "Empire Navigation"
+    ],
+    "industry_focus": "energy/crude oil/shipping",
+    "amount_usd": 2500000,
+    "source_kind": "DOJ press release",
+    "source_level": "official",
+    "source_urls": [
+      "https://www.justice.gov/archives/opa/pr/justice-department-announces-first-criminal-resolution-involving-illicit-sale-and-transport"
+    ],
+    "verified_facts": [
+      "DOJ announced the first criminal resolution involving illicit sale and transport of Iranian oil and seizure of over 980,000 barrels of crude oil."
+    ],
+    "risk_types": [
+      "energy",
+      "crude_oil",
+      "shipping"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "m-t-achilleas-iranian-oil-forfeiture-2021",
+    "type": "case_seed",
+    "title": "M T Achilleas Iranian Oil Forfeiture 2021",
+    "year": 2021,
+    "entities": [
+      "M/T Achilleas"
+    ],
+    "industry_focus": "energy/oil shipping/falsified documents",
+    "amount_usd": null,
+    "source_kind": "DOJ press release",
+    "source_level": "official",
+    "source_urls": [
+      "https://www.justice.gov/archives/opa/pr/complaint-seeks-forfeiture-iranian-oil-aboard-tanker-based-connection-terror-group"
+    ],
+    "verified_facts": [
+      "DOJ filed a forfeiture complaint alleging Iranian oil aboard M/T Achilleas involved ship-to-ship transfers and falsified documents."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_shipping",
+      "falsified_documents"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "m-t-courageous-north-korea-petroleum-sanctions-2021",
+    "type": "case_seed",
+    "title": "M T Courageous North Korea Petroleum Sanctions 2021",
+    "year": 2021,
+    "entities": [
+      "M/T Courageous",
+      "Kwek Kee Seng"
+    ],
+    "industry_focus": "energy/petroleum/shipping/North Korea",
+    "amount_usd": null,
+    "source_kind": "DOJ press release",
+    "source_level": "official",
+    "source_urls": [
+      "https://www.justice.gov/usao-sdny/pr/us-government-seizes-oil-tanker-used-violate-us-and-un-sanctions-against-north-korea"
+    ],
+    "verified_facts": [
+      "DOJ announced seizure of M/T Courageous, an oil products tanker allegedly used for illicit deliveries of petroleum products to North Korea."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "north_korea"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "b-and-p-solutions-private-limited-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "B and P Solutions Private Limited Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "B and P Solutions Private Limited"
+    ],
+    "industry_focus": "trade/designation/Iran petroleum network",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list B and P Solutions Private Limited as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "trade",
+      "designation",
+      "iran_petroleum_network"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "global-tankers-private-limited-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Global Tankers Private Limited Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Global Tankers Private Limited"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Global Tankers Private Limited as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "glory-international-fz-llc-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Glory International FZ-LLC Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Glory International FZ-LLC"
+    ],
+    "industry_focus": "trade/designation/Iran petroleum network",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Glory International FZ-LLC as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "trade",
+      "designation",
+      "iran_petroleum_network"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "guangsha-zhoushan-energy-group-co-ltd-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Guangsha Zhoushan Energy Group Co Ltd Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Guangsha Zhoushan Energy Group Co Ltd"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Guangsha Zhoushan Energy Group Co Ltd as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "marziya-shipping-opc-pvt-ltd-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Marziya Shipping OPC Pvt Ltd Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Marziya Shipping OPC Pvt Ltd"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Marziya Shipping OPC Pvt Ltd as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "prime-tankers-llc-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Prime Tankers LLC Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Prime Tankers LLC"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Prime Tankers LLC as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "rising-phoenix-provider-nv-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Rising Phoenix Provider NV Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Rising Phoenix Provider NV"
+    ],
+    "industry_focus": "trade/designation/Iran petroleum network",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Rising Phoenix Provider NV as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "trade",
+      "designation",
+      "iran_petroleum_network"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "valiant-marine-ventures-fze-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "Valiant Marine Ventures FZE Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Valiant Marine Ventures FZE"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list Valiant Marine Ventures FZE as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "amor-crude-oil-tanker-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "AMOR Crude Oil Tanker Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "AMOR Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list AMOR Crude Oil Tanker as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "chil-1-chemical-oil-tanker-iran-petroleum-network-ofac-2025",
+    "type": "case_seed",
+    "title": "CHIL 1 Chemical Oil Tanker Iran Petroleum Network OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "CHIL 1 Chemical Oil Tanker"
+    ],
+    "industry_focus": "energy/petroleum/shipping/designation",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250410"
+    ],
+    "verified_facts": [
+      "OFAC April 10, 2025 Iran-related designations list CHIL 1 Chemical Oil Tanker as part of an action whose press release targets a network transporting Iranian petroleum."
+    ],
+    "risk_types": [
+      "energy",
+      "petroleum",
+      "shipping",
+      "designation"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "novgorodnefteproduct-ooo-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Novgorodnefteproduct OOO Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Novgorodnefteproduct OOO"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Novgorodnefteproduct OOO in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "ocean-waters-maritime-corporation-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Ocean Waters Maritime Corporation Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Ocean Waters Maritime Corporation"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Ocean Waters Maritime Corporation in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "odine-marine-incorporated-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Odine Marine Incorporated Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Odine Marine Incorporated"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Odine Marine Incorporated in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "gazprom-neft-asia-llc-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Gazprom Neft Asia LLC Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Gazprom Neft Asia LLC"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Gazprom Neft Asia LLC in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "paker-service-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Paker Service Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Paker Service"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Paker Service in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "petro-welt-technologies-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Petro Welt Technologies Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Petro Welt Technologies"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Petro Welt Technologies in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "petroengineering-llc-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Petroengineering LLC Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Petroengineering LLC"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Petroengineering LLC in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "pratum-oil-trading-llc-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Pratum Oil Trading LLC Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Pratum Oil Trading LLC"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Pratum Oil Trading LLC in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "prominent-shipmanagement-limited-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Prominent Shipmanagement Limited Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Prominent Shipmanagement Limited"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Prominent Shipmanagement Limited in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "pskovnefteproduct-ooo-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "Pskovnefteproduct OOO Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "Pskovnefteproduct OOO"
+    ],
+    "industry_focus": "energy/oil services/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists Pskovnefteproduct OOO in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_services",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "ivy-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "IVY Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "IVY Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists IVY Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "jupiter-chemical-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "JUPITER Chemical Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "JUPITER Chemical Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists JUPITER Chemical Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "kapal-cantik-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "KAPAL CANTIK Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "KAPAL CANTIK Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists KAPAL CANTIK Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "kapitan-gotsky-shuttle-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "KAPITAN GOTSKY Shuttle Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "KAPITAN GOTSKY Shuttle Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists KAPITAN GOTSKY Shuttle Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "kirill-lavrov-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "KIRILL LAVROV Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "KIRILL LAVROV Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists KIRILL LAVROV Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "kola-floating-storage-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "KOLA Floating Storage Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "KOLA Floating Storage Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists KOLA Floating Storage Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "krishna-1-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "KRISHNA 1 Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "KRISHNA 1 Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists KRISHNA 1 Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "lauren-ii-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LAUREN II Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LAUREN II Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LAUREN II Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "legacy-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LEGACY Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LEGACY Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LEGACY Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "leo-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LEO Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LEO Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LEO Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "leopard-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LEOPARD Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LEOPARD Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LEOPARD Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "li-bai-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LI BAI Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LI BAI Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LI BAI Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "liberty-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LIBERTY Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LIBERTY Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LIBERTY Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "lyra-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "LYRA Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "LYRA Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists LYRA Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "m-sophia-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "M SOPHIA Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "M SOPHIA Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists M SOPHIA Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "makalu-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "MAKALU Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "MAKALU Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists MAKALU Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "scf-endurance-supply-vessel-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SCF ENDURANCE Supply Vessel Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SCF ENDURANCE Supply Vessel"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SCF ENDURANCE Supply Vessel in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "scf-enterprise-supply-vessel-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SCF ENTERPRISE Supply Vessel Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SCF ENTERPRISE Supply Vessel"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SCF ENTERPRISE Supply Vessel in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "scf-sakhalin-supply-vessel-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SCF SAKHALIN Supply Vessel Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SCF SAKHALIN Supply Vessel"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SCF SAKHALIN Supply Vessel in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "serenade-chemical-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SERENADE Chemical Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SERENADE Chemical Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SERENADE Chemical Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "shturman-albanov-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SHTURMAN ALBANOV Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SHTURMAN ALBANOV Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SHTURMAN ALBANOV Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "shturman-koshelev-products-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SHTURMAN KOSHELEV Products Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SHTURMAN KOSHELEV Products Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SHTURMAN KOSHELEV Products Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  },
+  {
+    "slug": "shturman-malygin-crude-oil-tanker-russia-energy-designation-ofac-2025",
+    "type": "case_seed",
+    "title": "SHTURMAN MALYGIN Crude Oil Tanker Russia Energy Designation OFAC 2025",
+    "year": 2025,
+    "entities": [
+      "SHTURMAN MALYGIN Crude Oil Tanker"
+    ],
+    "industry_focus": "energy/oil tanker/Russia sanctions",
+    "amount_usd": null,
+    "source_kind": "OFAC SDN designation",
+    "source_level": "official",
+    "source_urls": [
+      "https://ofac.treasury.gov/recent-actions/20250110"
+    ],
+    "verified_facts": [
+      "OFAC January 10, 2025 Russia-related action lists SHTURMAN MALYGIN Crude Oil Tanker in an energy-sector/oil-production-and-exports related sanctions action."
+    ],
+    "risk_types": [
+      "energy",
+      "oil_tanker",
+      "russia_sanctions"
+    ],
+    "eti_use_case": "Use as a seed record for ETI energy/trade risk pages. Expand only after reviewing the linked official source.",
+    "legal_disclaimer": "ETI provides public-source risk intelligence only. This record is not a legal finding or accusation beyond the cited official source."
+  }
+]

@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
               <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px', marginBottom: 'var(--space-6)' }}>
                 If <strong>{email}</strong> is registered, you will receive a password reset link. It expires in 1 hour.
               </p>
-              <Link href="/sign-in" style={{ display: 'inline-block', backgroundColor: 'var(--accent-primary)', color: '#fff', textDecoration: 'none', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}>
+              <Link href="/sign-in" style={{ display: 'inline-block', backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)', textDecoration: 'none', padding: '8px 20px', borderRadius: '6px', fontSize: '13px', fontWeight: 500 }}>
                 Back to sign in
               </Link>
             </div>
@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--border-subtle)', borderRadius: '6px', fontSize: '14px', fontFamily: 'inherit', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
                     placeholder="you@example.com" />
                 </div>
-                <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--accent-primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+                <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', backgroundColor: 'var(--accent-primary)', color: 'var(--text-on-accent)', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 500, fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
                   {loading ? 'Sending...' : 'Send reset link'}
                 </button>
               </form>

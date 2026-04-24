@@ -57,7 +57,7 @@ export default function NotFound() {
           gap: 'var(--space-2)',
           padding: 'var(--space-3) var(--space-5)',
           backgroundColor: 'var(--accent-primary)',
-          color: '#fff',
+          color: 'var(--text-on-accent)',
           borderRadius: '6px',
           fontSize: '14px',
           fontWeight: 500,
