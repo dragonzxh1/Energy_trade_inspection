@@ -613,14 +613,6 @@ table {
   .mobile-nav-trigger {
     display: block !important;
   }
-
-  .header-logo-text {
-    display: none;
-  }
-
-  .header-logo {
-    gap: 0 !important;
-  }
 }
 
 /* ─── Hover utilities (for Server Components) ────────────────────── */
