@@ -595,19 +595,29 @@ table {
   }
 }
 
-/* ─── Header: hide text nav links on small screens ───────────────── */
+/* ─── Header: responsive nav ──────────────────────────────────── */
 
-@media (max-width: 480px) {
-  .nav-text-link {
-    display: none;
+@media (min-width: 769px) {
+  .mobile-nav-trigger {
+    display: none !important;
+  }
+  .mobile-nav-dropdown {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile-nav {
+    display: none !important;
+  }
+  .mobile-nav-trigger {
+    display: block !important;
   }
 
   .header-logo-text {
     display: none;
   }
-}
 
-@media (max-width: 640px) {
   .header-logo {
     gap: 0 !important;
   }
