@@ -633,3 +633,16 @@ table {
 .hover-lift:hover {
   transform: translateY(-1px);
 }
+
+/* Dual entry cards: equal height, stack on mobile */
+.home-dual-entry > * {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .home-dual-entry {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3) !important;
+  }
+}

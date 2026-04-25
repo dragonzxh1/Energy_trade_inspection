@@ -391,16 +391,17 @@ export default function HomePage() {
 
             {/* Dual entry points */}
             <div
-              className="animate-fade-in-up-delay-1"
+              className="animate-fade-in-up-delay-1 home-dual-entry"
               style={{
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gap: 'var(--space-4)',
                 textAlign: 'left',
+                alignItems: 'stretch',
               }}
             >
               {/* Left: Search */}
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <Suspense>
                   <SearchBox />
                 </Suspense>
