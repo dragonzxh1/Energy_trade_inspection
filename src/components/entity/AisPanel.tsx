@@ -251,7 +251,7 @@ function countryFlag(code: string): string {
 function DraughtGauge({ current, max }: { current: number; max: number }) {
   const pct   = max > 0 ? Math.min(100, Math.round((current / max) * 100)) : 0
   const color = pct >= 85 ? 'var(--status-listed)'
-              : pct >= 60 ? '#eab308'
+              : pct >= 60 ? 'var(--risk-medium)'
               : 'var(--text-muted)'
   return (
     <div>
@@ -466,10 +466,10 @@ function PortCallsCard({ portCalls, provider }: { portCalls: PortCall[]; provide
 // ── AIS dark periods ───────────────────────────────────────────────────────────
 
 function darkSeverity(hours: number | null): { color: string; label: string } {
-  if (hours == null)    return { color: '#f97316', label: 'Ongoing' }
-  if (hours >= 24 * 30) return { color: '#ef4444', label: 'Critical' }
-  if (hours >= 24 * 7)  return { color: '#f97316', label: 'High' }
-  return { color: '#eab308', label: 'Medium' }
+  if (hours == null)    return { color: 'var(--risk-high)', label: 'Ongoing' }
+  if (hours >= 24 * 30) return { color: 'var(--risk-critical)', label: 'Critical' }
+  if (hours >= 24 * 7)  return { color: 'var(--risk-high)', label: 'High' }
+  return { color: 'var(--risk-medium)', label: 'Medium' }
 }
 
 function DarkPeriodRow({
@@ -582,12 +582,12 @@ function DarkPeriodsCard({
         </p>
         <div style={{ display: 'flex', gap: '6px' }}>
           {criticalCount > 0 && (
-            <span style={{ fontSize: '10px', fontWeight: 600, color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--risk-critical)', backgroundColor: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
               {criticalCount} critical
             </span>
           )}
           {highCount > 0 && (
-            <span style={{ fontSize: '10px', fontWeight: 600, color: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+            <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--risk-high)', backgroundColor: 'rgba(249,115,22,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
               {highCount} high
             </span>
           )}

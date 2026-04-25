@@ -26,10 +26,10 @@ const TOKEN = {
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<RiskLevel, string> = {
-  critical: '#ef4444',
-  high:     '#f97316',
-  medium:   '#fbbf24',
-  low:      '#4ade80',
+  critical: 'var(--risk-critical)',
+  high:     'var(--risk-high)',
+  medium:   'var(--risk-medium)',
+  low:      'var(--status-clear)',
 }
 const RISK_BG: Record<RiskLevel, string> = {
   critical: 'rgba(239,68,68,0.10)',
@@ -178,8 +178,8 @@ function RiskBadge({ level, large }: { level: RiskLevel; large?: boolean }) {
 
 function SanctionBadge({ status }: { status: string }) {
   const color =
-    status === 'listed'     ? '#ef4444' :
-    status === 'not_listed' ? '#22c55e' : 'var(--text-muted)'
+    status === 'listed'     ? 'var(--status-listed)' :
+    status === 'not_listed' ? 'var(--status-clear)' : 'var(--text-muted)'
   const label =
     status === 'listed'     ? 'SANCTIONED' :
     status === 'not_listed' ? 'CLEAR'      : 'UNKNOWN'
@@ -261,7 +261,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           fontSize: '11px', fontWeight: 500, color: TOKEN.textMuted,
           textTransform: 'uppercase', letterSpacing: '0.07em',
         }}>
-          {label}{required && <span style={{ color: '#ef4444', marginLeft: '3px' }}>*</span>}
+          {label}{required && <span style={{ color: 'var(--risk-critical)', marginLeft: '3px' }}>*</span>}
         </label>
         <input
           type={type}
@@ -273,7 +273,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           style={inputStyleNew(key, focused, hasError)}
         />
         {hint && <span style={{ fontSize: '11px', color: TOKEN.textSubtle }}>{hint}</span>}
-        {hasError && <span style={{ fontSize: '11px', color: '#ef4444' }}>Required</span>}
+        {hasError && <span style={{ fontSize: '11px', color: 'var(--risk-critical)' }}>Required</span>}
       </div>
     )
   }
@@ -497,7 +497,7 @@ function PartyCard({ label, party }: { label: string; party: TradePartyResult })
         </div>
       </div>
       {(party.icijConnections > 0) && (
-        <p style={{ fontSize: '12px', color: '#f97316', margin: 'var(--space-2) 0 0' }}>
+        <p style={{ fontSize: '12px', color: 'var(--risk-high)', margin: 'var(--space-2) 0 0' }}>
           ⚠ {party.icijConnections} ICIJ offshore connection{party.icijConnections !== 1 ? 's' : ''}
         </p>
       )}
@@ -569,18 +569,18 @@ function VesselCard({ vessel }: { vessel: TradeVesselResult }) {
         paddingTop: 'var(--space-3)', borderTop: '1px solid var(--border-subtle)',
         flexWrap: 'wrap',
       }}>
-        <span style={{ fontSize: '12px', color: vessel.hasRecentAis ? '#22c55e' : 'var(--text-muted)' }}>
+        <span style={{ fontSize: '12px', color: vessel.hasRecentAis ? 'var(--status-clear)' : 'var(--text-muted)' }}>
           AIS: {vessel.hasRecentAis ? `Live (${vessel.lastAisUpdate ? new Date(vessel.lastAisUpdate).toLocaleDateString() : 'recent'})` : 'No recent signal'}
         </span>
         {vessel.darkPeriods > 0 && (
-          <span style={{ fontSize: '12px', color: '#f97316' }}>
+          <span style={{ fontSize: '12px', color: 'var(--risk-high)' }}>
             ⚠ {vessel.darkPeriods} dark period{vessel.darkPeriods !== 1 ? 's' : ''}
           </span>
         )}
         {vessel.psc && vessel.psc.totalInspections > 0 && (
           <span style={{
             fontSize: '12px',
-            color: vessel.psc.detentions > 0 ? '#f97316' : 'var(--text-muted)',
+            color: vessel.psc.detentions > 0 ? 'var(--risk-high)' : 'var(--text-muted)',
           }}>
             PSC: {vessel.psc.totalInspections} inspection{vessel.psc.totalInspections !== 1 ? 's' : ''},
             {' '}{vessel.psc.detentions} detention{vessel.psc.detentions !== 1 ? 's' : ''},
@@ -626,7 +626,7 @@ function PortCard({ port }: { port: TradePortResult }) {
       )}
 
       {port.isStsZone && (
-        <p style={{ fontSize: '12px', color: '#f97316', margin: '6px 0 0' }}>
+        <p style={{ fontSize: '12px', color: 'var(--risk-high)', margin: '6px 0 0' }}>
           ⚠ STS anchorage zone — not a terminal berth
         </p>
       )}
@@ -634,7 +634,7 @@ function PortCard({ port }: { port: TradePortResult }) {
       {port.draftRisk && !port.isStsZone && (
         <p style={{
           fontSize: '12px',
-          color: port.draftRisk.canBerth === false ? '#ef4444' : 'var(--text-muted)',
+          color: port.draftRisk.canBerth === false ? 'var(--risk-critical)' : 'var(--text-muted)',
           margin: '6px 0 0',
         }}>
           {port.draftRisk.warning ??
@@ -682,8 +682,8 @@ function ResultBanner({ result }: { result: TradeCheckResult }) {
       </p>
       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
         {flags.length} flag{flags.length !== 1 ? 's' : ''} raised
-        {critical > 0 && <span style={{ color: '#ef4444', marginLeft: '8px' }}>· {critical} critical</span>}
-        {high > 0 && <span style={{ color: '#f97316', marginLeft: '8px' }}>· {high} high</span>}
+        {critical > 0 && <span style={{ color: 'var(--risk-critical)', marginLeft: '8px' }}>· {critical} critical</span>}
+        {high > 0 && <span style={{ color: 'var(--risk-high)', marginLeft: '8px' }}>· {high} high</span>}
         <span style={{ marginLeft: '8px' }}>· Checked {fmt(checkedAt)}</span>
       </p>
     </div>
@@ -762,7 +762,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
           padding: 'var(--space-4)',
           marginBottom: 'var(--space-4)',
         }}>
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#eab308', margin: '0 0 4px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--risk-medium)', margin: '0 0 4px' }}>
             Sanction data may be incomplete
           </p>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.5' }}>
@@ -808,7 +808,7 @@ function ResultsView({ result, onReset }: { result: TradeCheckResult; onReset: (
           borderRadius: '8px', padding: 'var(--space-5)', marginBottom: 'var(--space-6)',
           textAlign: 'center',
         }}>
-          <p style={{ fontSize: '14px', fontWeight: 500, color: '#22c55e', marginBottom: '4px' }}>
+          <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--status-clear)', marginBottom: '4px' }}>
             No flags raised
           </p>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -907,7 +907,7 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
       pushRecent(entry)
       setRecent(getRecent())
     } catch {
-      setError('Network error. Please try again.')
+      setError('Unable to process the trade check. Verify your inputs and retry, or contact support if the issue persists.')
       setPanelState('error')
     }
   }
@@ -954,7 +954,7 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
             borderRadius: '7px',
             padding: '12px 14px',
           }}>
-            <p style={{ fontSize: '13px', fontWeight: 500, color: '#ef4444', margin: '0 0 4px' }}>
+            <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--risk-critical)', margin: '0 0 4px' }}>
               Check failed
             </p>
             <p style={{ fontSize: '12px', color: TOKEN.textMuted, margin: 0 }}>{error}</p>

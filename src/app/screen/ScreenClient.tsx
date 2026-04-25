@@ -510,7 +510,7 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
             style={{
               ...secondaryBtnStyle,
               background: 'var(--brand-600)',
-              color: '#fff',
+              color: 'var(--text-on-accent)',
               border: '1px solid rgba(14, 165, 233, 0.4)',
               transition: 'background 0.12s ease',
             }}
@@ -557,7 +557,7 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
         <a
           href={`/api/screen/report?sessionId=${report.id}`}
           style={{
-            fontSize: '14px', fontWeight: 600, color: '#fff',
+            fontSize: '14px', fontWeight: 600, color: 'var(--text-on-accent)',
             background: 'var(--brand-600)',
             borderRadius: '7px', padding: '10px 24px',
             textDecoration: 'none', display: 'inline-block',
@@ -644,7 +644,7 @@ function UploadZone({
         border: `1.5px dashed ${isDragging ? TOKEN.primary : 'rgba(255,255,255,0.12)'}`,
         borderRadius: '10px',
         minHeight: '160px',
-        padding: '32px 24px',
+        padding: 'var(--space-8) var(--space-6)',
         textAlign: 'center',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
@@ -733,7 +733,7 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
       // Write sessionId into the URL so the user can navigate away and return.
       router.replace(`/screen?sessionId=${encodeURIComponent(data.id)}`)
     } catch {
-      setErrorMessage('Network error. Please try again.')
+      setErrorMessage('Unable to reach the screening service. Check your connection and retry, or contact support if the issue persists.')
       setPanelState('error')
     }
   }, [router, includeTradeAssessment])
@@ -776,7 +776,7 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
       {/* LEFT: upload zone + options */}
       <div style={{
         borderRight: `1px solid ${TOKEN.border}`,
-        padding: '32px 24px',
+        padding: 'var(--space-8) var(--space-6)',
         overflowY: 'auto',
         background: TOKEN.surface,
         display: 'flex',
@@ -830,7 +830,7 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
               width: '100%',
               padding: '11px 0',
               background: isPrimaryHover ? 'var(--brand-500)' : 'var(--brand-600)',
-              color: '#fff',
+              color: 'var(--text-on-accent)',
               border: '1px solid rgba(14, 165, 233, 0.4)',
               borderRadius: '7px', fontSize: '13px', fontWeight: 500,
               fontFamily: 'inherit',
