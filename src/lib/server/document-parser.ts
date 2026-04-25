@@ -14,11 +14,17 @@ export async function parseDocument(buffer: Buffer, mimeType: string): Promise<s
   // ── PDF ──────────────────────────────────────────────────────────────────
   if (mimeType === 'application/pdf') {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse') as (
-      dataBuffer: Buffer,
-      options?: Record<string, unknown>
-    ) => Promise<{ text: string; numpages: number }>
-    const result = await pdfParse(buffer)
+    const { PDFParse } = require('pdf-parse') as {
+      PDFParse: new (data: Uint8Array) => {
+        load(): Promise<void>
+        getText(): Promise<{ text: string }>
+        destroy(): void
+      }
+    }
+    const parser = new PDFParse(new Uint8Array(buffer))
+    await parser.load()
+    const result = await parser.getText()
+    parser.destroy()
     return result.text
   }
 
