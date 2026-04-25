@@ -417,6 +417,153 @@ function QuotaExceededPage({ resetDate }: { resetDate: string }) {
   )
 }
 
+// 鈹€鈹€ Vessel not found (external sources) 鈹€鈹€
+
+function VesselNotFoundPage({ imo }: { imo: string }) {
+  const sources = [
+    {
+      name: 'MarineTraffic',
+      url: `https://www.marinetraffic.com/en/ais/details/ships/imo:${imo}`,
+      desc: 'Real-time AIS tracking, vessel positions, port calls, and voyage history.',
+    },
+    {
+      name: 'VesselFinder',
+      url: `https://www.vesselfinder.com/vessels/details/${imo}`,
+      desc: 'Vessel details, current location on map, photos, and technical specifications.',
+    },
+  ]
+
+  return (
+    <>
+      <Header />
+      <div
+        style={{
+          maxWidth: 'var(--max-width)',
+          margin: '0 auto',
+          padding: 'var(--space-8) var(--space-4)',
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+          <p
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              marginBottom: 'var(--space-4)',
+            }}
+          >
+            IMO {imo}
+          </p>
+          <h1
+            style={{
+              color: 'var(--text-primary)',
+              fontSize: '28px',
+              fontWeight: 700,
+              marginBottom: 'var(--space-3)',
+            }}
+          >
+            Vessel Not Found
+          </h1>
+          <p
+            style={{
+              color: 'var(--text-secondary)',
+              fontSize: '14px',
+              lineHeight: '22px',
+              maxWidth: '500px',
+              margin: '0 auto',
+            }}
+          >
+            This vessel is not currently in our database. You can check the following external sources for real-time tracking and vessel details.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: 'var(--space-4)',
+            maxWidth: '700px',
+            margin: '0 auto',
+          }}
+        >
+          {sources.map((src) => (
+            <a
+              key={src.name}
+              href={src.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="home-tool-card"
+              style={{
+                display: 'block',
+                padding: 'var(--space-5)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '12px',
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--bg-elevated)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                  }}
+                >
+                  {src.name === 'MarineTraffic' ? '📡' : '🗺️'}
+                </div>
+                <div>
+                  <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600 }}>
+                    {src.name}
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '11px' }}>External source</p>
+                </div>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '20px', marginBottom: 'var(--space-4)' }}>
+                {src.desc}
+              </p>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'var(--accent-primary)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                }}
+              >
+                View on {src.name} ↗
+              </div>
+            </a>
+          ))}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: 'var(--space-8)' }}>
+          <Link
+            href="/search"
+            style={{
+              color: 'var(--accent-primary)',
+              fontSize: '14px',
+              textDecoration: 'none',
+              fontWeight: 500,
+            }}
+          >
+            ← Search for another vessel
+          </Link>
+        </div>
+      </div>
+    </>
+  )
+}
+
 // 鈹€鈹€ Page 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 export default async function VesselPage({ params }: PageProps) {
@@ -431,7 +578,9 @@ export default async function VesselPage({ params }: PageProps) {
 
   const vessel = await getVessel(imo)
 
-  if (!vessel) notFound()
+  if (!vessel) {
+    return <VesselNotFoundPage imo={imo} />
+  }
 
   const tier    = getScoreTier(vessel.authenticityScore)
   const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
