@@ -71,6 +71,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', minWidth: 0 }}>
             <Link
               href="/"
+              className="header-logo"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -94,6 +95,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                 {SHIELD_ICON}
               </div>
               <span
+                className="header-logo-text"
                 style={{
                   color: 'var(--text-primary)',
                   fontSize: '18px',
@@ -126,7 +128,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
           {/* Nav */}
           <nav
             aria-label="Site navigation"
-            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)', flexShrink: 1, minWidth: 0 }}
           >
             {/* System status */}
             <div

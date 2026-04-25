@@ -601,6 +601,16 @@ table {
   .nav-text-link {
     display: none;
   }
+
+  .header-logo-text {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .header-logo {
+    gap: 0 !important;
+  }
 }
 
 /* ─── Hover utilities (for Server Components) ────────────────────── */
