@@ -280,32 +280,24 @@ export default function HeaderNav({ user, plan }: HeaderNavProps) {
                 >
                   Account
                 </Link>
-                <form
-                  action={async () => {
-                    'use server'
-                    await signOut({ redirectTo: '/' })
+                <button
+                  onClick={() => { setMenuOpen(false); signOut({ callbackUrl: '/' }) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--risk-critical)',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    fontWeight: 500,
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    width: '100%',
+                    textAlign: 'left',
                   }}
                 >
-                  <button
-                    type="submit"
-                    onClick={() => setMenuOpen(false)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--risk-critical)',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontFamily: 'inherit',
-                      fontWeight: 500,
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      width: '100%',
-                      textAlign: 'left',
-                    }}
-                  >
-                    Sign out
-                  </button>
-                </form>
+                  Sign out
+                </button>
               </>
             ) : (
               <>
