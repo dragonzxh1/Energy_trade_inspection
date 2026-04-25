@@ -10,19 +10,6 @@ import type { RiskLevel } from '@/lib/types'
 // GlowLoader import retained (not deleted), LoadingView uses inline progress bar instead
 import GlowLoader from '@/components/ui/GlowLoader'
 
-// ── TOKEN (all hardcoded values live here; never scatter magic strings) ──────
-const TOKEN = {
-  surface:      '#111113',
-  elevated:     '#1e1e24',
-  elevated2:    '#26262e',
-  border:       'rgba(255,255,255,0.07)',
-  borderHover:  'rgba(255,255,255,0.14)',
-  primary:      'var(--accent-primary)',
-  text:         '#f1f1f3',
-  textMuted:    '#8b8b9a',
-  textSubtle:   '#55556a',
-} as const
-
 // ── Design tokens ─────────────────────────────────────────────────────────────
 
 const RISK_COLOR: Record<RiskLevel, string> = {
@@ -85,9 +72,9 @@ const VERDICT_DISPLAY: Record<TradeVerdict, string> = {
 
 // ── Secondary button style (Watch trade, Export PDF, New check) ───────────────
 const secondaryBtnStyle: React.CSSProperties = {
-  background: '#1e1e24',
-  color: '#8b8b9a',
-  border: '1px solid rgba(255,255,255,0.07)',
+  background: 'var(--bg-elevated)',
+  color: 'var(--text-muted)',
+  border: '1px solid var(--border-solid)',
   borderRadius: '7px',
   padding: '6px 14px',
   fontSize: '13px',
@@ -214,14 +201,14 @@ function inputStyleNew(key: string, focused: string | null, hasError?: boolean):
     background: 'rgba(0,0,0,0.28)',
     border: `1px solid ${
       hasError    ? 'rgba(239,68,68,0.5)' :
-      isFocused   ? 'var(--accent-primary)'             :
-                    TOKEN.border
+      isFocused   ? 'var(--accent-primary)' :
+                    'var(--border-solid)'
     }`,
     boxShadow: isFocused
       ? 'inset 0 2px 3px rgba(0,0,0,0.3), 0 0 0 2px rgba(14, 165, 233, 0.18)'
       : 'inset 0 2px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(0,0,0,0.12)',
     borderRadius: '7px',
-    color: TOKEN.text,
+    color: 'var(--text-primary)',
     fontSize: '13px',
     fontFamily: 'inherit',
     padding: '8px 12px',
@@ -258,7 +245,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         <label style={{
-          fontSize: '11px', fontWeight: 500, color: TOKEN.textMuted,
+          fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)',
           textTransform: 'uppercase', letterSpacing: '0.07em',
         }}>
           {label}{required && <span style={{ color: 'var(--risk-critical)', marginLeft: '3px' }}>*</span>}
@@ -272,7 +259,7 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           placeholder={placeholder}
           style={inputStyleNew(key, focused, hasError)}
         />
-        {hint && <span style={{ fontSize: '11px', color: TOKEN.textSubtle }}>{hint}</span>}
+        {hint && <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>{hint}</span>}
         {hasError && <span style={{ fontSize: '11px', color: 'var(--risk-critical)' }}>Required</span>}
       </div>
     )
@@ -350,7 +337,7 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
       alignItems: 'center', justifyContent: 'center',
       minHeight: '400px', gap: '16px',
     }}>
-      <p style={{ fontSize: '14px', color: TOKEN.textMuted, margin: 0 }}>Screening trade...</p>
+      <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>Screening trade...</p>
       <div style={{
         width: '200px', height: '3px',
         background: 'rgba(0,0,0,0.35)',
@@ -359,13 +346,13 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
         <div
           ref={barRef}
           style={{
-            height: '100%', background: TOKEN.primary,
+            height: '100%', background: 'var(--accent-primary)',
             transform: 'scaleX(0)', transformOrigin: 'left',
             transition: 'transform 1.4s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
       </div>
-      <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-faint)', margin: 0 }}>
         {seller}{vessel ? ` · ${vessel}` : ''}
       </p>
     </div>
@@ -927,17 +914,17 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
     }}>
       {/* Left column: form + Recent Checks */}
       <div style={{
-        borderRight: `1px solid ${TOKEN.border}`,
+        borderRight: `1px solid ${'var(--border-solid)'}`,
         padding: '32px 24px',
         overflowY: 'auto',
-        background: TOKEN.surface,
+        background: 'var(--bg-surface)',
       }}>
         {/* Page title */}
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '18px', fontWeight: 600, color: TOKEN.text, margin: '0 0 6px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>
             Trade Check
           </h1>
-          <p style={{ fontSize: '13px', color: TOKEN.textMuted, lineHeight: '1.5', margin: 0 }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', margin: 0 }}>
             Screen seller, vessel, and port against sanctions, AIS, and registry data.
           </p>
         </div>
@@ -957,7 +944,7 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
             <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--risk-critical)', margin: '0 0 4px' }}>
               Check failed
             </p>
-            <p style={{ fontSize: '12px', color: TOKEN.textMuted, margin: 0 }}>{error}</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{error}</p>
           </div>
         )}
 
@@ -965,7 +952,7 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
         {recent.length > 0 && (
           <div style={{ marginTop: '32px' }}>
             <div style={{
-              fontSize: '11px', color: TOKEN.textSubtle,
+              fontSize: '11px', color: 'var(--text-faint)',
               textTransform: 'uppercase', letterSpacing: '0.07em',
               marginBottom: '12px',
             }}>
@@ -1000,15 +987,15 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
                   }
                 }}
                 style={{ padding: '8px 10px', borderRadius: '7px', cursor: 'pointer', transition: 'background 0.1s ease' }}
-                onMouseEnter={e => (e.currentTarget.style.background = TOKEN.elevated)}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                onFocus={e => (e.currentTarget.style.background = TOKEN.elevated)}
+                onFocus={e => (e.currentTarget.style.background = 'var(--bg-elevated)')}
                 onBlur={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <div style={{ fontSize: '13px', fontWeight: 500, color: TOKEN.text }}>
+                <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
                   {r.seller}
                 </div>
-                <div style={{ fontSize: '11px', color: TOKEN.textMuted }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   {[r.commodity, r.loadingPort].filter(Boolean).join(' · ')}
                   {(r.commodity || r.loadingPort) ? ' · ' : ''}
                   <span style={{ color: RISK_COLOR[r.overallRisk] }}>
@@ -1029,8 +1016,8 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
             alignItems: 'center', justifyContent: 'center',
             minHeight: '400px', textAlign: 'center',
           }}>
-            <div style={{ fontSize: '28px', color: TOKEN.textSubtle, marginBottom: '12px' }}>⚡</div>
-            <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
+            <div style={{ fontSize: '28px', color: 'var(--text-faint)', marginBottom: '12px' }}>⚡</div>
+            <p style={{ fontSize: '14px', color: 'var(--text-faint)', margin: 0 }}>
               Run a trade check to see results
             </p>
           </div>
@@ -1051,8 +1038,8 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
             alignItems: 'center', justifyContent: 'center',
             minHeight: '400px', textAlign: 'center',
           }}>
-            <div style={{ fontSize: '28px', color: TOKEN.textSubtle, marginBottom: '12px' }}>⚡</div>
-            <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
+            <div style={{ fontSize: '28px', color: 'var(--text-faint)', marginBottom: '12px' }}>⚡</div>
+            <p style={{ fontSize: '14px', color: 'var(--text-faint)', margin: 0 }}>
               Run a trade check to see results
             </p>
           </div>

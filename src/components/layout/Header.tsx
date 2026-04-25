@@ -47,11 +47,11 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
       )}
 
       <header
-        className="glass-panel"
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 50,
+          backgroundColor: 'var(--bg-primary)',
           borderBottom: '1px solid var(--border-default)',
         }}
       >
@@ -132,7 +132,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
             <div
               className="hidden sm:flex"
               style={{
-                display: 'flex',
+                display: 'none',
                 alignItems: 'center',
                 gap: 'var(--space-2)',
                 padding: '3px 10px',

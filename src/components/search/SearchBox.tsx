@@ -30,6 +30,7 @@ export default function SearchBox() {
       onSubmit={(e) => handleSubmit(e)}
       role="search"
       aria-label="Search for companies, vessels, domains, or emails"
+      style={{ height: '100%', display: 'flex' }}
     >
       <div
         className="glass-panel"
@@ -40,6 +41,10 @@ export default function SearchBox() {
           boxShadow: focused
             ? '0 0 30px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.3)'
             : '0 0 20px rgba(14, 165, 233, 0.15)',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>

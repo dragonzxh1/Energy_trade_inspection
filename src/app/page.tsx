@@ -538,9 +538,9 @@ export default function HomePage() {
               gap: 'var(--space-4)',
             }}
           >
-            {TOOL_CARDS.map((card) => (
+            {TOOL_CARDS.map((card, i) => (
               <Link
-                key={card.href}
+                key={i}
                 href={card.href}
                 className="entity-card"
                 style={{
