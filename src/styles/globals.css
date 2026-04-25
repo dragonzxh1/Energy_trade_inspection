@@ -11,7 +11,7 @@
   --text-secondary:#94a3b8;
   --text-muted:    #64748b;
   --text-faint:    #475569;
-  --text-on-accent: #fff;
+  --text-on-accent: #f1f5f9;
 
   /* Brand — cyan/blue */
   --brand-50:  #f0f9ff;
@@ -45,6 +45,7 @@
   --border-solid:   #1e293b;
 
   /* Typography */
+  --font-display: 'Space Grotesk', var(--font-sans);
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -90,17 +91,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── New Design System Utilities ──────────────────────────────── */
+/* ─── Design System Utilities ──────────────────────────────────── */
 
 .glass-panel {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-surface);
   border: 1px solid var(--border-default);
-}
-
-.glow-border {
-  box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
 }
 
 .grid-bg {
@@ -110,22 +105,19 @@ body {
   background-size: 50px 50px;
 }
 
-.gradient-text {
-  background: linear-gradient(135deg, #38bdf8 0%, #22d3ee 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.brand-text {
+  color: var(--brand-400);
 }
 
-.gradient-btn {
-  background: linear-gradient(135deg, var(--brand-600) 0%, var(--brand-500) 100%);
+.btn-primary {
+  background: var(--brand-600);
   border: 1px solid rgba(14, 165, 233, 0.4);
-  color: #fff;
-  transition: all 0.15s ease;
+  color: var(--text-on-accent);
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.gradient-btn:hover {
-  background: linear-gradient(135deg, var(--brand-500) 0%, var(--brand-400) 100%);
+.btn-primary:hover {
+  background: var(--brand-500);
   box-shadow: 0 4px 15px rgba(14, 165, 233, 0.35);
   transform: translateY(-1px);
 }
@@ -150,24 +142,27 @@ body {
 /* ─── Typography ────────────────────────────────────────────────── */
 
 h1 {
+  font-family: var(--font-display);
   font-size: 32px;
-  line-height: 40px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 h2 {
+  font-family: var(--font-display);
   font-size: 24px;
-  line-height: 32px;
-  font-weight: 400;
-  letter-spacing: -0.288px;
+  line-height: 1.33;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 h3 {
+  font-family: var(--font-display);
   font-size: 20px;
-  line-height: 28px;
-  font-weight: 600;
-  letter-spacing: -0.24px;
+  line-height: 1.40;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 /* Monospace data elements */

@@ -27,17 +27,6 @@ const TOOL_CARDS = [
   {
     icon: (
       <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-    title: 'Screen a Document',
-    desc: 'Upload a contract or invoice. We extract parties automatically and screen them against sanctions lists and registry records.',
-    href: '/screen',
-    cta: 'Screen a document →',
-  },
-  {
-    icon: (
-      <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
       </svg>
     ),
@@ -168,7 +157,10 @@ async function FeaturedEntities() {
               paddingLeft: '4px',
             }}
           >
-            ⚠ High Risk
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            High Risk
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {flagged.map((e) => {
@@ -238,7 +230,10 @@ async function FeaturedEntities() {
               paddingLeft: '4px',
             }}
           >
-            ✓ Verified Clean
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Verified Clean
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {clean.map((e) => {
@@ -327,14 +322,13 @@ export default function HomePage() {
 
           <div
             style={{
-              maxWidth: '768px',
+              maxWidth: '900px',
               margin: '0 auto',
-              textAlign: 'center',
               position: 'relative',
               zIndex: 1,
             }}
           >
-            {/* Live feed badge */}
+            {/* Live feed badge — centered */}
             <div
               className="animate-fade-in-up"
               style={{
@@ -362,21 +356,23 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Heading */}
+            {/* Heading — left-aligned */}
             <h1
               className="animate-fade-in-up"
               style={{
+                fontFamily: 'var(--font-display)',
                 fontSize: 'clamp(36px, 6vw, 56px)',
                 lineHeight: 1.15,
-                fontWeight: 700,
+                fontWeight: 600,
                 color: 'var(--text-on-accent)',
                 marginBottom: 'var(--space-5)',
-                letterSpacing: '-0.03em',
+                letterSpacing: '-0.025em',
+                textAlign: 'left',
               }}
             >
               Energy Trade
               <br />
-              <span className="gradient-text">Intelligence & Screening</span>
+              <span className="brand-text">Intelligence & Screening</span>
             </h1>
 
             <p
@@ -386,19 +382,105 @@ export default function HomePage() {
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
                 marginBottom: 'var(--space-8)',
-                maxWidth: '580px',
-                marginLeft: 'auto',
-                marginRight: 'auto',
+                maxWidth: '560px',
+                textAlign: 'left',
               }}
             >
               Screen your counterparties in seconds. Search companies, vessels, and terminals — or enter a domain or email address to check for fraud risk. Backed by OFAC, EU FSF, AIS, and registry data.
             </p>
 
-            {/* Search Box */}
-            <div className="animate-fade-in-up-delay-1">
-              <Suspense>
-                <SearchBox />
-              </Suspense>
+            {/* Dual entry points */}
+            <div
+              className="animate-fade-in-up-delay-1"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 'var(--space-4)',
+                textAlign: 'left',
+              }}
+            >
+              {/* Left: Search */}
+              <div>
+                <Suspense>
+                  <SearchBox />
+                </Suspense>
+              </div>
+
+              {/* Right: Document Screen */}
+              <div
+                style={{
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '16px',
+                  padding: 'var(--space-6)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 'var(--space-4)',
+                  transition: 'border-color 0.15s ease, transform 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(56, 189, 248, 0.2)'
+                  ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
+                  ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    border: '1px solid rgba(14, 165, 233, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--brand-400)',
+                  }}
+                >
+                  <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p
+                    style={{
+                      color: 'var(--text-primary)',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      marginBottom: '4px',
+                    }}
+                  >
+                    Screen a Document
+                  </p>
+                  <p
+                    style={{
+                      color: 'var(--text-muted)',
+                      fontSize: '13px',
+                      lineHeight: '18px',
+                    }}
+                  >
+                    Upload a contract or invoice. We extract parties automatically.
+                  </p>
+                </div>
+                <Link
+                  href="/screen"
+                  className="btn-primary"
+                  style={{
+                    display: 'inline-block',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  Upload →
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -522,7 +604,7 @@ export default function HomePage() {
                   {card.desc}
                 </p>
                 <span
-                  className="gradient-btn"
+                  className="btn-primary"
                   style={{
                     display: 'inline-block',
                     padding: '8px 16px',
@@ -549,9 +631,10 @@ export default function HomePage() {
         >
           <h2
             style={{
+              fontFamily: 'var(--font-display)',
               textAlign: 'center',
               fontSize: '28px',
-              fontWeight: 700,
+              fontWeight: 600,
               color: 'var(--text-on-accent)',
               marginBottom: 'var(--space-10)',
               letterSpacing: '-0.02em',
@@ -560,55 +643,102 @@ export default function HomePage() {
             Core Capabilities
           </h2>
 
+          {/* Asymmetric: 1 featured + 2 stacked */}
           <div
-            className="animate-fade-in-up-delay-2 home-features"
+            className="animate-fade-in-up-delay-2"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: '1fr 1fr',
               gap: 'var(--space-5)',
+              alignItems: 'start',
             }}
           >
-            {FEATURES.map((f) => (
+            {/* Featured: Sanctions Screening — primary value prop, gets full left column */}
+            <div
+              className="entity-card"
+              style={{
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid rgba(14, 165, 233, 0.15)',
+                borderRadius: '16px',
+                padding: 'var(--space-8)',
+                gridRow: '1',
+              }}
+            >
               <div
-                key={f.title}
-                className="entity-card"
                 style={{
-                  backgroundColor: 'var(--bg-surface)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '16px',
-                  padding: 'var(--space-6)',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '12px',
+                  backgroundColor: 'rgba(14, 165, 233, 0.12)',
+                  border: '1px solid rgba(14, 165, 233, 0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--brand-400)',
+                  marginBottom: 'var(--space-5)',
                 }}
               >
-                <div
-                  style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--brand-400)',
-                    marginBottom: 'var(--space-4)',
-                  }}
-                >
-                  {f.icon}
-                </div>
-                <p
-                  style={{
-                    color: 'var(--text-primary)',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    marginBottom: 'var(--space-2)',
-                  }}
-                >
-                  {f.title}
-                </p>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '22px' }}>
-                  {f.desc}
-                </p>
+                {FEATURES[0].icon}
               </div>
-            ))}
+              <p
+                style={{
+                  color: 'var(--text-primary)',
+                  fontSize: '18px',
+                  fontWeight: 600,
+                  marginBottom: 'var(--space-3)',
+                }}
+              >
+                {FEATURES[0].title}
+              </p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '22px' }}>
+                {FEATURES[0].desc}
+              </p>
+            </div>
+
+            {/* Right column: 2 stacked cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+              {FEATURES.slice(1).map((f) => (
+                <div
+                  key={f.title}
+                  className="entity-card"
+                  style={{
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '16px',
+                    padding: 'var(--space-5)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(14, 165, 233, 0.08)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--brand-400)',
+                      marginBottom: 'var(--space-3)',
+                    }}
+                  >
+                    {f.icon}
+                  </div>
+                  <p
+                    style={{
+                      color: 'var(--text-primary)',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      marginBottom: '4px',
+                    }}
+                  >
+                    {f.title}
+                  </p>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '13px', lineHeight: '20px' }}>
+                    {f.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -635,13 +765,14 @@ export default function HomePage() {
           }}
         >
           <div
-            className="glass-panel glow-border"
+            className="glass-panel"
             style={{ borderRadius: '20px', padding: 'var(--space-10) var(--space-8)' }}
           >
             <h2
               style={{
+                fontFamily: 'var(--font-display)',
                 fontSize: '28px',
-                fontWeight: 700,
+                fontWeight: 600,
                 color: 'var(--text-on-accent)',
                 marginBottom: 'var(--space-4)',
                 letterSpacing: '-0.02em',
@@ -673,7 +804,7 @@ export default function HomePage() {
             >
               <Link
                 href="/pricing"
-                className="gradient-btn"
+                className="btn-primary"
                 style={{
                   padding: '12px 28px',
                   borderRadius: '12px',

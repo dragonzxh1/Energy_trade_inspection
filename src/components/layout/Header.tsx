@@ -270,7 +270,7 @@ export default async function Header({ entityName, sanctionStatus }: HeaderProps
                 </Link>
                 <Link
                   href="/sign-in"
-                  className="gradient-btn"
+                  className="btn-primary"
                   style={{
                     fontSize: '13px',
                     fontWeight: 600,

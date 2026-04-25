@@ -92,7 +92,7 @@ function UpgradePrompt() {
       </p>
       <Link
         href="/pricing"
-        className="gradient-btn"
+        className="btn-primary"
         style={{
           display: 'inline-block',
           fontSize: '14px',

@@ -32,7 +32,7 @@ export default function SearchBox() {
       aria-label="Search for companies, vessels, domains, or emails"
     >
       <div
-        className="glass-panel glow-border"
+        className="glass-panel"
         style={{
           borderRadius: '16px',
           padding: '8px',
@@ -119,7 +119,7 @@ export default function SearchBox() {
               type="submit"
               disabled={loading || !query.trim()}
               aria-label="Search"
-              className="gradient-btn btn-ripple"
+              className="btn-primary btn-ripple"
               style={{
                 padding: '14px 28px',
                 borderRadius: '12px',
@@ -181,9 +181,10 @@ export default function SearchBox() {
                 disabled={loading}
                 className="hover-border-brand"
                 style={{
-                  padding: '5px 12px',
+                  padding: '8px 12px',
                   fontSize: '12px',
                   fontWeight: 500,
+                  minHeight: '32px',
                   borderRadius: '8px',
                   textDecoration: 'none',
                   cursor: loading ? 'not-allowed' : 'pointer',

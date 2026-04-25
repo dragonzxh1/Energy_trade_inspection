@@ -106,7 +106,7 @@ function LoadingView({ filename, step }: { filename: string; step: string }) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (barRef.current) barRef.current.style.width = '100%'
+      if (barRef.current) barRef.current.style.transform = 'scaleX(1)'
     }, 50)
     return () => clearTimeout(timer)
   }, [])
@@ -125,7 +125,8 @@ function LoadingView({ filename, step }: { filename: string; step: string }) {
       }}>
         <div ref={barRef} style={{
           height: '100%', background: TOKEN.primary,
-          width: '0%', transition: 'width 1.4s ease',
+          transform: 'scaleX(0)', transformOrigin: 'left',
+          transition: 'transform 1.4s cubic-bezier(0.4, 0, 0.2, 1)',
         }} />
       </div>
       <p style={{ fontSize: '12px', color: TOKEN.textSubtle, margin: 0 }}>{filename}</p>
@@ -142,7 +143,9 @@ function UploadEmptyState() {
       alignItems: 'center', justifyContent: 'center',
       minHeight: '400px', textAlign: 'center', gap: '12px',
     }}>
-      <div style={{ fontSize: '28px', color: TOKEN.textSubtle }}>📄</div>
+      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: TOKEN.textSubtle }}>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
       <p style={{ fontSize: '14px', color: TOKEN.textSubtle, margin: 0 }}>
         Upload a document to see screening results
       </p>
@@ -506,10 +509,16 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
             href={`/api/screen/report?sessionId=${report.id}`}
             style={{
               ...secondaryBtnStyle,
-              background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
+              background: 'var(--brand-600)',
               color: '#fff',
-              border: '1px solid rgba(99,102,241,0.45)',
-              boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+              border: '1px solid rgba(14, 165, 233, 0.4)',
+              transition: 'background 0.12s ease',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-500)'
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-600)'
             }}
           >
             Download PDF Report
@@ -549,11 +558,17 @@ function ResultView({ report, onReset }: { report: ScreeningReport; onReset: () 
           href={`/api/screen/report?sessionId=${report.id}`}
           style={{
             fontSize: '14px', fontWeight: 600, color: '#fff',
-            background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
+            background: 'var(--brand-600)',
             borderRadius: '7px', padding: '10px 24px',
             textDecoration: 'none', display: 'inline-block',
-            border: '1px solid rgba(99,102,241,0.45)',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+            border: '1px solid rgba(14, 165, 233, 0.4)',
+            transition: 'background 0.12s ease',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-500)'
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-600)'
           }}
         >
           Download PDF Report
@@ -606,10 +621,25 @@ function UploadZone({
 
   return (
     <div
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label="Upload document file"
       onDragOver={disabled ? undefined : onDragOver}
       onDragLeave={disabled ? undefined : onDragLeave}
       onDrop={disabled ? undefined : onDrop}
       onClick={() => { if (!disabled) inputRef.current?.click() }}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+          e.preventDefault()
+          inputRef.current?.click()
+        }
+      }}
+      onFocus={(e) => {
+        if (!disabled) e.currentTarget.style.borderColor = TOKEN.primary
+      }}
+      onBlur={(e) => {
+        if (!disabled) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'
+      }}
       style={{
         border: `1.5px dashed ${isDragging ? TOKEN.primary : 'rgba(255,255,255,0.12)'}`,
         borderRadius: '10px',
@@ -618,8 +648,8 @@ function UploadZone({
         textAlign: 'center',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
-        backgroundColor: isDragging ? 'rgba(99,102,241,0.08)' : 'rgba(0,0,0,0.2)',
-        transition: 'all 0.15s ease',
+        backgroundColor: isDragging ? 'rgba(14, 165, 233, 0.08)' : 'rgba(0,0,0,0.2)',
+        transition: 'border-color 0.15s ease, background-color 0.15s ease',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', gap: '8px',
       }}
@@ -634,7 +664,9 @@ function UploadZone({
           if (f) onFile(f)
         }}
       />
-      <div style={{ fontSize: '28px', color: isDragging ? TOKEN.primary : TOKEN.textSubtle }}>📄</div>
+      <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: isDragging ? TOKEN.primary : TOKEN.textSubtle }}>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+      </svg>
       <p style={{ fontSize: '14px', fontWeight: 500, color: TOKEN.textMuted, margin: 0 }}>
         Drop file here or click to browse
       </p>
@@ -797,20 +829,15 @@ export default function ScreenClient({ initialSessionId }: { initialSessionId?: 
             style={{
               width: '100%',
               padding: '11px 0',
-              background: isPrimaryHover
-                ? 'linear-gradient(180deg, #818cf8 0%, #6366f1 100%)'
-                : 'linear-gradient(180deg, #7578f2 0%, #5558e8 100%)',
+              background: isPrimaryHover ? 'var(--brand-500)' : 'var(--brand-600)',
               color: '#fff',
-              border: '1px solid rgba(99,102,241,0.45)',
-              boxShadow: isPrimaryHover
-                ? '0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35)'
-                : '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+              border: '1px solid rgba(14, 165, 233, 0.4)',
               borderRadius: '7px', fontSize: '13px', fontWeight: 500,
               fontFamily: 'inherit',
               cursor: !file || panelState === 'loading' ? 'not-allowed' : 'pointer',
-              transition: 'all 0.12s ease',
-              transform: isPrimaryHover && !!file && panelState !== 'loading' ? 'translateY(-1px)' : 'none',
+              transition: 'background 0.12s ease, box-shadow 0.12s ease',
               opacity: !file ? 0.5 : 1,
+              boxShadow: isPrimaryHover ? '0 2px 8px rgba(14, 165, 233, 0.25)' : 'none',
             }}
           >
             {panelState === 'loading' ? 'Screening\u2026' : 'Screen Document \u2192'}

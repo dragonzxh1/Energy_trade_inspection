@@ -262,7 +262,7 @@ function DraughtGauge({ current, max }: { current: number; max: number }) {
         </span>
       </div>
       <div style={{ height: '6px', backgroundColor: 'var(--bg-elevated)', borderRadius: '3px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, backgroundColor: color, borderRadius: '3px', transition: 'width 0.4s ease' }} />
+        <div style={{ height: '100%', width: '100%', transform: `scaleX(${pct / 100})`, transformOrigin: 'left', backgroundColor: color, borderRadius: '3px', transition: 'transform 0.4s ease' }} />
       </div>
       <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px' }}>
         {pct >= 85 ? 'Heavily loaded — likely carrying full cargo'

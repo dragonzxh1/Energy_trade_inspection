@@ -211,7 +211,7 @@ export default async function WatchlistPage() {
             </p>
             <Link
               href="/pricing"
-              className="gradient-btn"
+              className="btn-primary"
               style={{
                 display: 'inline-block',
                 padding: 'var(--space-3) var(--space-6)', borderRadius: '8px',
@@ -295,7 +295,7 @@ export default async function WatchlistPage() {
             </p>
             <Link
               href="/"
-              className="gradient-btn"
+              className="btn-primary"
               style={{
                 display: 'inline-block',
                 padding: 'var(--space-2) var(--space-5)', borderRadius: '8px',

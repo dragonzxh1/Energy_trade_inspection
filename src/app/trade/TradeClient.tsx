@@ -218,7 +218,7 @@ function inputStyleNew(key: string, focused: string | null, hasError?: boolean):
                     TOKEN.border
     }`,
     boxShadow: isFocused
-      ? 'inset 0 2px 3px rgba(0,0,0,0.3), 0 0 0 2px rgba(99,102,241,0.18)'
+      ? 'inset 0 2px 3px rgba(0,0,0,0.3), 0 0 0 2px rgba(14, 165, 233, 0.18)'
       : 'inset 0 2px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(0,0,0,0.12)',
     borderRadius: '7px',
     color: TOKEN.text,
@@ -299,32 +299,30 @@ function TradeForm({ values, setValues, onSubmit }: TradeFormProps) {
           style={btnHover ? {
             width: '100%',
             padding: '11px 0',
-            background: 'linear-gradient(180deg, var(--brand-500) 0%, var(--accent-primary) 100%)',
+            background: 'var(--brand-500)',
             color: '#fff',
-            border: '1px solid rgba(99,102,241,0.45)',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset, 0 4px 10px rgba(99,102,241,0.35)',
+            border: '1px solid rgba(14, 165, 233, 0.4)',
             borderRadius: '7px',
             fontSize: '13px',
             fontWeight: 500,
             fontFamily: 'inherit',
             cursor: 'pointer',
             letterSpacing: '0.01em',
-            transition: 'all 0.12s ease',
-            transform: 'translateY(-1px)',
+            transition: 'background 0.12s ease, box-shadow 0.12s ease',
+            boxShadow: '0 2px 8px rgba(14, 165, 233, 0.25)',
           } : {
             width: '100%',
             padding: '11px 0',
-            background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
+            background: 'var(--brand-600)',
             color: '#fff',
-            border: '1px solid rgba(99,102,241,0.45)',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+            border: '1px solid rgba(14, 165, 233, 0.4)',
             borderRadius: '7px',
             fontSize: '13px',
             fontWeight: 500,
             fontFamily: 'inherit',
             cursor: 'pointer',
             letterSpacing: '0.01em',
-            transition: 'all 0.12s ease',
+            transition: 'background 0.12s ease, box-shadow 0.12s ease',
           }}
         >
           Run Trade Check →
@@ -341,7 +339,7 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (barRef.current) barRef.current.style.width = '100%'
+      if (barRef.current) barRef.current.style.transform = 'scaleX(1)'
     }, 50)
     return () => clearTimeout(timer)
   }, [])
@@ -362,7 +360,8 @@ function LoadingView({ seller, vessel }: { seller: string; vessel: string }) {
           ref={barRef}
           style={{
             height: '100%', background: TOKEN.primary,
-            width: '0%', transition: 'width 1.4s ease',
+            transform: 'scaleX(0)', transformOrigin: 'left',
+            transition: 'transform 1.4s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         />
       </div>
@@ -975,6 +974,8 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
             {recent.map((r, i) => (
               <div
                 key={i}
+                role="button"
+                tabIndex={0}
                 onClick={() => setValues({
                   seller:      r.seller,
                   vessel:      r.vessel ?? '',
@@ -984,9 +985,25 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
                   date:        '',
                   sellerDomain: '',
                 })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setValues({
+                      seller: r.seller,
+                      vessel: r.vessel ?? '',
+                      commodity: r.commodity ?? '',
+                      loadingPort: r.loadingPort ?? '',
+                      imo: '',
+                      date: '',
+                      sellerDomain: '',
+                    })
+                  }
+                }}
                 style={{ padding: '8px 10px', borderRadius: '7px', cursor: 'pointer', transition: 'background 0.1s ease' }}
                 onMouseEnter={e => (e.currentTarget.style.background = TOKEN.elevated)}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                onFocus={e => (e.currentTarget.style.background = TOKEN.elevated)}
+                onBlur={e => (e.currentTarget.style.background = 'transparent')}
               >
                 <div style={{ fontSize: '13px', fontWeight: 500, color: TOKEN.text }}>
                   {r.seller}

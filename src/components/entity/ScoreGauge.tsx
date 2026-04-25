@@ -195,10 +195,12 @@ export default function ScoreGauge({ score, tier, breakdown, showBreakdown }: Sc
                     <div
                       style={{
                         height: '100%',
-                        width: `${pct}%`,
+                        width: '100%',
+                        transform: `scaleX(${pct / 100})`,
+                        transformOrigin: 'left',
                         backgroundColor: strokeColor,
                         borderRadius: '2px',
-                        transition: animated ? `width 1s cubic-bezier(0.33, 1, 0.68, 1) ${0.2 + index * 0.08}s` : 'none',
+                        transition: animated ? `transform 1s cubic-bezier(0.33, 1, 0.68, 1) ${0.2 + index * 0.08}s` : 'none',
                       }}
                     />
                   </div>

@@ -1,167 +1,272 @@
-# Design System Inspired by Linear
+---
+name: ETI Verify
+description: B2B compliance and risk screening platform for energy traders
+colors:
+  canvas-deep: "#020617"
+  surface-navy: "#0f172a"
+  elevated-slate: "#1e293b"
+  subtle-slate: "#334155"
+  text-primary: "#f1f5f9"
+  text-secondary: "#94a3b8"
+  text-muted: "#64748b"
+  text-faint: "#475569"
+  text-on-accent: "#ffffff"
+  brand-50: "#f0f9ff"
+  brand-100: "#e0f2fe"
+  brand-400: "#38bdf8"
+  brand-500: "#0ea5e9"
+  brand-600: "#0284c7"
+  brand-900: "#0c4a6e"
+  status-clear: "#10b981"
+  status-listed: "#ef4444"
+  status-unknown: "#8a8f98"
+  risk-low: "#22c55e"
+  risk-medium: "#f59e0b"
+  risk-high: "#f97316"
+  risk-critical: "#ef4444"
+  accent-primary: "#0ea5e9"
+  accent-secondary: "#22d3ee"
+  accent-hover: "#38bdf8"
+  accent-violet: "#38bdf8"
+  border-default: "rgba(56, 189, 248, 0.1)"
+  border-subtle: "rgba(56, 189, 248, 0.06)"
+  border-solid: "#1e293b"
+typography:
+  display:
+    fontFamily: "'Space Grotesk', var(--font-sans)"
+    fontSize: "clamp(36px, 6vw, 56px)"
+    fontWeight: 600
+    lineHeight: 1.15
+    letterSpacing: "-0.025em"
+  headline:
+    fontFamily: "'Space Grotesk', var(--font-sans)"
+    fontSize: "32px"
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
+  title:
+    fontFamily: "'Space Grotesk', var(--font-sans)"
+    fontSize: "20px"
+    fontWeight: 500
+    lineHeight: 1.40
+    letterSpacing: "-0.01em"
+  body:
+    fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.57
+  label:
+    fontFamily: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif"
+    fontSize: "12px"
+    fontWeight: 500
+    lineHeight: 1.40
+    letterSpacing: "-0.13px"
+  mono:
+    fontFamily: "'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace"
+    fontSize: "14px"
+    lineHeight: 1.43
+    fontFeatureSettings: "normal"
+rounded:
+  micro: "2px"
+  standard: "4px"
+  comfortable: "6px"
+  card: "12px"
+  featured: "16px"
+  pill: "9999px"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "12px"
+  base: "16px"
+  lg: "20px"
+  xl: "24px"
+  2xl: "32px"
+  3xl: "40px"
+  4xl: "48px"
+  5xl: "64px"
+components:
+  button-primary:
+    backgroundColor: "#0284c7"
+    textColor: "#ffffff"
+    borderColor: "rgba(14, 165, 233, 0.4)"
+    rounded: "6px"
+    padding: "12px 28px"
+  button-primary-hover:
+    backgroundColor: "#0ea5e9"
+    boxShadow: "0 4px 15px rgba(14, 165, 233, 0.35)"
+    transform: "translateY(-1px)"
+  glass-panel:
+    backgroundColor: "#0f172a"
+    borderColor: "rgba(56, 189, 248, 0.1)"
+  card:
+    backgroundColor: "#0f172a"
+    borderColor: "rgba(56, 189, 248, 0.06)"
+    rounded: "12px"
+  input:
+    backgroundColor: "#0f172a"
+    borderColor: "rgba(56, 189, 248, 0.1)"
+    rounded: "6px"
+---
 
-## 1. Visual Theme & Atmosphere
+# Design System: ETI Verify
 
-Linear's website is a masterclass in dark-mode-first product design — a near-black canvas (`#08090a`) where content emerges from darkness like starlight. The overall impression is one of extreme precision engineering: every element exists in a carefully calibrated hierarchy of luminance, from barely-visible borders (`rgba(255,255,255,0.05)`) to soft, luminous text (`#f7f8f8`). This is not a dark theme applied to a light design — it is darkness as the native medium, where information density is managed through subtle gradations of white opacity rather than color variation.
+## 1. Overview
 
-The typography system is built entirely on **Inter Variable** with OpenType features `"cv01"` and `"ss03"` enabled globally, giving the typeface a cleaner, more geometric character. Inter is used at a remarkable range of weights — from 300 (light body) through 510 (medium, Linear's signature weight) to 590 (semibold emphasis). Berkeley Mono serves as the monospace companion for code and technical labels.
+**Creative North Star: "The Control Room"**
+
+A B2B compliance platform where information density meets visual precision. The interface should feel like standing in front of a situation room dashboard — dark, focused, every element serving a purpose. Not a marketing site that happens to have data, not a dashboard that happens to be dark. A tool built for people who need to make high-stakes decisions under time pressure.
+
+The aesthetic philosophy rejects decoration in favor of signal. Every color, weight, and spacing choice communicates hierarchy. The brand personality — 精准 · 可信 · 克制 (Precise, Trustworthy, Restrained) — manifests as a system where nothing is accidental.
 
 **Key Characteristics:**
-- Dark-mode-native: `#08090a` marketing background, `#0f1011` panel background, `#191a1b` elevated surfaces
-- Inter Variable with `"cv01"`, `"ss03"` globally
-- Signature weight 510 for most UI text
-- Aggressive negative letter-spacing at display sizes
-- Brand indigo-violet: `#5e6ad2` (bg) / `#7170ff` (accent) / `#828fff` (hover)
-- Semi-transparent white borders: `rgba(255,255,255,0.05)` to `rgba(255,255,255,0.08)`
+- Deep navy canvas with controlled luminance hierarchy
+- Single brand accent used sparingly — its rarity gives it power
+- Risk signals are the only source of chromatic saturation on any screen
+- Space Grotesk for headings/display establishes brand authority; Inter for body ensures long-session readability
+- Information architecture driven by decision priority, not visual balance
+- Motion as feedback, never as choreography
 
----
+## 2. Colors
 
-## 2. Color Palette & Roles
+A restrained system built on near-black navy with a single steel-blue accent. Risk signals break the monochrome deliberately — green for clear, amber for warning, red for critical. The accent appears on CTAs, active states, and interactive focus only.
 
-**Background Surfaces**
-- Marketing Black (`#08090a`): deepest background
-- Panel Dark (`#0f1011`): sidebar and panel backgrounds
-- Level 3 Surface (`#191a1b`): elevated surfaces, cards, dropdowns
-- Secondary Surface (`#28282c`): hover states
+### Brand
+- **Steel Blue** (`#0ea5e9`): Primary brand accent. Used on CTAs, active navigation states, interactive focus indicators, and link hovers. Never used for risk status or data visualization.
+- **Steel Blue Light** (`#38bdf8`): Hover states on brand elements, subtle border tints.
+- **Steel Blue Dark** (`#0284c7`): Primary button background, pressed states.
 
-**Text & Content**
-- Primary Text (`#f7f8f8`): near-white, default text
-- Secondary Text (`#d0d6e0`): cool silver-gray for body
-- Tertiary Text (`#8a8f98`): muted gray for placeholders
-- Quaternary Text (`#62666d`): timestamps, disabled
+### Neutral
+- **Canvas Deep** (`#020617`): Deepest background. The primary canvas for the entire application.
+- **Surface Navy** (`#0f172a`): Card and panel backgrounds. First level of elevation above canvas.
+- **Elevated Slate** (`#1e293b`): Dropdowns, modals, elevated overlays. Second elevation step.
+- **Subtle Slate** (`#334155`): Hover states, disabled elements. Third elevation step.
+- **Text Primary** (`#f1f5f9`): Near-white for headings, labels, and primary content.
+- **Text Secondary** (`#94a3b8`): Body text, descriptions, secondary labels.
+- **Text Muted** (`#64748b`): Placeholders, captions, timestamps.
+- **Text Faint** (`#475569`): Disabled text, legal footnotes.
 
-**Brand & Accent**
-- Brand Indigo (`#5e6ad2`): CTAs, brand marks
-- Accent Violet (`#7170ff`): links, active states
-- Accent Hover (`#828fff`): hover on accent elements
+### Status (Semantic)
+- **Clear** (`#10b981`): Sanction status "not listed", low risk confirmation.
+- **Listed** (`#ef4444`): Sanction status "listed", critical risk.
+- **Unknown** (`#8a8f98`): Unverified or pending status.
 
-**Status Colors**
-- Green (`#27a644`): success/active/low risk
-- Emerald (`#10b981`): pill badges, completion
-- Red (`#e5484d`): critical/error
-- Amber (`#f59e0b`): warning/medium risk
+### Risk Levels
+- **Low** (`#22c55e`): Green, safe/verified.
+- **Medium** (`#f59e0b`): Amber, caution/warning.
+- **High** (`#f97316`): Orange-red, elevated risk.
+- **Critical** (`#ef4444`): Red, immediate attention required.
 
-**Border & Divider**
-- Border Subtle (`rgba(255,255,255,0.05)`): default
-- Border Standard (`rgba(255,255,255,0.08)`): cards, inputs
-- Border Primary (`#23252a`): solid dark border
+### Borders
+- **Subtle** (`rgba(56, 189, 248, 0.06)`): Default card and section borders.
+- **Default** (`rgba(56, 189, 248, 0.1)`): Input fields, active containers.
+- **Solid** (`#1e293b`): Section dividers, footer borders.
 
----
+### Named Rules
 
-## 3. Typography Rules
+**The One Accent Rule.** The brand accent (`#0ea5e9`) appears on ≤10% of any given screen. Its rarity is the point. If everything is highlighted, nothing is. CTAs, active nav, focus rings, link hovers — that's it.
 
-**Font Family**
-- Primary: Inter Variable (fallbacks: SF Pro Display, -apple-system, system-ui)
-- Monospace: Berkeley Mono (fallbacks: ui-monospace, SF Mono, Menlo)
-- OpenType Features: `"cv01"`, `"ss03"` enabled globally via `font-feature-settings`
+**The Risk-Only Saturation Rule.** On any screen, the only fully saturated colors are the risk indicators (green/amber/red). Everything else lives in the navy-slate spectrum with the single blue accent.
 
-**Hierarchy**
+## 3. Typography
 
-| Role | Size | Weight | Line Height | Letter Spacing |
-|------|------|--------|-------------|----------------|
-| Display XL | 72px | 510 | 1.00 | -1.584px |
-| Display | 48px | 510 | 1.00 | -1.056px |
-| Heading 1 | 32px | 400 | 1.13 | -0.704px |
-| Heading 2 | 24px | 400 | 1.33 | -0.288px |
-| Heading 3 | 20px | 590 | 1.33 | -0.24px |
-| Body Large | 18px | 400 | 1.60 | -0.165px |
-| Body | 16px | 400 | 1.50 | normal |
-| Body Medium | 16px | 510 | 1.50 | normal |
-| Small | 15px | 400 | 1.60 | -0.165px |
-| Caption | 13px | 400–510 | 1.50 | -0.13px |
-| Label | 12px | 400–590 | 1.40 | normal |
+**Display Font:** Space Grotesk (with fallback: var(--font-sans) → system-ui)
+**Body Font:** Inter Variable (with fallback: system-ui, -apple-system, Segoe UI, sans-serif)
+**Label/Mono Font:** JetBrains Mono (with fallback: ui-monospace, SF Mono, Menlo, monospace)
 
-**Principles**
-- 510 is the signature weight — Linear's default emphasis
-- Weight 700 is never used; max is 590
+**Character:** A dual-font system where Space Grotesk's geometric precision establishes brand authority at display and heading sizes, while Inter's clarity ensures long-session readability for body text. Space Grotesk's distinctive character prevents the interface from blending into generic dark-mode templates. Inter's tabular numerals are essential for data-dense screens. JetBrains Mono handles all codes, identifiers, and technical values.
 
----
+### Hierarchy
+- **Display** (weight 600, clamp 36-56px, line-height 1.15, letter-spacing -0.025em): Homepage hero heading only.
+- **Headline** (weight 600, 32px, line-height 1.25, letter-spacing -0.025em): Page titles, section headers.
+- **Title** (weight 500, 20px, line-height 1.40, letter-spacing -0.01em): Card titles, panel headers.
+- **Body** (weight 400, 14px, line-height 1.57): Default body text. Max 65-75ch line length.
+- **Body Medium** (weight 500, 14px, line-height 1.57): Emphasized body text, form labels.
+- **Small** (weight 400, 13px, line-height 1.60): Secondary text, descriptions.
+- **Caption** (weight 500, 12px, line-height 1.40, letter-spacing -0.13px): Badges, labels, timestamps.
 
-## 4. Component Stylings
+### Named Rules
 
-**Buttons**
-- Ghost: `rgba(255,255,255,0.02)` bg, `#e2e4e7` text, 6px radius, `1px solid rgb(36,40,44)` border
-- Primary: `#5e6ad2` bg, white text, 8px 16px padding, 6px radius
-- Pill: transparent bg, `#d0d6e0` text, 9999px radius
+**The Display/Body Split Rule.** Space Grotesk is reserved for h1, h2, h3, and display text only. All body copy, labels, UI text, and navigation use Inter. This preserves Space Grotesk's authority by preventing it from being used at small sizes where its character becomes noise.
 
-**Cards & Containers**
-- Background: `rgba(255,255,255,0.02–0.05)` (translucent)
-- Border: `1px solid rgba(255,255,255,0.08)`
-- Radius: 8px (standard), 12px (featured)
+**The No-700-Body Rule.** Weight 700 is reserved for headings and hero displays only. Body text, labels, badges, and navigation never exceed weight 600. This preserves the visual impact of bold text.
 
-**Badges & Pills**
-- Success: `#10b981` bg, 50% radius, 10px weight 510
-- Neutral: transparent, `1px solid rgb(35,37,42)` border
+## 4. Elevation
 
-**Navigation**
-- Dark sticky header on `#0f1011`
-- Links: 13–14px weight 510, `#d0d6e0` text → `#f7f8f8` on hover
+This system uses tonal layering, not shadows. Depth is conveyed through background luminance steps: Canvas → Surface → Elevated → Subtle. At rest, all surfaces are flat. Shadows appear only as a response to hover state on interactive cards.
 
----
+### Shadow Vocabulary
+- **Card Hover** (`0 10px 40px rgba(14, 165, 233, 0.2)`): Appears only on entity card hover. Subtle brand-tinted lift.
+- **Button Hover** (`0 4px 15px rgba(14, 165, 233, 0.35)`): Primary button hover state only.
 
-## 5. Layout Principles
+### Named Rules
 
-**Spacing**
-- Base unit: 8px
-- Scale: 4px, 8px, 12px, 16px, 20px, 24px, 32px
+**The Flat-By-Default Rule.** Surfaces are flat at rest. Shadows appear only as a response to state (hover, elevation, focus). No persistent drop shadows on cards, panels, or containers.
 
-**Border Radius Scale**
-- Micro: 2px (inline badges)
-- Standard: 4px
-- Comfortable: 6px (buttons, inputs)
-- Card: 8px
-- Panel: 12px
-- Pill: 9999px
+**The No-Glass Rule.** Backdrop blur (`backdrop-filter`) is not used for decorative cards or panels. The `.glass-panel` utility uses a solid `var(--bg-surface)` background — blur was removed in the polish pass. Backdrop blur serves a functional purpose only when content must remain readable over dynamic backgrounds.
 
----
+**The No-Glow-Border Rule.** Decorative `box-shadow` glows on borders are prohibited. Any `.glow-border` usage is a design smell — remove it.
 
-## 6. Depth & Elevation
+## 5. Components
 
-| Level | Treatment |
-|-------|-----------|
-| Flat | `#010102` bg, no shadow |
-| Surface | `rgba(255,255,255,0.05)` bg + border |
-| Elevated | `rgba(0,0,0,0.4) 0px 2px 4px` shadow |
+### Buttons
+- **Shape:** Gently rounded corners (6px standard, 12px for large CTA).
+- **Primary:** `var(--brand-600)` background, white text, 6px radius, 1px solid `rgba(14, 165, 233, 0.4)` border, 12px 28px padding. Hover: `var(--brand-500)` background with brand-tinted shadow and `translateY(-1px)`. Active: `translateY(0)` with shadow removed.
+- **Ghost:** Transparent background, `var(--text-secondary)` text. Hover: `var(--text-primary)` text, no background shift.
+- **Pill:** Transparent background, `var(--text-secondary)` text, 9999px border radius. Used for filter chips and status toggles.
 
-Elevation via background luminance steps, not shadow darkness.
+### Cards / Containers
+- **Corner Style:** Comfortably rounded (12px standard, 16px for featured cards).
+- **Background:** `var(--bg-surface)` for standard cards. `var(--bg-elevated)` for elevated surfaces.
+- **Border:** 1px solid `var(--border-subtle)` for standard cards. Semantic borders for risk-tinted cards (e.g., red border for sanctioned entities).
+- **Internal Padding:** `var(--space-6)` (24px) standard. `var(--space-4)` (16px) for compact cards.
+- **Hover:** Subtle lift (`translateY(-2px)`) with brand-tinted shadow. Border color shifts to brand accent.
 
----
+### Inputs / Fields
+- **Style:** `var(--bg-surface)` background, 1px solid `var(--border-default)` border, 6px radius.
+- **Focus:** Border shifts to brand color, 2px solid `var(--accent-primary)` outline with 2px offset.
+- **Error:** Border shifts to `var(--status-listed)` red.
 
-## 7. Do's and Don'ts
+### Navigation
+- **Style:** Sticky header on `var(--bg-surface)` background. Links at 13-14px weight 500, `var(--text-secondary)` text → `var(--text-primary)` on hover.
+- **Active State:** Brand accent color (`#0ea5e9`), no underline.
+- **Mobile:** Text nav links hidden below 480px, icon-only navigation.
 
-**Do**
-- Use Inter Variable with `"cv01"`, `"ss03"` on ALL text
-- Use weight 510 as default emphasis
-- Build on near-black backgrounds: `#08090a` / `#0f1011`
-- Use semi-transparent white borders
-- Reserve brand indigo for primary CTAs only
+### Badges / Pills
+- **Status Badge:** 12px weight 500 text, 9999px border radius (pill). Background is tinted version of status color (`${color}15`), border is semi-transparent (`${color}30`).
+- **Risk Badge:** Same shape as status badge. Color maps to risk level (green/amber/red).
+- **Sanction Badge:** Glowing pulse animation for "listed" status (`redPulse 2.2s`). Subtle glow pulse for "not listed" (`glowPulse 2.8s`).
 
-**Don't**
-- Use pure white (`#ffffff`) as primary text
-- Use solid colored backgrounds for buttons
-- Use weight 700 (max 590)
-- Introduce warm colors into UI chrome
-- Use drop shadows on dark surfaces
+### ScoreGauge (Signature Component)
+- **Shape:** Circular ring gauge with animated stroke-dashoffset.
+- **Track:** `var(--bg-elevated)` background, 8px stroke width.
+- **Progress:** Risk-colored stroke, rounded linecap, animated on first visibility via IntersectionObserver.
+- **Center:** Score displayed at 32px weight 700, risk-colored. "/ 100" label below in muted text.
+- **Breakdown:** 5-dimension progress bars below, each 3px height with risk-colored fill.
+- **Animation:** 1.2s count-up with cubic-bezier easing (0.33, 1, 0.68, 1). Respects `prefers-reduced-motion`.
 
----
+## 6. Do's and Don'ts
 
-## 8. Quick Reference
+### Do:
+- **Do** use Space Grotesk for h1, h2, h3 and display text. Reserve it for large sizes where its character adds authority.
+- **Do** use Inter for all body text, labels, navigation, and UI text. Keep it at 14px or below.
+- **Do** build on the deep navy canvas (`#020617`) — this is the native medium, not a "dark mode."
+- **Do** reserve brand accent (`#0ea5e9`) for primary CTAs, active states, and interactive focus only.
+- **Do** use risk signals (green/amber/red) as the only fully saturated colors on any screen.
+- **Do** convey elevation through background luminance steps, not persistent shadows.
+- **Do** ensure risk status is communicated through color + icon/text together, never color alone.
+- **Do** cap body text line length at 65-75 characters for readability.
+- **Do** use JetBrains Mono for all data values, codes, and technical labels.
+- **Do** use `brand-text` (solid `var(--brand-400)`) for inline brand emphasis. Never use gradient text.
 
-**Colors**
-- Page bg: `#08090a`
-- Panel bg: `#0f1011`
-- Surface: `#191a1b`
-- Heading: `#f7f8f8`
-- Body: `#d0d6e0`
-- Muted: `#8a8f98`
-- Accent: `#7170ff`
-- CTA: `#5e6ad2`
-- Border: `rgba(255,255,255,0.08)`
-
-**ETI-Specific Status Colors**
-- Low Risk: `#27a644` (green)
-- Medium Risk: `#f59e0b` (amber)
-- High Risk: `#e5484d` (red)
-- Critical: `#b91c1c` (deep red)
-- Sanctioned: `#ef4444` with glow
-- Not Listed: `#10b981` (emerald)
+### Don't:
+- **Don't** use `background-clip: text` with a gradient for decorative text effects. It's decorative, never meaningful, and fails the AI slop test. Use solid color via `.brand-text` or weight/size emphasis.
+- **Don't** use `backdrop-filter: blur()` for decorative glass panels. Use solid `var(--bg-surface)` background.
+- **Don't** use `box-shadow` glows on borders (`.glow-border`). They are decorative and prohibited.
+- **Don't** use weight 700 for body text, labels, badges, or navigation. Maximum 600 for body emphasis, 500 for default UI text.
+- **Don't** use pure white (`#ffffff`) as text color. `#f1f5f9` is the maximum luminance.
+- **Don't** use `border-left` or `border-right` greater than 1px as a colored accent stripe on cards or list items.
+- **Don't** introduce warm colors (amber, orange) into UI chrome. They are reserved for risk states only.
+- **Don't** animate CSS layout properties (width, height, padding, margin). Use transform and opacity.
+- **Don't** use identical card grids with icon + heading + text repeated endlessly. Vary structure for visual hierarchy.
+- **Don't** use consumer SaaS clichés (cartoon illustrations, playful emojis, rounded "friendly" elements).
+- **Don't** use Web3/crypto aesthetics (neon overload, pixel art, hype-driven visual noise).

@@ -130,8 +130,8 @@ export default async function AccountPage() {
                 fontSize: '12px', fontWeight: 600, letterSpacing: '0.04em',
                 textTransform: 'uppercase' as const,
                 color: 'var(--accent-primary)',
-                backgroundColor: 'rgba(99,102,241,0.12)',
-                border: '1px solid rgba(99,102,241,0.3)',
+                backgroundColor: 'rgba(14, 165, 233, 0.12)',
+                border: '1px solid rgba(14, 165, 233, 0.3)',
                 borderRadius: '4px',
                 padding: '2px 8px',
                 display: 'inline-block',
@@ -147,16 +147,21 @@ export default async function AccountPage() {
                   type="submit"
                   style={{
                     padding: '8px 16px',
-                    background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
+                    background: 'var(--brand-600)',
                     color: 'var(--text-on-accent)',
-                    border: '1px solid rgba(99,102,241,0.45)',
-                    boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+                    border: '1px solid rgba(14, 165, 233, 0.4)',
                     borderRadius: '7px',
                     fontSize: '13px',
                     fontWeight: 500,
                     fontFamily: 'inherit',
                     cursor: 'pointer',
-                    transition: 'all 0.12s ease',
+                    transition: 'background 0.12s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--brand-500)'
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--brand-600)'
                   }}
                 >
                   Manage billing
@@ -168,15 +173,20 @@ export default async function AccountPage() {
                 style={{
                   display: 'inline-block',
                   padding: '8px 16px',
-                  background: 'linear-gradient(180deg, var(--brand-600) 0%, var(--brand-500) 100%)',
+                  background: 'var(--brand-600)',
                   color: 'var(--text-on-accent)',
-                  border: '1px solid rgba(99,102,241,0.45)',
-                  boxShadow: '0 1px 0 rgba(255,255,255,0.1) inset, 0 2px 5px rgba(99,102,241,0.25)',
+                  border: '1px solid rgba(14, 165, 233, 0.4)',
                   borderRadius: '7px',
                   fontSize: '13px',
                   fontWeight: 500,
                   textDecoration: 'none',
-                  transition: 'all 0.12s ease',
+                  transition: 'background 0.12s ease',
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-500)'
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.background = 'var(--brand-600)'
                 }}
               >
                 Upgrade plan
@@ -216,10 +226,12 @@ export default async function AccountPage() {
               }}>
                 <div style={{
                   height: '100%',
-                  width: `${usedPercent}%`,
+                  width: '100%',
+                  transform: `scaleX(${usedPercent / 100})`,
+                  transformOrigin: 'left',
                   background: usedPercent >= 100 ? 'var(--status-listed)' : 'var(--accent-primary)',
                   borderRadius: '2px',
-                  transition: 'width 0.3s ease',
+                  transition: 'transform 0.3s ease',
                 }} />
               </div>
 
