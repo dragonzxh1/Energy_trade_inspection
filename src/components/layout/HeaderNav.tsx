@@ -1,5 +1,4 @@
 'use client'
-
 import { useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
@@ -194,7 +193,6 @@ export default function HeaderNav({ user, plan }: HeaderNavProps) {
       {/* Mobile dropdown */}
       {menuOpen && (
         <>
-          {/* Backdrop */}
           <div
             onClick={() => setMenuOpen(false)}
             style={{
@@ -204,7 +202,6 @@ export default function HeaderNav({ user, plan }: HeaderNavProps) {
               zIndex: 40,
             }}
           />
-          {/* Dropdown panel */}
           <div
             className="mobile-nav-dropdown"
             style={{
@@ -235,7 +232,6 @@ export default function HeaderNav({ user, plan }: HeaderNavProps) {
                   textDecoration: 'none',
                   padding: '10px 14px',
                   borderRadius: '8px',
-                  transition: 'background 0.1s ease, color 0.1s ease',
                 }}
                 className="hover-border-brand"
               >
