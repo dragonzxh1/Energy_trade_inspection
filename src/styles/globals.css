@@ -45,9 +45,9 @@
   --border-solid:   #1e293b;
 
   /* Typography */
-  --font-display: 'Space Grotesk', var(--font-sans);
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* Layout */
   --max-width:     1200px;
@@ -625,4 +625,11 @@ table {
 }
 .hover-text-muted:hover {
   color: var(--text-muted) !important;
+}
+
+.hover-lift {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
 }

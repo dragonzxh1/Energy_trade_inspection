@@ -408,6 +408,7 @@ export default function HomePage() {
 
               {/* Right: Document Screen */}
               <div
+                className="home-tool-card"
                 style={{
                   backgroundColor: 'var(--bg-surface)',
                   border: '1px solid var(--border-subtle)',
@@ -417,14 +418,6 @@ export default function HomePage() {
                   flexDirection: 'column',
                   gap: 'var(--space-4)',
                   transition: 'border-color 0.15s ease, transform 0.15s ease',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(56, 189, 248, 0.2)'
-                  ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)'
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--border-subtle)'
-                  ;(e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)'
                 }}
               >
                 <div
@@ -811,7 +804,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/search"
-                className="hover-border-brand"
+                className="home-tool-card"
                 style={{
                   padding: '12px 28px',
                   borderRadius: '12px',
