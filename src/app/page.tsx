@@ -500,38 +500,31 @@ export default function HomePage() {
               padding: 'var(--space-8) var(--space-4)',
             }}
           >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 'var(--space-8)',
-              }}
-              className="home-trust-strip"
-            >
-              {TRUST_STATS.map((s) => (
-                <div key={s.label} style={{ textAlign: 'center' }}>
-                  <div
-                    style={{
-                      fontSize: '32px',
-                      fontWeight: 700,
-                      color: s.value.includes('s') || s.value.includes('%')
-                        ? 'var(--brand-400)'
-                        : '#fff',
-                      marginBottom: '4px',
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {s.value}
-                  </div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                    {s.label}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-faint)', marginTop: '4px' }}>
-                    {s.note}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 'var(--space-4) var(--space-8)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {TRUST_STATS.map((s) => (
+              <div key={s.label} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  color: s.value.includes('s') || s.value.includes('%')
+                    ? 'var(--brand-400)'
+                    : 'var(--text-primary)',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {s.value}
+                </span>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
           </div>
         </section>
 

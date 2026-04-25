@@ -263,7 +263,7 @@ function PscSummaryPanel({ summary }: { summary: PscSummary }) {
           { label: 'Deficiency rate', value: summary.totalInspections > 0 ? `${Math.round(summary.deficiencyRate * 100)}%` : '-' },
         ].map(({ label, value }) => (
           <div key={label} style={{ textAlign: 'center', padding: 'var(--space-3)', backgroundColor: 'var(--bg-elevated)', borderRadius: '8px' }}>
-            <p style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 700 }}>{value}</p>
+            <p style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: 600 }}>{value}</p>
             <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>{label}</p>
           </div>
         ))}
@@ -460,7 +460,7 @@ function VesselNotFoundPage({ imo }: { imo: string }) {
             style={{
               color: 'var(--text-primary)',
               fontSize: '28px',
-              fontWeight: 700,
+              fontWeight: 600,
               marginBottom: 'var(--space-3)',
             }}
           >

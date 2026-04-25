@@ -102,7 +102,7 @@ function DnsIndicator({ present, label }: { present: boolean; label: string }) {
           height: '18px',
           borderRadius: '50%',
           fontSize: '11px',
-          fontWeight: 700,
+          fontWeight: 600,
           flexShrink: 0,
           backgroundColor: present ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.12)',
           color: present ? 'var(--risk-low)' : 'var(--status-listed)',
@@ -307,7 +307,7 @@ function EmailDnsSection({ email }: { email: EmailData | null }) {
           style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: '18px', height: '18px', borderRadius: '50%',
-            fontSize: '11px', fontWeight: 700, flexShrink: 0,
+            fontSize: '11px', fontWeight: 600, flexShrink: 0,
             backgroundColor: email.dkimDetected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)',
             color: email.dkimDetected ? 'var(--risk-low)' : 'var(--text-muted)',
           }}

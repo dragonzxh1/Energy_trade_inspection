@@ -100,8 +100,8 @@ function DomainCheckCard({ result }: { result: DomainCheckResult }) {
           {result.domain}
         </span>
         <span style={{
-          fontSize: '10px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
-          backgroundColor: color, color: '#fff', borderRadius: '4px', padding: '2px 7px',
+          fontSize: '10px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+          backgroundColor: color, color: 'var(--text-on-accent)', borderRadius: '4px', padding: '2px 7px',
         }}>
           {result.severity}
         </span>
@@ -113,7 +113,7 @@ function DomainCheckCard({ result }: { result: DomainCheckResult }) {
           {/* Spoofing match shown first */}
           {hasSpoofing && best && (
             <li style={{ display: 'flex', gap: '8px', alignItems: 'baseline' }}>
-              <span style={{ color, flexShrink: 0, fontWeight: 700, fontSize: '13px' }}>!</span>
+              <span style={{ color, flexShrink: 0, fontWeight: 600, fontSize: '13px' }}>!</span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '18px' }}>
                 Resembles{' '}
                 <strong style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -183,7 +183,7 @@ function SanctionHitsSection({ hits, query }: { hits: SanctionHit[]; query: stri
         marginBottom: 'var(--space-4)',
       }}>
         <span style={{
-          fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em',
+          fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
           textTransform: 'uppercase', color: 'var(--status-listed)',
           backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: '4px',
           padding: '2px 8px',

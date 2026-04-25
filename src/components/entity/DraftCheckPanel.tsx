@@ -203,7 +203,7 @@ export default function DraftCheckPanel({ imo }: Props) {
                   textAlign: 'center',
                 }}
               >
-                <p style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono, monospace)' }}>
+                <p style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono, monospace)' }}>
                   {value}
                 </p>
                 <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{label}</p>

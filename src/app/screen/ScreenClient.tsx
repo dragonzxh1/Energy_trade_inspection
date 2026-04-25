@@ -168,7 +168,7 @@ function SanctionBadge({ status }: { status: string }) {
 
   return (
     <span style={{
-      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
+      fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
       color, backgroundColor: 'color-mix(in srgb, ' + color + ' 10%, transparent)', border: `1px solid color-mix(in srgb, ` + color + ` 25%, transparent)`,
       borderRadius: '4px', padding: '2px 7px',
     }}>
@@ -182,7 +182,7 @@ function SanctionBadge({ status }: { status: string }) {
 function RiskBadge({ level }: { level: RiskLevel }) {
   return (
     <span style={{
-      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
+      fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
       color: RISK_COLOR[level],
       backgroundColor: RISK_BG[level],
       border: `1px solid ${RISK_BORDER[level]}`,
@@ -333,7 +333,7 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
           Trade Assessment
         </p>
         <span style={{
-          fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em',
+          fontSize: '11px', fontWeight: 600, letterSpacing: '0.06em',
           color: RISK_COLOR[risk],
           backgroundColor: 'color-mix(in srgb, ' + RISK_COLOR[risk] + ' 10%, transparent)',
           border: `1px solid color-mix(in srgb, ` + RISK_COLOR[risk] + ` 25%, transparent)`,
@@ -377,22 +377,40 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
       {/* Flags */}
       {flags.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {flags.map((flag, i) => (
+          {flags.map((flag, i) => {
+            const severityColor = RISK_COLOR[flag.severity]
+            return (
             <div key={i} style={{
               display: 'flex', gap: '12px', padding: '12px',
-              backgroundColor: TOKEN.elevated, borderRadius: '6px',
-              borderLeft: `3px solid ${RISK_COLOR[flag.severity]}`,
+              backgroundColor: 'rgba(239,68,68,0.04)',
+              border: `1px solid ${severityColor}30`,
+              borderRadius: '8px',
             }}>
+              <div style={{ flex: '0 0 auto', paddingTop: '2px' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '22px', height: '22px', borderRadius: '4px',
+                  backgroundColor: `${severityColor}18`,
+                  color: severityColor,
+                  fontSize: '11px', fontWeight: 600,
+                  fontFamily: 'var(--font-mono, monospace)',
+                }}>
+                  {flag.severity === 'critical' ? '!!'
+                   : flag.severity === 'high'     ? '!'
+                   : flag.severity === 'medium'   ? '~'
+                   : '·'}
+                </span>
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span style={{
-                    fontSize: '10px', fontWeight: 700,
-                    color: RISK_COLOR[flag.severity], letterSpacing: '0.04em',
+                    fontSize: '10px', fontWeight: 600,
+                    color: severityColor, letterSpacing: '0.04em',
                   }}>
                     {flag.severity.toUpperCase()}
                   </span>
                   <span style={{
-                    fontSize: '10px', fontWeight: 600, color: TOKEN.textMuted,
+                    fontSize: '10px', fontWeight: 500, color: TOKEN.textMuted,
                     fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.03em',
                   }}>
                     {FLAG_LABEL[flag.code] ?? flag.code}
@@ -403,7 +421,7 @@ function TradeAssessmentCard({ assessment }: { assessment: TradeAssessmentResult
                 </p>
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
 

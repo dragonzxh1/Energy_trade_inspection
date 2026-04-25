@@ -163,7 +163,7 @@ function RiskBadge({ level, large }: { level: RiskLevel; large?: boolean }) {
   return (
     <span style={{
       fontSize: large ? '13px' : '10px',
-      fontWeight: 700,
+      fontWeight: 600,
       letterSpacing: '0.06em',
       color: RISK_COLOR[level],
       backgroundColor: RISK_BG[level],
@@ -185,7 +185,7 @@ function SanctionBadge({ status }: { status: string }) {
     status === 'not_listed' ? 'CLEAR'      : 'UNKNOWN'
   return (
     <span style={{
-      fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em',
+      fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
       color, backgroundColor: `${color}18`, border: `1px solid ${color}44`,
       borderRadius: '4px', padding: '2px 7px',
     }}>
@@ -385,7 +385,7 @@ function FlagCard({ flag }: { flag: TradeFlag }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', flexWrap: 'wrap' }}>
         <span style={{
-          fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em',
+          fontSize: '11px', fontWeight: 600, letterSpacing: '0.05em',
           color: RISK_COLOR[flag.severity],
           backgroundColor: `${RISK_COLOR[flag.severity]}18`,
           border: `1px solid ${RISK_COLOR[flag.severity]}44`,
@@ -393,7 +393,7 @@ function FlagCard({ flag }: { flag: TradeFlag }) {
         }}>
           {flag.severity.toUpperCase()}
         </span>
-        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.03em' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.03em' }}>
           {FLAG_LABEL[flag.code] ?? flag.code}
         </span>
         <span style={{
@@ -934,7 +934,7 @@ export default function TradeClient({ initialSessionId }: { initialSessionId?: s
       }}>
         {/* Page title */}
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '18px', fontWeight: 700, color: TOKEN.text, margin: '0 0 6px' }}>
+          <h1 style={{ fontSize: '18px', fontWeight: 600, color: TOKEN.text, margin: '0 0 6px' }}>
             Trade Check
           </h1>
           <p style={{ fontSize: '13px', color: TOKEN.textMuted, lineHeight: '1.5', margin: 0 }}>

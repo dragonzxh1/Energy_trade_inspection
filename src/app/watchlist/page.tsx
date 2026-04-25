@@ -390,7 +390,7 @@ export default async function WatchlistPage() {
                     {statusChanged && (
                       <span
                         title={`Changed from ${STATUS_LABEL[item.sanction_status] ?? item.sanction_status}`}
-                        style={{ fontSize: '10px', color: '#f97316', fontWeight: 700 }}
+                        style={{ fontSize: '10px', color: '#f97316', fontWeight: 600 }}
                       >
                     ⚠                      </span>
                     )}
@@ -499,7 +499,7 @@ export default async function WatchlistPage() {
                     <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {t.seller_name}
                       {alerts > 0 && (
-                        <span style={{ marginLeft: '6px', fontSize: '10px', color: '#f97316', fontWeight: 700 }}>
+                        <span style={{ marginLeft: '6px', fontSize: '10px', color: 'var(--risk-high)', fontWeight: 600 }}>
                 ⚠ {alerts}
                         </span>
                       )}
