@@ -18,6 +18,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     siteName: 'ETI Verify',
   },
+  icons: {
+    icon: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%230ea5e9%22 width=%22100%22 height=%22100%22 rx=%2216%22/%3E%3C/svg%3E',
+  },
 }
 
 export default function RootLayout({
