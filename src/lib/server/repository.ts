@@ -2295,6 +2295,31 @@ export interface AdminStats {
   new30Days: number
   dailyRegistrations: Array<{ date: string; count: number }>
   topEntityTypes: Array<{ type: 'company' | 'vessel' | 'terminal'; count: number }>
+  totalPageViews: number
+  pageViewsToday: number
+  dailyPageViews: Array<{ date: string; count: number }>
+  topPages: Array<{ path: string; count: number }>
+}
+
+// ─── Page Views ────────────────────────────────────────────────────────────────
+
+const PAGE_VIEW_DEDUP_MINUTES = 5
+
+export async function recordPageView(path: string, ipHash: string): Promise<void> {
+  try {
+    await db.query(
+      `INSERT INTO page_views (path, ip_hash, created_at)
+       SELECT $1, $2, NOW()
+       WHERE NOT EXISTS (
+         SELECT 1 FROM page_views
+         WHERE ip_hash = $2 AND path = $1
+           AND created_at > NOW() - INTERVAL '${PAGE_VIEW_DEDUP_MINUTES} minutes'
+       )`,
+      [path, ipHash],
+    )
+  } catch {
+    // silently ignore — page view tracking shouldn't break the page
+  }
 }
 
 // ─── Admin Dashboard Queries ─────────────────────────────────────────────────
@@ -2344,7 +2369,8 @@ export async function getAdminUsers(): Promise<UserAdminRow[]> {
  * topEntityTypes: counts from query_log JOIN entities, grouped by entity_type.
  */
 export async function getAdminStats(): Promise<AdminStats> {
-  const [totalRow, planRows, todayRow, thirtyDayRow, dailyRows, entityTypeRows] = await Promise.all([
+  const [totalRow, planRows, todayRow, thirtyDayRow, dailyRows, entityTypeRows,
+         pvTotalRow, pvTodayRow, pvDailyRows, pvTopPages] = await Promise.all([
     db.query<{ total: string }>('SELECT COUNT(*)::text AS total FROM users'),
     db.query<{ plan: string; count: string }>('SELECT plan, COUNT(*)::text AS count FROM users GROUP BY plan'),
     db.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM users WHERE created_at >= NOW() - INTERVAL '1 day'`),
@@ -2368,6 +2394,24 @@ export async function getAdminStats(): Promise<AdminStats> {
       GROUP BY e.entity_type
       ORDER BY count DESC
     `),
+    db.query<{ total: string }>('SELECT COUNT(*)::text AS total FROM page_views'),
+    db.query<{ count: string }>(`SELECT COUNT(*)::text AS count FROM page_views WHERE created_at >= NOW() - INTERVAL '1 day'`),
+    db.query<{ day: string; count: number }>(`
+      SELECT
+        date_trunc('day', created_at AT TIME ZONE 'UTC')::date AS day,
+        COUNT(*)::int AS count
+      FROM page_views
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY 1
+      ORDER BY 1
+    `),
+    db.query<{ path: string; count: number }>(`
+      SELECT path, COUNT(*)::int AS count
+      FROM page_views
+      GROUP BY path
+      ORDER BY count DESC
+      LIMIT 5
+    `),
   ])
 
   const planDistribution = { free: 0, starter: 0, enterprise: 0, professional: 0 }
@@ -2386,6 +2430,13 @@ export async function getAdminStats(): Promise<AdminStats> {
       count: r.count,
     })),
     topEntityTypes: entityTypeRows.rows,
+    totalPageViews: parseInt(pvTotalRow.rows[0]?.total ?? '0', 10),
+    pageViewsToday: parseInt(pvTodayRow.rows[0]?.count ?? '0', 10),
+    dailyPageViews: pvDailyRows.rows.map((r) => ({
+      date: String(r.day),
+      count: r.count,
+    })),
+    topPages: pvTopPages.rows,
   }
 }
 

@@ -64,7 +64,7 @@ export default function StatCards({ stats }: StatCardsProps) {
         Platform Stats
       </h2>
 
-      {/* 2x2 grid of core stat cards */}
+      {/* 2x3 grid of core stat cards */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
@@ -91,9 +91,19 @@ export default function StatCards({ stats }: StatCardsProps) {
           value={stats.new30Days}
           subtext="registrations in the past 30 days"
         />
+        <StatCard
+          label="Total Page Views"
+          value={stats.totalPageViews.toLocaleString()}
+          subtext="unique page views"
+        />
+        <StatCard
+          label="Page Views Today"
+          value={stats.pageViewsToday.toLocaleString()}
+          subtext="views in the last 24h"
+        />
       </div>
 
-      {/* Entity Breakdown — full-width card below the 2x2 grid (per ADMIN-04 topEntityTypes) */}
+      {/* Entity Breakdown — full-width card below the 2x3 grid (per ADMIN-04 topEntityTypes) */}
       <div style={{
         backgroundColor: 'var(--bg-surface)',
         border: '1px solid var(--border-subtle)',
@@ -123,6 +133,45 @@ export default function StatCards({ stats }: StatCardsProps) {
           {entitySubtext}
         </p>
       </div>
+
+      {/* Top Pages */}
+      {stats.topPages.length > 0 && (
+        <div style={{
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '12px',
+          padding: 'var(--space-4)',
+          marginTop: 'var(--space-4)',
+        }}>
+          <p style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            marginBottom: 'var(--space-3)',
+          }}>
+            Top Pages
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+            {stats.topPages.map((p, i) => (
+              <div key={p.path} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '13px',
+              }}>
+                <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                  {p.path}
+                </span>
+                <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {p.count.toLocaleString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

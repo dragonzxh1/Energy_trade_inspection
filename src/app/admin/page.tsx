@@ -59,6 +59,10 @@ export default async function AdminPage() {
     new30Days: 0,
     dailyRegistrations: [],
     topEntityTypes: [],
+    totalPageViews: 0,
+    pageViewsToday: 0,
+    dailyPageViews: [],
+    topPages: [],
   }
 
   try {
