@@ -7,17 +7,18 @@ interface PageViewRow {
   path: string
   ip: string | null
   country: string | null
-  created_at: string
+  created_at_ms: number
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso + 'Z')
+function formatTime(ms: number): string {
+  const d = new Date(ms)
   return d.toLocaleString('zh-CN', {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+    timeZoneName: 'short',
   })
 }
 
@@ -70,7 +71,7 @@ export default function RecentPageViews() {
                 <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{r.ip ?? '-'}</td>
                 <td style={tdStyle}>{r.country ?? '-'}</td>
                 <td style={{ ...tdStyle, fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{r.path}</td>
-                <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatTime(r.created_at)}</td>
+                <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>{formatTime(r.created_at_ms)}</td>
               </tr>
             ))}
           </tbody>

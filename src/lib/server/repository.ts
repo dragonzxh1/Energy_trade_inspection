@@ -2306,7 +2306,7 @@ export interface RecentPageView {
   path: string
   ip: string | null
   country: string | null
-  created_at: string
+  created_at_ms: number
 }
 
 // ─── Page Views ────────────────────────────────────────────────────────────────
@@ -2332,7 +2332,8 @@ export async function recordPageView(path: string, ipHash: string, ip: string, c
 
 export async function getRecentPageViews(limit: number): Promise<RecentPageView[]> {
   const { rows } = await db.query<RecentPageView>(
-    `SELECT id, path, ip, country, created_at::text AS created_at
+    `SELECT id, path, ip, country,
+            (EXTRACT(EPOCH FROM created_at) * 1000)::bigint AS created_at_ms
      FROM page_views
      ORDER BY created_at DESC
      LIMIT $1`,
