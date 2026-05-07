@@ -2301,25 +2301,44 @@ export interface AdminStats {
   topPages: Array<{ path: string; count: number }>
 }
 
+export interface RecentPageView {
+  id: number
+  path: string
+  ip: string | null
+  country: string | null
+  created_at: string
+}
+
 // ─── Page Views ────────────────────────────────────────────────────────────────
 
 const PAGE_VIEW_DEDUP_MINUTES = 5
 
-export async function recordPageView(path: string, ipHash: string): Promise<void> {
+export async function recordPageView(path: string, ipHash: string, ip: string, country: string | null): Promise<void> {
   try {
     await db.query(
-      `INSERT INTO page_views (path, ip_hash, created_at)
-       SELECT $1, $2, NOW()
+      `INSERT INTO page_views (path, ip_hash, ip, country, created_at)
+       SELECT $1, $2, $3, $4, NOW()
        WHERE NOT EXISTS (
          SELECT 1 FROM page_views
          WHERE ip_hash = $2 AND path = $1
            AND created_at > NOW() - INTERVAL '${PAGE_VIEW_DEDUP_MINUTES} minutes'
        )`,
-      [path, ipHash],
+      [path, ipHash, ip, country],
     )
   } catch {
     // silently ignore — page view tracking shouldn't break the page
   }
+}
+
+export async function getRecentPageViews(limit: number): Promise<RecentPageView[]> {
+  const { rows } = await db.query<RecentPageView>(
+    `SELECT id, path, ip, country, created_at::text AS created_at
+     FROM page_views
+     ORDER BY created_at DESC
+     LIMIT $1`,
+    [limit],
+  )
+  return rows
 }
 
 // ─── Admin Dashboard Queries ─────────────────────────────────────────────────

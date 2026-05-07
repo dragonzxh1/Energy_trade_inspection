@@ -6,6 +6,7 @@ import SyncJobTable from '@/components/admin/SyncJobTable'
 import UserTable from '@/components/admin/UserTable'
 import StatCards from '@/components/admin/StatCards'
 import DailyRegistrationChart from '@/components/admin/DailyRegistrationChart'
+import RecentPageViews from '@/components/admin/RecentPageViews'
 import { getAdminSyncLogs, getAdminUsers, getAdminStats } from '@/lib/server/repository'
 import type { AdminSyncLogRow, UserAdminRow, AdminStats } from '@/lib/server/repository'
 
@@ -93,6 +94,7 @@ export default async function AdminPage() {
             { id: 'sync', label: 'Sync History' },
             { id: 'users', label: 'Users' },
             { id: 'stats', label: 'Platform Stats' },
+            { id: 'pageviews', label: 'Page Views' },
           ]}
           defaultTab="sync"
           panels={[
@@ -102,6 +104,7 @@ export default async function AdminPage() {
               <StatCards stats={stats} />
               <DailyRegistrationChart data={stats.dailyRegistrations} />
             </div>,
+            <RecentPageViews key="pageviews" />,
           ]}
         />
       </div>
