@@ -7,19 +7,14 @@ interface PageViewRow {
   path: string
   ip: string | null
   country: string | null
-  created_at_ms: number
+  created_at_ms: string
 }
 
-function formatTime(ms: number): string {
-  const d = new Date(ms)
-  return d.toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short',
-  })
+function formatTime(s: string): string {
+  // s is 'YYYY-MM-DD HH24:MI:SS' in Asia/Shanghai timezone
+  const parts = s.split(/[- :]/)
+  if (parts.length < 6) return s
+  return `${parts[1]}/${parts[2]} ${parts[3]}:${parts[4]}:${parts[5]} CST`
 }
 
 export default function RecentPageViews() {
