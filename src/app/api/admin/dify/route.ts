@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { isAdminAuthorized } from '@/lib/server/admin-auth'
 
@@ -6,7 +6,7 @@ export const runtime = 'nodejs'
 
 const DIFY_BASE = process.env.DIFY_BASE_URL ?? 'http://212.64.20.114'
 const DIFY_KEY_A = process.env.DIFY_WORKFLOW_API_KEY ?? 'app-of1Cd6t1rGtpSqgaLt7SboTp'
-const DIFY_KEY_B = process.env.DIFY_WORKFLOW_API_KEY_QUOTES ?? 'app-KOYWmxcVituHTzCGj4f5Obw4'
+const DIFY_KEY_B = process.env.DIFY_WORKFLOW_API_KEY_QUOTES ?? 'app-MCRflAs8Ygn8RY20ZmEVyV1N'
 
 export async function POST(req: NextRequest) {
   const session = await auth()
