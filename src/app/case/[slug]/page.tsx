@@ -58,6 +58,23 @@ function seedToContent(seed: RawSeed): SeoContent {
     page_views: 0,
     created_at: new Date(),
     updated_at: new Date(),
+    commodity: null,
+    subcommodity: null,
+    region: null,
+    content_subtype: null,
+    source_channel: null,
+    source_message_id: null,
+    source_file_hash: null,
+    source_file_name: null,
+    source_published_at: null,
+    parser_confidence: null,
+    review_status: 'reviewed',
+    distribution_status: 'distributed',
+    language_variants: null,
+    source_document_json: null,
+    key_facts: null,
+    why_it_matters: null,
+    internal_only: false,
   }
 }
 
