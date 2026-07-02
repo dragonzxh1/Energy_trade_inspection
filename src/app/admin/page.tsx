@@ -7,8 +7,10 @@ import UserTable from '@/components/admin/UserTable'
 import StatCards from '@/components/admin/StatCards'
 import DailyRegistrationChart from '@/components/admin/DailyRegistrationChart'
 import RecentPageViews from '@/components/admin/RecentPageViews'
+import ContentOpsPanel from '@/components/admin/ContentOpsPanel'
 import { getAdminSyncLogs, getAdminUsers, getAdminStats } from '@/lib/server/repository'
 import type { AdminSyncLogRow, UserAdminRow, AdminStats } from '@/lib/server/repository'
+import { getAdminContentOpsSnapshot, type AdminContentOpsSnapshot } from '@/lib/server/seo-repository'
 
 export const metadata: Metadata = {
   title: 'Admin — Energy Trade Inspection',
@@ -65,12 +67,25 @@ export default async function AdminPage() {
     dailyPageViews: [],
     topPages: [],
   }
+  let contentOpsSnapshot: AdminContentOpsSnapshot = {
+    ingestionQueue: [],
+    parsedKnowledgeEntries: [],
+    draftArticles: [],
+    reviewQueue: [],
+    stats: {
+      totalPublished: 0,
+      totalDrafts: 0,
+      commodityCounts: [],
+      subtypeCounts: [],
+    },
+  }
 
   try {
-    ;[syncLogs, users, stats] = await Promise.all([
+    ;[syncLogs, users, stats, contentOpsSnapshot] = await Promise.all([
       getAdminSyncLogs(),
       getAdminUsers(),
       getAdminStats(),
+      getAdminContentOpsSnapshot(),
     ])
   } catch {
     // Partial failure — render with empty data; components handle empty state
@@ -80,18 +95,37 @@ export default async function AdminPage() {
     <>
       <Header />
       <div style={{ maxWidth: 'var(--max-width)', margin: '0 auto', padding: 'var(--space-12) var(--space-4)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-8)' }}>
         <h1 style={{
           fontSize: '20px',
           fontWeight: 600,
           color: 'var(--text-primary)',
-          marginBottom: 'var(--space-8)',
         }}>
           Admin
         </h1>
+        <a
+          href="/admin/upload"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+            padding: 'var(--space-2) var(--space-4)',
+            background: 'var(--brand-400)',
+            color: 'white',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: 600,
+          }}
+        >
+          📤 Upload
+        </a>
+      </div>
 
         <TabNav
           tabs={[
             { id: 'sync', label: 'Sync History' },
+            { id: 'content', label: 'Content Ops' },
             { id: 'users', label: 'Users' },
             { id: 'stats', label: 'Platform Stats' },
             { id: 'pageviews', label: 'Page Views' },
@@ -99,6 +133,7 @@ export default async function AdminPage() {
           defaultTab="sync"
           panels={[
             <SyncJobTable key="sync" initialLogs={syncLogs} />,
+            <ContentOpsPanel key="content" snapshot={contentOpsSnapshot} />,
             <UserTable key="users" users={users} />,
             <div key="stats" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
               <StatCards stats={stats} />
