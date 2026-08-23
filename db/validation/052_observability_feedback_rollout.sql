@@ -7,7 +7,7 @@ WHERE alert.pipeline_daily_run_id IS NOT NULL AND run.id IS NULL
 UNION ALL
 SELECT 'invalid_released_quality', count(*) FROM published_articles article
 JOIN article_quality_metrics metric ON metric.published_article_id=article.id
-WHERE article.publication_status IN ('draft_created','published')
+WHERE article.publication_status = 'published'
   AND (metric.numeric_traceability_rate < 1 OR metric.unique_main_thesis=false
        OR metric.has_counter_signal=false OR metric.has_invalidation_conditions=false
        OR metric.validation_metric_count < 3 OR metric.unsupported_number_count > 0)

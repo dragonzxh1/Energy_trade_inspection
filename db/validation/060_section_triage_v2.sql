@@ -1,7 +1,10 @@
-SELECT count(*) AS completed_sections_modified
+SELECT count(*) AS completed_sections_triaged_after_extraction
 FROM document_sections
 WHERE fact_extraction_status = 'completed'
-  AND triage_version = 'section-triage.v2';
+  AND triage_version = 'section-triage.v2'
+  AND fact_extraction_completed_at IS NOT NULL
+  AND triaged_at IS NOT NULL
+  AND triaged_at > fact_extraction_completed_at;
 
 SELECT count(*) AS low_value_still_pending
 FROM document_sections

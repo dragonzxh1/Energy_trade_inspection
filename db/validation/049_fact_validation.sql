@@ -16,10 +16,14 @@ SELECT 'publishable_unverified_facts', count(*)
 FROM market_facts
 WHERE is_current = true AND publication_blocked = false AND verification_status <> 'verified'
 UNION ALL
-SELECT 'high_risk_not_queued', count(*)
+SELECT 'blocked_high_risk_not_queued', count(*)
 FROM market_facts fact
 LEFT JOIN fact_review_queue queue ON queue.market_fact_id = fact.id
-WHERE fact.is_current = true AND fact.risk_level IN ('high', 'critical') AND queue.id IS NULL
+WHERE fact.is_current = true
+  AND fact.risk_level IN ('high', 'critical')
+  AND fact.verification_status = 'needs_review'
+  AND fact.publication_blocked = true
+  AND queue.id IS NULL
 UNION ALL
 SELECT 'duplicate_attempt_numbers', count(*)
 FROM (

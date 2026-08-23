@@ -58,3 +58,16 @@ It reports two moderate advisories through `exceljs@4.4.0 -> uuid@8.3.2`.
 The registry-proposed forced fix is a breaking ExcelJS version change, so this
 baseline records the risk instead of applying an unreviewed `--force` change.
 The Web Research Agent production dependency audit reports zero findings.
+
+## Production validation reconciliation
+
+The 2026-08-24 production gate exposed validation queries that predated later
+pipeline semantics. The release updates those checks to match the deployed
+rules: attributed high-risk facts are warnings unless blocked, review drafts
+are not public releases, later article modes are valid, and section triage is
+checked by event order rather than final status alone.
+
+`db/maintenance/060_reconcile_section_triage_v2.sql` is the reviewed one-time
+repair for sections already classified as ineligible while still carrying a
+pending or retryable extraction state. It does not touch eligible, processing,
+completed, or review-required sections.

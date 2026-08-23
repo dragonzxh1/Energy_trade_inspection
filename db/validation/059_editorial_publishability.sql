@@ -12,4 +12,7 @@ WHERE publishable <> editorially_publishable
 
 SELECT market_date, article_mode, evidence_ready, editorially_publishable
 FROM pipeline_daily_runs
-WHERE article_mode NOT IN ('market_view', 'factual_brief', 'archive_only');
+WHERE article_mode NOT IN (
+  'faithful_translation', 'event_brief', 'market_analysis',
+  'market_view', 'factual_brief', 'archive_only'
+);

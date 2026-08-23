@@ -2,7 +2,10 @@ SELECT 'multiple_views_per_day' AS check_name, count(*) AS failures
 FROM (SELECT market_date FROM editorial_views GROUP BY market_date HAVING count(*) > 1) duplicate
 UNION ALL
 SELECT 'publishable_low_signal', count(*)
-FROM editorial_views WHERE view_change_type = 'low_signal' AND publishable = true
+FROM editorial_views
+WHERE view_change_type = 'low_signal'
+  AND publishable = true
+  AND article_mode = 'market_view'
 UNION ALL
 SELECT 'publishable_view_without_facts', count(*)
 FROM editorial_views WHERE publishable = true AND jsonb_array_length(supporting_fact_ids) = 0
