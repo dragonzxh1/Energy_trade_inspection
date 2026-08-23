@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ETI SourceDocument parser every minute
+
+[Timer]
+OnBootSec=45s
+OnUnitActiveSec=60s
+Persistent=true
+Unit=eti-document-parser.service
+
+[Install]
+WantedBy=timers.target

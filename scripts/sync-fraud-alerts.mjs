@@ -474,3 +474,6 @@ for (const { source, fn } of SCRAPERS) {
 
 await pool.end()
 console.log(`\nDone: ${overall.success} sources OK, ${overall.failed} failed, ${overall.total} total entries`)
+if (overall.failed > 0) {
+  process.exitCode = 1
+}

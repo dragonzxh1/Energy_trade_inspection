@@ -1,0 +1,649 @@
+image:
+  base_width: 1280
+  base_height: 530
+  auto_refine_tables: false
+date_region:
+  bbox:
+  - 0.02
+  - 0.01
+  - 0.45
+  - 0.06
+  psm: 7
+ignore_regions:
+- id: qr_platts_digits
+  bbox:
+  - 0.725
+  - 0.645
+  - 0.858
+  - 0.985
+- id: qr_quotes_summary
+  bbox:
+  - 0.865
+  - 0.645
+  - 0.995
+  - 0.985
+conversion_table:
+  bbox:
+  - 0.59
+  - 0.735
+  - 0.7
+  - 0.998
+  type: key_value
+  columns:
+    mt_bbl:
+    - 0.58
+    - 0.95
+  rows:
+  - name: ULSD_10ppm
+    y:
+    - 0.22
+    - 0.35
+  - name: JET-A1
+    y:
+    - 0.35
+    - 0.49
+  - name: Gasoline_Prem_10ppm
+    y:
+    - 0.49
+    - 0.63
+  - name: Naphtha
+    y:
+    - 0.63
+    - 0.76
+  - name: Gasoil_0.1
+    y:
+    - 0.76
+    - 0.89
+  - name: FO_1.0
+    y:
+    - 0.89
+    - 1.0
+spread_table:
+  bbox:
+  - 0.59
+  - 0.05
+  - 0.998
+  - 0.635
+  type: matrix
+  row_labels:
+  - left_market
+  - right_market
+  rows:
+  - left_market: ULSD 10ppm
+    right_market: JET-A1
+    y:
+    - 0.058
+    - 0.096
+  - left_market: ULSD 10ppm
+    right_market: Gasoline
+    y:
+    - 0.1185
+    - 0.1565
+  - left_market: ULSD 10ppm
+    right_market: Naphtha
+    y:
+    - 0.179
+    - 0.217
+  - left_market: ULSD 10ppm
+    right_market: Gasoil 0.1
+    y:
+    - 0.2395
+    - 0.2775
+  - left_market: ULSD 10ppm
+    right_market: FO 1.0
+    y:
+    - 0.3
+    - 0.338
+  - left_market: JET-A1
+    right_market: Gasoline
+    y:
+    - 0.3605
+    - 0.3985
+  - left_market: JET-A1
+    right_market: Naphtha
+    y:
+    - 0.421
+    - 0.459
+  - left_market: JET-A1
+    right_market: Gasoil 0.1
+    y:
+    - 0.4815
+    - 0.5195
+  - left_market: JET-A1
+    right_market: FO 1.0
+    y:
+    - 0.542
+    - 0.58
+  - left_market: Naphtha
+    right_market: Gasoline
+    y:
+    - 0.6025
+    - 0.6405
+  - left_market: Naphtha
+    right_market: Gasoil 0.1
+    y:
+    - 0.663
+    - 0.701
+  - left_market: Naphtha
+    right_market: FO 1.0
+    y:
+    - 0.7235
+    - 0.7615
+  - left_market: Gasoil 0.1
+    right_market: Gasoline
+    y:
+    - 0.784
+    - 0.822
+  - left_market: Gasoil 0.1
+    right_market: Naphtha
+    y:
+    - 0.8445
+    - 0.8825
+  - left_market: FO 1.0
+    right_market: Naphtha
+    y:
+    - 0.905
+    - 0.943
+  columns:
+    ULSD:
+    - 0.27
+    - 0.39
+    JET-A1:
+    - 0.39
+    - 0.52
+    Gasoline:
+    - 0.52
+    - 0.66
+    Naphtha:
+    - 0.66
+    - 0.78
+    Gasoil_0.1:
+    - 0.78
+    - 0.9
+    FO_1.0:
+    - 0.9
+    - 0.995
+tables:
+- id: ULSD_10ppm
+  type: price_table
+  bbox:
+  - 0.002
+  - 0.05
+  - 0.24
+  - 0.502
+  columns:
+    name:
+    - 0.02
+    - 0.38
+    code:
+    - 0.38
+    - 0.57
+    mid:
+    - 0.57
+    - 0.78
+    change:
+    - 0.78
+    - 0.98
+    extra:
+    - 0.57
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.125
+    - 0.195
+    fixed_values:
+      code: AAWYY00
+  - name: CIF Med
+    y:
+    - 0.195
+    - 0.265
+    fixed_values:
+      code: AAWYZ00
+  - name: FOB NWE
+    y:
+    - 0.265
+    - 0.335
+    fixed_values:
+      code: AAVBF00
+  - name: CIF NWE
+    y:
+    - 0.335
+    - 0.405
+    fixed_values:
+      code: AAVBG00
+  - name: FOB Rott
+    y:
+    - 0.405
+    - 0.475
+    fixed_values:
+      code: AAIUS00
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.53
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+    fixed_values:
+      code: POABC00
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+    fixed_values:
+      code: AAIDT00
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    fields:
+    - code
+    fixed_values:
+      code: N/A
+    has_extra: false
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0
+    fields: []
+- id: JET-A1
+  type: price_table
+  bbox:
+  - 0.254
+  - 0.05
+  - 0.41
+  - 0.502
+  columns:
+    code:
+    - 0.1
+    - 0.38
+    mid:
+    - 0.38
+    - 0.68
+    change:
+    - 0.68
+    - 0.98
+    extra:
+    - 0.38
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.125
+    - 0.195
+  - name: CIF Med
+    y:
+    - 0.195
+    - 0.265
+  - name: FOB NWE
+    y:
+    - 0.265
+    - 0.335
+  - name: CIF NWE
+    y:
+    - 0.335
+    - 0.405
+  - name: FOB Rott
+    y:
+    - 0.405
+    - 0.475
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.53
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    has_extra: true
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0
+    fields: []
+- id: Gasoline_Prem_10ppm
+  type: price_table
+  bbox:
+  - 0.423
+  - 0.05
+  - 0.578
+  - 0.502
+  columns:
+    code:
+    - 0.1
+    - 0.38
+    mid:
+    - 0.38
+    - 0.68
+    change:
+    - 0.68
+    - 0.98
+    extra:
+    - 0.38
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.125
+    - 0.195
+  - name: CIF Med
+    y:
+    - 0.195
+    - 0.265
+  - name: FOB NWE
+    y:
+    - 0.265
+    - 0.335
+    fields:
+    - code
+    fixed_values:
+      code: N/A
+  - name: CIF NWE
+    y:
+    - 0.335
+    - 0.405
+  - name: FOB Rott
+    y:
+    - 0.405
+    - 0.475
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.53
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    has_extra: true
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0
+    fields: []
+- id: Naphtha
+  type: price_table
+  bbox:
+  - 0.002
+  - 0.535
+  - 0.24
+  - 0.998
+  columns:
+    name:
+    - 0.02
+    - 0.38
+    code:
+    - 0.38
+    - 0.57
+    mid:
+    - 0.57
+    - 0.78
+    change:
+    - 0.78
+    - 0.98
+    extra:
+    - 0.57
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.145
+    - 0.195
+    fixed_values:
+      code: PAAAI00
+  - name: CIF Med
+    y:
+    - 0.215
+    - 0.265
+    fixed_values:
+      code: PAAAH00
+  - name: FOB NWE
+    y:
+    - 0.285
+    - 0.335
+    fields:
+    - code
+    fixed_values:
+      code: N/A
+  - name: CIF NWE
+    y:
+    - 0.355
+    - 0.405
+    fixed_values:
+      code: PAAAL00
+  - name: FOB Rott
+    y:
+    - 0.425
+    - 0.475
+    fixed_values:
+      code: PAAAM00
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.53
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+    fixed_values:
+      code: PAAAP00
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+    fixed_values:
+      code: PAAAA00
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    has_extra: true
+    fixed_values:
+      code: PAAAD00
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0
+    fields: []
+- id: Gasoil_0.1
+  type: price_table
+  bbox:
+  - 0.254
+  - 0.535
+  - 0.41
+  - 0.998
+  columns:
+    code:
+    - 0.1
+    - 0.38
+    mid:
+    - 0.38
+    - 0.68
+    change:
+    - 0.68
+    - 0.98
+    extra:
+    - 0.38
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.145
+    - 0.195
+    fixed_values:
+      code: AAVJI00
+  - name: CIF Med
+    y:
+    - 0.215
+    - 0.265
+    fixed_values:
+      code: AAVJJ00
+  - name: FOB NWE
+    y:
+    - 0.285
+    - 0.335
+    fixed_values:
+      code: AAYWR00
+  - name: CIF NWE
+    y:
+    - 0.355
+    - 0.405
+    fixed_values:
+      code: AAYWS00
+  - name: FOB Rott
+    y:
+    - 0.425
+    - 0.475
+    fixed_values:
+      code: AAYWT00
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.535
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+    fixed_values:
+      code: AAFEX00
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+    fixed_values:
+      code: AAFEZ00
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    has_extra: false
+    fields:
+    - code
+    fixed_values:
+      code: N/A
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0
+    fields: []
+- id: Fuel_Oil_1.0
+  type: price_table
+  bbox:
+  - 0.423
+  - 0.535
+  - 0.578
+  - 0.998
+  columns:
+    code:
+    - 0.1
+    - 0.38
+    mid:
+    - 0.38
+    - 0.68
+    change:
+    - 0.68
+    - 0.98
+    extra:
+    - 0.38
+    - 0.98
+  rows:
+  - name: FOB Med
+    y:
+    - 0.145
+    - 0.195
+  - name: CIF Med
+    y:
+    - 0.215
+    - 0.265
+  - name: FOB NWE
+    y:
+    - 0.285
+    - 0.335
+  - name: CIF NWE
+    y:
+    - 0.355
+    - 0.405
+  - name: FOB Rott
+    y:
+    - 0.425
+    - 0.475
+  - name: FOB Sing (MOPS)
+    y:
+    - 0.535
+    - 0.625
+    extra_y:
+    - 0.625
+    - 0.69
+    has_extra: true
+  - name: FOB AG (MOPAG)
+    y:
+    - 0.69
+    - 0.775
+    extra_y:
+    - 0.775
+    - 0.835
+    has_extra: true
+  - name: MOPJ
+    y:
+    - 0.85
+    - 0.945
+    extra_y:
+    - 0.945
+    - 1.0
+    has_extra: true
+  - name: HSFO 180/380 CST
+    y:
+    - 0.925
+    - 1.0

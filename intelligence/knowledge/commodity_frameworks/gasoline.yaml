@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: gasoline.v1
+updated_at: 2026-07-11
+commodity_id: gasoline
+title: 汽油市场知识卡
+aliases: [gasoline, petrol, 汽油, rbob]
+market_definition: 由道路燃料需求、调和组分和区域规格约束驱动的成品油市场。
+core_benchmarks: [NYMEX RBOB, Eurobob oxy, FOB Singapore 92 RON]
+core_prices_spreads: [gasoline crack, octane spreads, transatlantic arbitrage]
+supply_sources: [US Gulf Coast, ARA, Singapore, Middle East, China]
+demand_centers: [United States, West Africa, Latin America, Southeast Asia]
+trade_flows: [ARA to US Atlantic Coast, Europe to West Africa, Asia regional flows]
+seasonality: [US driving season, specification switches, refinery maintenance]
+substitutions: [ethanol, alkylate, reformate, MTBE]
+drivers: [inventories, refinery outages, blending economics, exports]
+transmission_paths: [refinery outage to component shortage to crack and octane spread]
+validation_metrics: [US inventories, ARA stocks, cracks, exports, refinery utilization]
+common_misreads: [headline demand without inventory draw, crude-led flat price move]
+invalidation_conditions: [inventories build, cracks compress, arbitrage closes]
+data_gaps: [real-time blending demand, regional specification constraints]

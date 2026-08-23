@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: refining.v1
+updated_at: 2026-07-11
+commodity_id: refining
+title: 炼厂运行知识卡
+aliases: [refinery, refining, 炼厂, refinery run]
+market_definition: 原油投入、装置可用率、产品收率和利润共同决定的加工环节。
+core_benchmarks: [refinery utilization, gross refining margin, turnaround capacity]
+core_prices_spreads: [simple margin, complex margin, product cracks]
+supply_sources: [regional refinery systems]
+demand_centers: [product markets and petrochemical feedstock demand]
+trade_flows: [product export balances caused by run changes]
+seasonality: [spring and autumn maintenance, hurricane season]
+substitutions: [yield switching, crude slate switching]
+drivers: [margins, outages, maintenance, crude availability]
+transmission_paths: [unit outage to yield loss to product crack and imports]
+validation_metrics: [utilization, maintenance capacity, margins, product exports]
+common_misreads: [nameplate outage treated as full production loss]
+invalidation_conditions: [unit restarts, inventories absorb loss, imports rise]
+data_gaps: [unit-level operating status, actual throughput loss]

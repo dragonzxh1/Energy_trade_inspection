@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: fuel-oil.v1
+updated_at: 2026-07-11
+commodity_id: fuel_oil
+title: 燃料油市场知识卡
+aliases: [fuel oil, bunker, 燃料油, vlsfo, hsfo]
+market_definition: 船燃、炼厂二次加工和发电需求驱动的重质成品油市场。
+core_benchmarks: [Singapore VLSFO, Singapore 380 CST HSFO, Rotterdam barges]
+core_prices_spreads: [fuel oil crack, VLSFO-HSFO spread, east-west spread]
+supply_sources: [Middle East, Russia, Europe, Latin America]
+demand_centers: [Singapore bunkering, Fujairah, Rotterdam, power generation]
+trade_flows: [West to East arbitrage, Middle East regional supply]
+seasonality: [Middle East summer power, shipping demand, refinery maintenance]
+substitutions: [LNG bunkers, marine gasoil, refinery coking feed]
+drivers: [bunker demand, sour crude runs, sanctions, refinery upgrading]
+transmission_paths: [residue supply to cracks to bunker premiums]
+validation_metrics: [Singapore stocks, bunker sales, cracks, freight]
+common_misreads: [bunker sales growth without stock adjustment]
+invalidation_conditions: [stocks rise, premiums weaken, coker demand falls]
+data_gaps: [offshore blending, sanctioned cargo origin]

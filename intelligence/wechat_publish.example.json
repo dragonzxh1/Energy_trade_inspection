@@ -1,0 +1,17 @@
+{
+  "account_id": "",
+  "appid": "",
+  "appsecret": "",
+  "author": "能见社",
+  "content_source_url": "",
+  "default_thumb_media_id": "",
+  "thumb_image_path": "",
+  "auto_generate_thumb": true,
+  "thumb_upload_type": "image",
+  "need_open_comment": 0,
+  "only_fans_can_comment": 0,
+  "auto_mode": "auto",
+  "shadow_publish_days": 3,
+  "publish_poll_seconds": 8,
+  "publish_poll_attempts": 15
+}

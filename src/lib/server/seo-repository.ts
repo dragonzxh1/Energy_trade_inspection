@@ -9,6 +9,7 @@ import {
   REVIEW_STATUS,
   slugifyContentValue,
 } from '@/lib/intelligence'
+import type { TelegramInputContract } from '@/lib/server/telegram-input'
 
 export interface SeoFact {
   fact: string
@@ -164,6 +165,13 @@ export interface IngestionQueueInput {
   extracted_summary?: string | null
   raw_payload_json?: Record<string, unknown> | null
   error_message?: string | null
+}
+
+export interface TelegramInputPersistenceResult {
+  item: ContentIngestionItem
+  message_id: string
+  attachment_id: string
+  processing_run_id: string
 }
 
 export interface IntelligenceStats {
@@ -559,6 +567,208 @@ export async function upsertContentIngestionItem(input: IngestionQueueInput): Pr
   )
 
   return normalizeIngestionRow(result.rows[0])
+}
+
+export async function persistTelegramInput(
+  input: TelegramInputContract,
+): Promise<TelegramInputPersistenceResult> {
+  const client = await db.connect()
+  try {
+    await client.query('BEGIN')
+
+    const messageResult = await client.query<{ id: string }>(
+      `
+        INSERT INTO telegram_messages (
+          schema_version, source_channel, telegram_chat_id, telegram_message_id,
+          telegram_message_date, sender_name, forwarded_from, message_text,
+          message_type, reply_to_message_id, telegram_message_url,
+          raw_payload_path, raw_payload_json, ingested_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        ON CONFLICT (source_channel, telegram_message_id) DO UPDATE SET
+          schema_version = EXCLUDED.schema_version,
+          telegram_chat_id = EXCLUDED.telegram_chat_id,
+          telegram_message_date = EXCLUDED.telegram_message_date,
+          sender_name = EXCLUDED.sender_name,
+          forwarded_from = EXCLUDED.forwarded_from,
+          message_text = EXCLUDED.message_text,
+          message_type = EXCLUDED.message_type,
+          reply_to_message_id = EXCLUDED.reply_to_message_id,
+          telegram_message_url = EXCLUDED.telegram_message_url,
+          raw_payload_path = EXCLUDED.raw_payload_path,
+          raw_payload_json = EXCLUDED.raw_payload_json,
+          ingested_at = EXCLUDED.ingested_at,
+          updated_at = now()
+        RETURNING id
+      `,
+      [
+        input.schema_version,
+        input.source_channel,
+        input.message.telegram_chat_id,
+        input.message.telegram_message_id,
+        input.message.telegram_message_date,
+        input.message.sender_name,
+        input.message.forwarded_from,
+        input.message.message_text,
+        input.message.message_type,
+        input.message.reply_to_message_id,
+        input.message.telegram_message_url,
+        input.message.raw_payload_path,
+        serializeForPg(input.message.raw_payload, 'raw_payload_json'),
+        input.message.ingested_at,
+      ],
+    )
+    const messageId = messageResult.rows[0].id
+
+    const existingAttachment = await client.query<{ id: string }>(
+      `
+        SELECT id
+        FROM telegram_attachments
+        WHERE ($1::text IS NOT NULL AND telegram_file_id = $1)
+           OR file_hash = $2
+        ORDER BY CASE WHEN telegram_file_id = $1 THEN 0 ELSE 1 END
+        LIMIT 1
+        FOR UPDATE
+      `,
+      [input.attachment.telegram_file_id, input.attachment.attachment_hash],
+    )
+
+    let attachmentId: string
+    if (existingAttachment.rowCount) {
+      attachmentId = existingAttachment.rows[0].id
+      await client.query(
+        `
+          UPDATE telegram_attachments
+          SET telegram_file_id = COALESCE(telegram_file_id, $2),
+              file_hash = $3,
+              attachment_name = $4,
+              attachment_path = $5,
+              attachment_mime_type = $6,
+              attachment_size_bytes = $7,
+              updated_at = now()
+          WHERE id = $1
+        `,
+        [
+          attachmentId,
+          input.attachment.telegram_file_id,
+          input.attachment.attachment_hash,
+          input.attachment.attachment_name,
+          input.attachment.attachment_path,
+          input.attachment.attachment_mime_type,
+          input.attachment.attachment_size_bytes,
+        ],
+      )
+    } else {
+      const attachmentResult = await client.query<{ id: string }>(
+        `
+          INSERT INTO telegram_attachments (
+            telegram_file_id, file_hash, attachment_name, attachment_path,
+            attachment_mime_type, attachment_size_bytes
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id
+        `,
+        [
+          input.attachment.telegram_file_id,
+          input.attachment.attachment_hash,
+          input.attachment.attachment_name,
+          input.attachment.attachment_path,
+          input.attachment.attachment_mime_type,
+          input.attachment.attachment_size_bytes,
+        ],
+      )
+      attachmentId = attachmentResult.rows[0].id
+    }
+
+    await client.query(
+      `
+        INSERT INTO telegram_message_attachments (message_id, attachment_id, caption)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (message_id, attachment_id) DO UPDATE SET
+          caption = EXCLUDED.caption
+      `,
+      [messageId, attachmentId, input.message.message_text],
+    )
+
+    const runResult = await client.query<{ id: string }>(
+      `
+        INSERT INTO processing_runs (
+          attachment_id, run_type, pipeline_version, pipeline_mode,
+          processing_status, completed_at, metadata
+        )
+        VALUES ($1, 'telegram_adapter', $2, $3, 'adapted', now(), $4)
+        ON CONFLICT (attachment_id, run_type, pipeline_version) DO UPDATE SET
+          pipeline_mode = EXCLUDED.pipeline_mode,
+          processing_status = 'adapted',
+          completed_at = now(),
+          error_message = NULL,
+          metadata = EXCLUDED.metadata,
+          updated_at = now()
+        RETURNING id
+      `,
+      [
+        attachmentId,
+        input.pipeline_version,
+        input.pipeline_mode,
+        serializeForPg({
+          schema_version: input.schema_version,
+          source_channel: input.source_channel,
+          telegram_message_id: input.message.telegram_message_id,
+        }, 'metadata'),
+      ],
+    )
+    const processingRunId = runResult.rows[0].id
+
+    const queueResult = await client.query<ContentIngestionItem>(
+      `
+        INSERT INTO content_ingestion_queue (
+          source_channel, source_message_id, sender_label, media_type, file_name,
+          file_hash, file_size_bytes, message_timestamp, storage_path, source_url,
+          processing_status, raw_payload_json, error_message
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'queued', $11, NULL)
+        ON CONFLICT (source_channel, source_message_id) DO UPDATE SET
+          sender_label = EXCLUDED.sender_label,
+          media_type = EXCLUDED.media_type,
+          file_name = EXCLUDED.file_name,
+          file_hash = EXCLUDED.file_hash,
+          file_size_bytes = EXCLUDED.file_size_bytes,
+          message_timestamp = EXCLUDED.message_timestamp,
+          storage_path = EXCLUDED.storage_path,
+          source_url = EXCLUDED.source_url,
+          raw_payload_json = EXCLUDED.raw_payload_json,
+          error_message = NULL,
+          updated_at = now()
+        RETURNING *
+      `,
+      [
+        input.source_channel,
+        input.message.telegram_message_id,
+        input.message.sender_name,
+        input.attachment.attachment_mime_type,
+        input.attachment.attachment_name,
+        input.attachment.attachment_hash,
+        input.attachment.attachment_size_bytes,
+        input.message.telegram_message_date,
+        input.attachment.attachment_path,
+        input.message.telegram_message_url,
+        serializeForPg(input.message.raw_payload, 'raw_payload_json'),
+      ],
+    )
+
+    await client.query('COMMIT')
+    return {
+      item: normalizeIngestionRow(queueResult.rows[0]),
+      message_id: messageId,
+      attachment_id: attachmentId,
+      processing_run_id: processingRunId,
+    }
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
 export async function getContentIngestionQueue(limit = 50): Promise<ContentIngestionItem[]> {

@@ -1,0 +1,45 @@
+diff --git a/agent-core/src/agent.ts b/agent-core/src/agent.ts
+--- a/agent-core/src/agent.ts
++++ b/agent-core/src/agent.ts
+@@ -403,6 +403,8 @@ Do not use emojis.${schemaSystemLine}`,
+       : model;
+     const toolkit = this.getToolkit();
+     const skillsDir = this.options.skillsDir ?? getDefaultSkillsDir();
++    const quickMode = (params.maxSteps ?? this.options.maxSteps ?? 12) <= 4
++      && (params.subAgents?.length ?? 0) === 0;
+ 
+     const uploadedFiles: Record<string, string> = {};
+     if (params.uploads?.length) {
+@@ -424,14 +426,14 @@ Do not use emojis.${schemaSystemLine}`,
+     // stays available because sub-agents may need to reshape data.
+     const subAgentTools = [
+       ...aiToolkitToLc(toolkit.tools as Record<string, any>),
+-      aiToolToLc("bashExec", bashExec),
++      ...(quickMode ? [] : [aiToolToLc("bashExec", bashExec)]),
+     ];
+ 
+     // Orchestrator tool set includes the terminal formatOutput + exportSkill.
+     const tools = [
+       ...subAgentTools,
+       aiToolToLc("formatOutput", formatOutput),
+-      aiToolToLc("exportSkill", exportSkillTool),
++      ...(quickMode ? [] : [aiToolToLc("exportSkill", exportSkillTool)]),
+     ];
+ 
+     // Override Deep Agents' default "general-purpose" sub-agent so it inherits
+@@ -460,12 +462,12 @@ Do not use emojis.${schemaSystemLine}`,
+       }),
+     );
+ 
+-    const subagents: SubAgent[] = [generalPurposeSubAgent, ...userSubagents];
++    const subagents: SubAgent[] = quickMode ? [] : [generalPurposeSubAgent, ...userSubagents];
+ 
+     const appSystemPrompt = (this.options.appSections ?? []).join("\n\n");
+-    const systemPrompt = [toolkit.systemPrompt, appSystemPrompt].filter(Boolean).join("\n\n");
++    const systemPrompt = [quickMode ? "" : toolkit.systemPrompt, appSystemPrompt].filter(Boolean).join("\n\n");
+ 
+-    const skills = [skillsDir, ...(params.skills ?? [])];
++    const skills = quickMode ? [] : [skillsDir, ...(params.skills ?? [])];
+ 
+     // NB: Deep Agents already includes SummarizationMiddleware in its default
+     // stack — passing another instance throws "Middleware ... defined multiple

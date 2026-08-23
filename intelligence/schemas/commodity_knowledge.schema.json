@@ -1,0 +1,152 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "commodity-knowledge.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "commodity_id": {
+      "title": "Commodity Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "aliases": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Aliases",
+      "type": "array"
+    },
+    "market_definition": {
+      "title": "Market Definition",
+      "type": "string"
+    },
+    "core_benchmarks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Core Benchmarks",
+      "type": "array"
+    },
+    "core_prices_spreads": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Core Prices Spreads",
+      "type": "array"
+    },
+    "supply_sources": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supply Sources",
+      "type": "array"
+    },
+    "demand_centers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Demand Centers",
+      "type": "array"
+    },
+    "trade_flows": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Trade Flows",
+      "type": "array"
+    },
+    "seasonality": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Seasonality",
+      "type": "array"
+    },
+    "substitutions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Substitutions",
+      "type": "array"
+    },
+    "drivers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Drivers",
+      "type": "array"
+    },
+    "transmission_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Transmission Paths",
+      "type": "array"
+    },
+    "validation_metrics": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Validation Metrics",
+      "type": "array"
+    },
+    "common_misreads": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Common Misreads",
+      "type": "array"
+    },
+    "invalidation_conditions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Invalidation Conditions",
+      "type": "array"
+    },
+    "data_gaps": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Data Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "version",
+    "updated_at",
+    "commodity_id",
+    "title",
+    "aliases",
+    "market_definition",
+    "core_benchmarks",
+    "core_prices_spreads",
+    "supply_sources",
+    "demand_centers",
+    "trade_flows",
+    "seasonality",
+    "substitutions",
+    "drivers",
+    "transmission_paths",
+    "validation_metrics",
+    "common_misreads",
+    "invalidation_conditions",
+    "data_gaps"
+  ],
+  "title": "CommodityKnowledgeCard",
+  "type": "object"
+}

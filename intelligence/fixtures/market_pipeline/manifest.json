@@ -1,0 +1,20 @@
+{
+  "schema_version": "market-regression.v1",
+  "cases": [
+    {"id":"platts_standard","covers":["publisher","market_date","price_table"]},
+    {"id":"argus_standard","covers":["publisher","section_split"]},
+    {"id":"multi_commodity_pdf","covers":["semantic_sections","commodity"]},
+    {"id":"multi_attachment_message","covers":["message_attachment_cardinality"]},
+    {"id":"duplicate_forward","covers":["file_hash_idempotency"]},
+    {"id":"filename_date_error","covers":["date_candidates"]},
+    {"id":"title_body_date_conflict","covers":["date_priority","conflict_reason"]},
+    {"id":"different_units","covers":["unit_validation"]},
+    {"id":"telegram_commentary","covers":["input_boundary"]},
+    {"id":"image_quote","covers":["no_production_ocr"]},
+    {"id":"scanned_pdf","covers":["needs_review"]},
+    {"id":"extreme_number","covers":["risk_gate"]},
+    {"id":"single_military_statement","covers":["attribution","manual_review"]},
+    {"id":"cross_source_price_conflict","covers":["conflict_record"]},
+    {"id":"no_main_signal_day","covers":["low_signal","no_publish"]}
+  ]
+}

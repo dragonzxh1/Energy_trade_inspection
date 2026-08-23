@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@wechat-assistant/*": [
+        "./wechat-assistant/*"
       ]
     }
   },
@@ -36,6 +39,8 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "wechat-assistant/miniapp",
+    "web-research-agent"
   ]
 }

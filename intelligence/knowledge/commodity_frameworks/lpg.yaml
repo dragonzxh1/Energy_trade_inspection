@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: lpg.v1
+updated_at: 2026-07-11
+commodity_id: lpg
+title: LPG 市场知识卡
+aliases: [lpg, propane, butane, 液化石油气, fei, saudi cp]
+market_definition: 炼厂与天然气液产量、石化裂解及 PDH 需求连接的海运市场。
+core_benchmarks: [Saudi CP, FEI, Mont Belvieu]
+core_prices_spreads: [FEI-Mont Belvieu, propane-naphtha spread, PDH margin]
+supply_sources: [United States, Middle East, West Africa]
+demand_centers: [China PDH, Northeast Asia crackers, residential markets]
+trade_flows: [USGC to Asia, Middle East to Asia]
+seasonality: [winter heating, cracker maintenance, PDH cycles]
+substitutions: [naphtha cracker feed, natural gas liquids]
+drivers: [US exports, Middle East liftings, PDH runs, VLGC freight]
+transmission_paths: [export availability to freight to FEI and feedstock switching]
+validation_metrics: [US exports, Saudi CP, FEI, VLGC freight, PDH utilization]
+common_misreads: [FEI rise without PDH margin or freight separation]
+invalidation_conditions: [PDH cuts, exports recover, freight falls]
+data_gaps: [Chinese PDH operating rates, floating storage]

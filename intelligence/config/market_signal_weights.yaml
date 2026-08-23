@@ -1,0 +1,24 @@
+version: market-signal-score.v1
+positive:
+  price_magnitude: 15
+  margin_confirmation: 20
+  spot_trade_confirmation: 15
+  flow_inventory_confirmation: 15
+  disruption_policy_impact: 15
+  cross_source_confirmation: 10
+  persistence: 10
+deductions:
+  single_quote_only: -10
+  media_narrative_only: -10
+  weak_market_relevance: -15
+  stale_source: -20
+  unclear_causality: -10
+  unresolved_conflict: -15
+  low_parse_confidence: -10
+thresholds:
+  top_signal: 70
+  secondary_signal: 50
+  weak_signal: 30
+rules:
+  top_signal_min_dimensions: 2
+  top_signal_max_per_day: 1

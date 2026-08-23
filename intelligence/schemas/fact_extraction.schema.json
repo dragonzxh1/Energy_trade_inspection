@@ -1,0 +1,236 @@
+{
+  "$defs": {
+    "ExtractedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_type": {
+          "$ref": "#/$defs/FactType"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "country": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Country"
+        },
+        "commodity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commodity"
+        },
+        "benchmark": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Benchmark"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "change_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Change Value"
+        },
+        "change_unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Change Unit"
+        },
+        "direction": {
+          "$ref": "#/$defs/FactDirection",
+          "default": "unknown"
+        },
+        "time_basis": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Time Basis"
+        },
+        "evidence_text": {
+          "minLength": 1,
+          "title": "Evidence Text",
+          "type": "string"
+        },
+        "attribution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribution"
+        },
+        "uncertainty": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Uncertainty"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "metadata": {
+          "additionalProperties": true,
+          "title": "Metadata",
+          "type": "object"
+        }
+      },
+      "required": [
+        "fact_type",
+        "statement",
+        "evidence_text",
+        "confidence"
+      ],
+      "title": "ExtractedFact",
+      "type": "object"
+    },
+    "FactDirection": {
+      "enum": [
+        "up",
+        "down",
+        "flat",
+        "mixed",
+        "unknown"
+      ],
+      "title": "FactDirection",
+      "type": "string"
+    },
+    "FactType": {
+      "enum": [
+        "price",
+        "price_change",
+        "spread",
+        "premium_discount",
+        "inventory",
+        "production",
+        "refinery_run",
+        "refinery_outage",
+        "shipment",
+        "arrival",
+        "tender",
+        "trade_flow",
+        "demand",
+        "supply",
+        "weather",
+        "sanction",
+        "policy",
+        "geopolitical_event",
+        "freight",
+        "arbitrage",
+        "market_sentiment",
+        "source_commentary"
+      ],
+      "title": "FactType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "market-fact.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/ExtractedFact"
+      },
+      "title": "Facts",
+      "type": "array"
+    }
+  },
+  "required": [
+    "facts"
+  ],
+  "title": "FactExtractionResult",
+  "type": "object"
+}

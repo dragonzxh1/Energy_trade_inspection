@@ -1,0 +1,560 @@
+{
+  "$defs": {
+    "DateCandidate": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "format": "date",
+          "title": "Value",
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/DateCandidateSource"
+        },
+        "evidence": {
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "source",
+        "evidence",
+        "confidence"
+      ],
+      "title": "DateCandidate",
+      "type": "object"
+    },
+    "DateCandidateSource": {
+      "enum": [
+        "assessment_date",
+        "title_date",
+        "body_date",
+        "published_at",
+        "filename_date",
+        "telegram_date"
+      ],
+      "title": "DateCandidateSource",
+      "type": "string"
+    },
+    "DocumentProcessingStatus": {
+      "enum": [
+        "parsed",
+        "needs_review",
+        "failed"
+      ],
+      "title": "DocumentProcessingStatus",
+      "type": "string"
+    },
+    "DocumentSection": {
+      "additionalProperties": false,
+      "properties": {
+        "section_id": {
+          "title": "Section Id",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "section_index": {
+          "minimum": 0,
+          "title": "Section Index",
+          "type": "integer"
+        },
+        "section_title": {
+          "title": "Section Title",
+          "type": "string"
+        },
+        "page_start": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Start"
+        },
+        "page_end": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page End"
+        },
+        "region": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Region"
+        },
+        "commodity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Commodity"
+        },
+        "section_type": {
+          "title": "Section Type",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "table_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Table Ids",
+          "type": "array"
+        },
+        "classification_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Classification Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "section_id",
+        "source_id",
+        "section_index",
+        "section_title",
+        "section_type",
+        "text",
+        "classification_confidence"
+      ],
+      "title": "DocumentSection",
+      "type": "object"
+    },
+    "ParseMethod": {
+      "enum": [
+        "pdf_text",
+        "plain_text",
+        "html",
+        "platts_table",
+        "image_only",
+        "unsupported"
+      ],
+      "title": "ParseMethod",
+      "type": "string"
+    },
+    "ParsedTable": {
+      "additionalProperties": false,
+      "properties": {
+        "table_id": {
+          "title": "Table Id",
+          "type": "string"
+        },
+        "source_id": {
+          "title": "Source Id",
+          "type": "string"
+        },
+        "section_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section Id"
+        },
+        "table_index": {
+          "minimum": 0,
+          "title": "Table Index",
+          "type": "integer"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Title"
+        },
+        "page_number": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Page Number"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "rows": {
+          "items": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object"
+          },
+          "title": "Rows",
+          "type": "array"
+        },
+        "parse_method": {
+          "title": "Parse Method",
+          "type": "string"
+        },
+        "parse_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Parse Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "table_id",
+        "source_id",
+        "table_index",
+        "columns",
+        "rows",
+        "parse_method",
+        "parse_confidence"
+      ],
+      "title": "ParsedTable",
+      "type": "object"
+    },
+    "SourceContent": {
+      "additionalProperties": false,
+      "properties": {
+        "raw_text_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Text Path"
+        },
+        "parsed_text": {
+          "title": "Parsed Text",
+          "type": "string"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/DocumentSection"
+          },
+          "title": "Sections",
+          "type": "array"
+        },
+        "tables": {
+          "items": {
+            "$ref": "#/$defs/ParsedTable"
+          },
+          "title": "Tables",
+          "type": "array"
+        },
+        "parse_method": {
+          "$ref": "#/$defs/ParseMethod"
+        },
+        "parse_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Parse Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "parsed_text",
+        "sections",
+        "tables",
+        "parse_method",
+        "parse_confidence"
+      ],
+      "title": "SourceContent",
+      "type": "object"
+    },
+    "SourceDocumentMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "publisher": {
+          "title": "Publisher",
+          "type": "string"
+        },
+        "publisher_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Publisher Confidence",
+          "type": "number"
+        },
+        "report_family": {
+          "title": "Report Family",
+          "type": "string"
+        },
+        "report_title": {
+          "title": "Report Title",
+          "type": "string"
+        },
+        "document_type": {
+          "title": "Document Type",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "market_date": {
+          "format": "date",
+          "title": "Market Date",
+          "type": "string"
+        },
+        "market_date_confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Market Date Confidence",
+          "type": "number"
+        },
+        "market_date_reason": {
+          "minLength": 1,
+          "title": "Market Date Reason",
+          "type": "string"
+        },
+        "date_candidates": {
+          "items": {
+            "$ref": "#/$defs/DateCandidate"
+          },
+          "title": "Date Candidates",
+          "type": "array"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "regions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "commodities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Commodities",
+          "type": "array"
+        },
+        "content_hash": {
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "title": "Content Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "publisher",
+        "publisher_confidence",
+        "report_family",
+        "report_title",
+        "document_type",
+        "market_date",
+        "market_date_confidence",
+        "market_date_reason",
+        "date_candidates",
+        "language",
+        "regions",
+        "commodities",
+        "content_hash"
+      ],
+      "title": "SourceDocumentMetadata",
+      "type": "object"
+    },
+    "SourceIngestion": {
+      "additionalProperties": false,
+      "properties": {
+        "channel": {
+          "default": "telegram",
+          "title": "Channel",
+          "type": "string"
+        },
+        "source_channel": {
+          "minLength": 1,
+          "title": "Source Channel",
+          "type": "string"
+        },
+        "chat_id": {
+          "minLength": 1,
+          "title": "Chat Id",
+          "type": "string"
+        },
+        "message_id": {
+          "minLength": 1,
+          "title": "Message Id",
+          "type": "string"
+        },
+        "message_date": {
+          "format": "date-time",
+          "title": "Message Date",
+          "type": "string"
+        },
+        "attachment_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attachment Id"
+        }
+      },
+      "required": [
+        "source_channel",
+        "chat_id",
+        "message_id",
+        "message_date"
+      ],
+      "title": "SourceIngestion",
+      "type": "object"
+    },
+    "SourceStatus": {
+      "additionalProperties": false,
+      "properties": {
+        "processing_status": {
+          "$ref": "#/$defs/DocumentProcessingStatus"
+        },
+        "source_verified": {
+          "title": "Source Verified",
+          "type": "boolean"
+        },
+        "needs_review": {
+          "title": "Needs Review",
+          "type": "boolean"
+        },
+        "review_reasons": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Review Reasons",
+          "type": "array"
+        },
+        "error_message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Error Message"
+        }
+      },
+      "required": [
+        "processing_status",
+        "source_verified",
+        "needs_review",
+        "review_reasons"
+      ],
+      "title": "SourceStatus",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "source-document.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "parser_version": {
+      "default": "source-document.v1",
+      "title": "Parser Version",
+      "type": "string"
+    },
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    },
+    "ingestion": {
+      "$ref": "#/$defs/SourceIngestion"
+    },
+    "document": {
+      "$ref": "#/$defs/SourceDocumentMetadata"
+    },
+    "content": {
+      "$ref": "#/$defs/SourceContent"
+    },
+    "status": {
+      "$ref": "#/$defs/SourceStatus"
+    }
+  },
+  "required": [
+    "source_id",
+    "ingestion",
+    "document",
+    "content",
+    "status"
+  ],
+  "title": "SourceDocument",
+  "type": "object"
+}
