@@ -21,12 +21,11 @@
  */
 
 import fs from 'node:fs'
-import https from 'node:https'
-import http from 'node:http'
 import path from 'node:path'
 import os from 'node:os'
 import { execSync, execFileSync } from 'node:child_process'
 import pg from 'pg'
+import { downloadToFile, fetchJson } from './lib/http-client.mjs'
 
 const { Pool } = pg
 
@@ -39,56 +38,31 @@ const PSQL      = process.env.PSQL_PATH ?? 'psql'
 const FORCE     = process.env.FORCE_SYNC === '1'
 // LOCAL_CSV：指向已下载的 CSV 文件路径，跳过网络下载（e.g. LOCAL_CSV=./targets.simple.csv）
 const LOCAL_CSV = process.env.LOCAL_CSV ?? null
+const HTTP_OPTIONS = {
+  headers: { 'User-Agent': 'EnergyTradeInspection/1.0' },
+  maxRedirects: 5,
+  timeoutMs: 30_000,
+}
 
 const pool = new Pool({ connectionString: DB_URL, max: 3 })
 
 // ─── Network helpers ──────────────────────────────────────────────────────────
 
-function fetchJson(url) {
-  return new Promise((resolve, reject) => {
-    const mod = url.startsWith('https') ? https : http
-    mod.get(url, { headers: { 'User-Agent': 'EnergyTradeInspection/1.0' } }, (res) => {
-      if (res.statusCode === 301 || res.statusCode === 302) return resolve(fetchJson(res.headers.location))
-      if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode} fetching ${url}`))
-      let data = ''
-      res.on('data', (c) => (data += c))
-      res.on('end', () => { try { resolve(JSON.parse(data)) } catch (e) { reject(e) } })
-    }).on('error', reject)
-  })
-}
-
 /**
  * 流式下载 — 不把文件整体读入内存，直接写磁盘
  */
-function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest)
-    let received = 0
-    let lastReport = 0
-
-    const doGet = (targetUrl) => {
-      const mod = targetUrl.startsWith('https') ? https : http
-      mod.get(targetUrl, { headers: { 'User-Agent': 'EnergyTradeInspection/1.0' } }, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) return doGet(res.headers.location)
-        if (res.statusCode !== 200) { file.destroy(); return reject(new Error(`HTTP ${res.statusCode}`)) }
-        res.on('data', (chunk) => {
-          received += chunk.length
-          if (received - lastReport >= 10_000_000) {
-            process.stdout.write(`\r  已下载 ${(received / 1_000_000).toFixed(0)} MB...`)
-            lastReport = received
-          }
-        })
-        res.pipe(file)
-        file.on('finish', () => {
-          file.close()
-          process.stdout.write(`\r  已下载 ${(received / 1_000_000).toFixed(0)} MB\n`)
-          resolve()
-        })
-        file.on('error', (e) => { file.destroy(); reject(e) })
-      }).on('error', (e) => { file.destroy(); reject(e) })
-    }
-    doGet(url)
+async function downloadFile(url, dest) {
+  let lastReport = 0
+  const { bytes } = await downloadToFile(url, dest, {
+    ...HTTP_OPTIONS,
+    onProgress(received) {
+      if (received - lastReport >= 10_000_000) {
+        process.stdout.write(`\r  已下载 ${(received / 1_000_000).toFixed(0)} MB...`)
+        lastReport = received
+      }
+    },
   })
+  process.stdout.write(`\r  已下载 ${(bytes / 1_000_000).toFixed(0)} MB\n`)
 }
 
 // ─── PostgreSQL COPY helpers ──────────────────────────────────────────────────
@@ -171,7 +145,7 @@ async function run() {
   try {
     // 1. 版本检查
     console.log('[sync] 正在获取 OpenSanctions 版本信息...')
-    const index = await fetchJson(INDEX_URL)
+    const index = await fetchJson(INDEX_URL, HTTP_OPTIONS)
     const version = index.updated_at ?? index.last_change ?? new Date().toISOString()
     console.log(`[sync] 远端版本: ${version}`)
 
@@ -322,7 +296,7 @@ async function run() {
       VALUES ('opensanctions', 'error', $1, $2)
     `, [String(err.message), durationMs]).catch(() => {})
     console.error('[sync] 同步失败:', err.message)
-    process.exit(1)
+    process.exitCode = 1
   } finally {
     await client.query('DROP TABLE IF EXISTS sanctions_staging').catch(() => {})
     client.release()
