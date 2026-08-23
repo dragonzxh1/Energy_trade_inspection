@@ -1,0 +1,10 @@
+[Unit]
+Description=ETI Telegram collector health check
+After=eti-telegram-ingest-digital.service eti-telegram-ingest-summary.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python -m intelligence.telegram_collector_health --notify

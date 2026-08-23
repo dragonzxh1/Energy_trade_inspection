@@ -1,0 +1,15 @@
+[Unit]
+Description=ETI Telegram attachment collector
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/eti-telegram-ingest
+EnvironmentFile=/opt/eti-telegram-ingest/.env
+ExecStart=/opt/eti-telegram-ingest/.venv-intelligence/bin/python /opt/eti-telegram-ingest/telegram_ingest.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -7,9 +7,9 @@ import { applyCodeTable, toQuotesReport } from '@/lib/server/code-table'
 
 export const runtime = 'nodejs'
 
-const DIFY_BASE = process.env.DIFY_BASE_URL ?? 'http://212.64.20.114'
-const DIFY_KEY_A = process.env.DIFY_WORKFLOW_API_KEY ?? 'app-of1Cd6t1rGtpSqgaLt7SboTp'
-const DIFY_KEY_B = process.env.DIFY_WORKFLOW_API_KEY_QUOTES ?? 'app-WGmbwOdLYuWL72VeNv0Qm4Ev'
+const DIFY_BASE = process.env.DIFY_BASE_URL
+const DIFY_KEY_A = process.env.DIFY_WORKFLOW_API_KEY
+const DIFY_KEY_B = process.env.DIFY_WORKFLOW_API_KEY_QUOTES
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
     const wf = fd.get('workflow') as string | null
     if (!file || !wf) return NextResponse.json({ error: 'Missing' }, { status: 400 })
     if (wf === 'B' && file.type.startsWith('image/')) return handlePricingImage(file)
+    if (!DIFY_BASE) return NextResponse.json({ error: 'Dify base URL is not configured' }, { status: 503 })
     const key = wf === 'B' ? DIFY_KEY_B : DIFY_KEY_A
+    if (!key) return NextResponse.json({ error: 'Dify workflow key is not configured' }, { status: 503 })
     const uf = new FormData(); uf.append('file', file); uf.append('user', session?.user?.email ?? 'admin')
     const ur = await fetch(DIFY_BASE + '/v1/files/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + key }, body: uf })
     if (!ur.ok) return NextResponse.json({ error: 'Upload failed' }, { status: 502 })

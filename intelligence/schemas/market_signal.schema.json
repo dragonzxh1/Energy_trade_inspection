@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "SignalDirection": {
+      "enum": [
+        "bullish",
+        "bearish",
+        "neutral",
+        "mixed"
+      ],
+      "title": "SignalDirection",
+      "type": "string"
+    },
+    "SignalStatus": {
+      "enum": [
+        "top_signal",
+        "secondary_signal",
+        "weak_signal",
+        "discard",
+        "low_signal"
+      ],
+      "title": "SignalStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "market-signal.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "signal_id": {
+      "title": "Signal Id",
+      "type": "string"
+    },
+    "market_date": {
+      "format": "date",
+      "title": "Market Date",
+      "type": "string"
+    },
+    "commodity": {
+      "title": "Commodity",
+      "type": "string"
+    },
+    "region": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Region"
+    },
+    "signal_type": {
+      "title": "Signal Type",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "title": "Summary",
+      "type": "string"
+    },
+    "direction": {
+      "$ref": "#/$defs/SignalDirection"
+    },
+    "supporting_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supporting Fact Ids",
+      "type": "array"
+    },
+    "counter_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Counter Fact Ids",
+      "type": "array"
+    },
+    "metric_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Metric Ids",
+      "type": "array"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "score": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "Score",
+      "type": "integer"
+    },
+    "score_breakdown": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Score Breakdown",
+      "type": "object"
+    },
+    "support_dimensions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Support Dimensions",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/SignalStatus"
+    },
+    "scoring_version": {
+      "title": "Scoring Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "signal_id",
+    "market_date",
+    "commodity",
+    "signal_type",
+    "title",
+    "summary",
+    "direction",
+    "supporting_fact_ids",
+    "counter_fact_ids",
+    "metric_ids",
+    "confidence",
+    "score",
+    "score_breakdown",
+    "support_dimensions",
+    "status",
+    "scoring_version"
+  ],
+  "title": "MarketSignal",
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: crude-oil.v1
+updated_at: 2026-07-11
+commodity_id: crude_oil
+title: 原油市场知识卡
+aliases: [crude, crude oil, 原油, brent, wti, dubai, oman]
+market_definition: 全球基准原油、区域现货差价及实货贸易流组成的上游市场。
+core_benchmarks: [Dated Brent, ICE Brent, WTI, Dubai, Oman]
+core_prices_spreads: [Brent-Dubai EFS, WTI-Brent, calendar spreads, physical differentials]
+supply_sources: [OPEC+, United States, Russia, Brazil, Guyana, North Sea]
+demand_centers: [China refineries, India refineries, Europe, United States]
+trade_flows: [Atlantic Basin to Europe and Asia, Middle East to Asia, Russian rerouting]
+seasonality: [refinery maintenance, hurricane season, winter heating demand]
+substitutions: [light versus heavy grades, sweet versus sour grades]
+drivers: [OPEC policy, sanctions, outages, refinery margins, inventories]
+transmission_paths: [supply change to physical differential to futures structure to refinery economics]
+validation_metrics: [exports, tanker tracking, OECD inventories, refinery runs, time spreads]
+common_misreads: [futures move without physical confirmation, announced cuts without export decline]
+invalidation_conditions: [exports do not fall, differentials weaken, inventories build]
+data_gaps: [opaque floating storage, delayed customs data]

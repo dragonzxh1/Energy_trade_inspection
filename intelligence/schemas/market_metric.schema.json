@@ -1,0 +1,113 @@
+{
+  "$defs": {
+    "MetricStatus": {
+      "enum": [
+        "computed",
+        "insufficient_data"
+      ],
+      "title": "MetricStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "market-metric.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "metric_id": {
+      "title": "Metric Id",
+      "type": "string"
+    },
+    "market_date": {
+      "format": "date",
+      "title": "Market Date",
+      "type": "string"
+    },
+    "commodity": {
+      "title": "Commodity",
+      "type": "string"
+    },
+    "region": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Region"
+    },
+    "benchmark": {
+      "title": "Benchmark",
+      "type": "string"
+    },
+    "metric_type": {
+      "title": "Metric Type",
+      "type": "string"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unit"
+    },
+    "status": {
+      "$ref": "#/$defs/MetricStatus"
+    },
+    "calculation_method": {
+      "title": "Calculation Method",
+      "type": "string"
+    },
+    "calculation_version": {
+      "title": "Calculation Version",
+      "type": "string"
+    },
+    "source_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Source Fact Ids",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "metric_id",
+    "market_date",
+    "commodity",
+    "benchmark",
+    "metric_type",
+    "status",
+    "calculation_method",
+    "calculation_version",
+    "source_fact_ids"
+  ],
+  "title": "MarketMetric",
+  "type": "object"
+}

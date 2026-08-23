@@ -55,7 +55,15 @@ export async function applyMigrations(): Promise<void> {
       // Strip UTF-8 BOM if a Windows editor added one.
       const raw = fs.readFileSync(path.join(migrationsDir, filename), 'utf8')
       const sql = raw.replace(/^\uFEFF/, '')
-      await client.query(sql)
+      try {
+        await client.query(sql)
+      } catch (error) {
+        const cause = error instanceof Error ? error.message : String(error)
+        throw new Error(
+          `[migrations] ${filename} failed. If this schema was applied outside migration tracking, ` +
+          `run "npm run db:reconcile-production -- --dry-run" before any explicit --apply. Cause: ${cause}`,
+        )
+      }
       await client.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [filename])
       console.log(`[migrations] applied ${filename}`)
     }
@@ -65,7 +73,7 @@ export async function applyMigrations(): Promise<void> {
     console.log('[migrations] all migrations applied')
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {})
-    console.error('[migrations] 杩佺Щ澶辫触:', error)
+    console.error('[migrations] migration failed:', error)
     throw error
   } finally {
     await client.query('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID]).catch(() => {})

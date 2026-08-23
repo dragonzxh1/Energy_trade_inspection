@@ -1,0 +1,320 @@
+{
+  "$defs": {
+    "FactClass": {
+      "enum": [
+        "source_fact",
+        "calculated_fact",
+        "supported_inference",
+        "editorial_view",
+        "hypothesis"
+      ],
+      "title": "FactClass",
+      "type": "string"
+    },
+    "FactDirection": {
+      "enum": [
+        "up",
+        "down",
+        "flat",
+        "mixed",
+        "unknown"
+      ],
+      "title": "FactDirection",
+      "type": "string"
+    },
+    "FactRiskLevel": {
+      "enum": [
+        "normal",
+        "elevated",
+        "high",
+        "critical"
+      ],
+      "title": "FactRiskLevel",
+      "type": "string"
+    },
+    "FactType": {
+      "enum": [
+        "price",
+        "price_change",
+        "spread",
+        "premium_discount",
+        "inventory",
+        "production",
+        "refinery_run",
+        "refinery_outage",
+        "shipment",
+        "arrival",
+        "tender",
+        "trade_flow",
+        "demand",
+        "supply",
+        "weather",
+        "sanction",
+        "policy",
+        "geopolitical_event",
+        "freight",
+        "arbitrage",
+        "market_sentiment",
+        "source_commentary"
+      ],
+      "title": "FactType",
+      "type": "string"
+    },
+    "VerificationStatus": {
+      "enum": [
+        "pending",
+        "verified",
+        "needs_review",
+        "rejected"
+      ],
+      "title": "VerificationStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "market-fact.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "fact_id": {
+      "title": "Fact Id",
+      "type": "string"
+    },
+    "fact_hash": {
+      "pattern": "^[a-fA-F0-9]{64}$",
+      "title": "Fact Hash",
+      "type": "string"
+    },
+    "source_id": {
+      "title": "Source Id",
+      "type": "string"
+    },
+    "section_id": {
+      "title": "Section Id",
+      "type": "string"
+    },
+    "market_date": {
+      "format": "date",
+      "title": "Market Date",
+      "type": "string"
+    },
+    "published_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Published At"
+    },
+    "region": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Region"
+    },
+    "country": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Country"
+    },
+    "commodity": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Commodity"
+    },
+    "benchmark": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Benchmark"
+    },
+    "fact_type": {
+      "$ref": "#/$defs/FactType"
+    },
+    "fact_class": {
+      "$ref": "#/$defs/FactClass",
+      "default": "source_fact"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Value"
+    },
+    "unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Unit"
+    },
+    "change_value": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Change Value"
+    },
+    "change_unit": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Change Unit"
+    },
+    "direction": {
+      "$ref": "#/$defs/FactDirection",
+      "default": "unknown"
+    },
+    "time_basis": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Time Basis"
+    },
+    "evidence_text": {
+      "title": "Evidence Text",
+      "type": "string"
+    },
+    "page_number": {
+      "anyOf": [
+        {
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Page Number"
+    },
+    "attribution": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Attribution"
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Uncertainty"
+    },
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "verification_status": {
+      "$ref": "#/$defs/VerificationStatus",
+      "default": "pending"
+    },
+    "risk_level": {
+      "$ref": "#/$defs/FactRiskLevel",
+      "default": "normal"
+    },
+    "supporting_fact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supporting Fact Ids",
+      "type": "array"
+    },
+    "metadata": {
+      "additionalProperties": true,
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "required": [
+    "fact_id",
+    "fact_hash",
+    "source_id",
+    "section_id",
+    "market_date",
+    "fact_type",
+    "statement",
+    "evidence_text",
+    "confidence"
+  ],
+  "title": "MarketFact",
+  "type": "object"
+}

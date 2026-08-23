@@ -1,0 +1,166 @@
+diff --git a/agent-core/src/agent.ts b/agent-core/src/agent.ts
+index 64f5daa..b43f047 100644
+--- a/agent-core/src/agent.ts
++++ b/agent-core/src/agent.ts
+@@ -48,12 +48,15 @@ function resultHasData(result: unknown): boolean {
+     if (typeof o.error === "string" && o.error) return false;
+     // Search/scrape-style shapes — consider data present if any of these
+     // resolve to non-empty.
+-    const candidates = [
+-      o.markdown, o.content, o.html, o.stdout, o.text, o.data,
+-      o.web, o.news, o.images, o.results, o.pages, o.links,
+-      o.json, o.extract, o.preview,
++    const candidateKeys = [
++      "markdown", "content", "html", "stdout", "text", "data",
++      "web", "news", "images", "results", "pages", "links",
++      "json", "extract", "preview",
+     ];
+-    for (const c of candidates) {
++    for (const key of candidateKeys) {
++      const descriptor = Object.getOwnPropertyDescriptor(o, key);
++      if (descriptor?.get) continue;
++      const c = descriptor?.value;
+       if (typeof c === "string" && c.trim().length > 0) return true;
+       if (Array.isArray(c) && c.length > 0) return true;
+       if (c && typeof c === "object" && Object.keys(c as object).length > 0) return true;
+@@ -65,8 +68,49 @@ function resultHasData(result: unknown): boolean {
+   return true;
+ }
+ 
++export function compactToolResultForModel(result: unknown, maxCharacters = 24_000): unknown {
++  let remaining = Math.max(maxCharacters, 1_000);
++  const seen = new WeakSet<object>();
++  const visit = (value: unknown): unknown => {
++    if (value == null || typeof value === "boolean" || typeof value === "number") {
++      remaining -= 16;
++      return value;
++    }
++    if (typeof value === "string") {
++      const limit = Math.max(0, remaining);
++      const output = value.length > limit ? `${value.slice(0, limit)}\n[truncated]` : value;
++      remaining -= output.length;
++      return output;
++    }
++    if (typeof value !== "object") return String(value);
++    if (seen.has(value)) return "[circular]";
++    seen.add(value);
++    if (Array.isArray(value)) {
++      const output: unknown[] = [];
++      for (const item of value) {
++        if (remaining <= 0 || output.length >= 20) break;
++        output.push(visit(item));
++      }
++      return output;
++    }
++    const output: Record<string, unknown> = {};
++    for (const key of Object.keys(value as object)) {
++      if (remaining <= 0 || Object.keys(output).length >= 50) break;
++      const descriptor = Object.getOwnPropertyDescriptor(value, key);
++      if (!descriptor || descriptor.get) continue;
++      remaining -= key.length;
++      output[key] = visit(descriptor.value);
++    }
++    return output;
++  };
++  return visit(result);
++}
++
+ type RunState = {
+   dataCollected?: boolean;
++  dataToolCalls?: number;
++  maxDataToolCalls?: number;
++  toolSignatures?: Set<string>;
+   /** JSON schema the final output must match; set when RunParams.schema is provided */
+   schema?: Record<string, unknown>;
+   /** Monotonic counter used to bound repair loops for a misaligned formatOutput call */
+@@ -80,6 +124,25 @@ function aiToolToLc(name: string, t: any) {
+     async (input: unknown, config?: { configurable?: { runState?: RunState } }) => {
+       const runState = config?.configurable?.runState;
+ 
++      if (runState && DATA_TOOLS.has(name)) {
++        const signature = `${name}:${JSON.stringify(input)}`;
++        runState.toolSignatures ??= new Set<string>();
++        if (runState.toolSignatures.has(signature)) {
++          return JSON.stringify({
++            error: "duplicate_tool_call",
++            message: "This equivalent tool call already completed. Use the existing result and call formatOutput now.",
++          });
++        }
++        if ((runState.dataToolCalls ?? 0) >= (runState.maxDataToolCalls ?? Number.POSITIVE_INFINITY)) {
++          return JSON.stringify({
++            error: "tool_budget_exhausted",
++            message: "The data-tool budget is exhausted. Use the evidence already collected and call formatOutput now.",
++          });
++        }
++        runState.toolSignatures.add(signature);
++        runState.dataToolCalls = (runState.dataToolCalls ?? 0) + 1;
++      }
++
+       if (name === "formatOutput" && runState && !runState.dataCollected) {
+         return JSON.stringify({
+           error:
+@@ -123,7 +186,14 @@ function aiToolToLc(name: string, t: any) {
+         runState.dataCollected = true;
+       }
+ 
+-      return typeof result === "string" ? result : JSON.stringify(result);
++      let modelResult = DATA_TOOLS.has(name) ? compactToolResultForModel(result) : result;
++      if (runState && DATA_TOOLS.has(name) && (runState.dataToolCalls ?? 0) >= (runState.maxDataToolCalls ?? Number.POSITIVE_INFINITY)) {
++        modelResult = {
++          result: modelResult,
++          agentInstruction: "The data-tool budget is now exhausted. Return the final answer directly and do not call another data tool.",
++        };
++      }
++      return typeof modelResult === "string" ? modelResult : JSON.stringify(modelResult);
+     },
+     { name, description: t.description ?? "", schema: t.inputSchema as never },
+   );
+@@ -170,6 +240,16 @@ export class FirecrawlAgent {
+     return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+   }
+ 
++  private recursionLimit(params: RunParams): number {
++    const maxSteps = Math.min(Math.max(params.maxSteps ?? this.options.maxSteps ?? 12, 1), 200);
++    return maxSteps * 4 + 2;
++  }
++
++  private dataToolBudget(params: RunParams): number {
++    const maxSteps = Math.min(Math.max(params.maxSteps ?? this.options.maxSteps ?? 12, 1), 200);
++    return Math.max(1, maxSteps - 2);
++  }
++
+   async run(params: RunParams): Promise<RunResult> {
+     if (!params.prompt?.trim()) {
+       throw new Error("prompt is required and must be a non-empty string");
+@@ -177,12 +257,12 @@ export class FirecrawlAgent {
+     workerProgress.clear();
+     const startTime = Date.now();
+     const agent = await this.buildAgent(params);
+-    const runState: RunState = { dataCollected: false };
++    const runState: RunState = { dataCollected: false, dataToolCalls: 0, maxDataToolCalls: this.dataToolBudget(params) };
+     if (params.schema) runState.schema = params.schema;
+     const allMsgs: any[] = [];
+     const result = await agent.invoke(
+       { messages: [{ role: "user", content: this.buildPrompt(params) }] },
+-      { configurable: { runState } },
++      { configurable: { runState }, recursionLimit: this.recursionLimit(params) },
+     );
+     for (const m of result.messages ?? []) allMsgs.push(m);
+ 
+@@ -229,14 +309,14 @@ export class FirecrawlAgent {
+     workerProgress.clear();
+     const startTime = Date.now();
+     const agent = await this.buildAgent(params);
+-    const runState: RunState = { dataCollected: false };
++    const runState: RunState = { dataCollected: false, dataToolCalls: 0, maxDataToolCalls: this.dataToolBudget(params) };
+     if (params.schema) runState.schema = params.schema;
+     const allMsgs: any[] = [];
+ 
+     try {
+       for await (const [mode, chunk] of await agent.stream(
+         { messages: [{ role: "user", content: this.buildPrompt(params) }] },
+-        { streamMode: ["messages", "updates"], configurable: { runState } },
++        { streamMode: ["messages", "updates"], configurable: { runState }, recursionLimit: this.recursionLimit(params) },
+       )) {
+         if (mode === "messages") {
+           const [msg] = chunk as unknown as [any, unknown];

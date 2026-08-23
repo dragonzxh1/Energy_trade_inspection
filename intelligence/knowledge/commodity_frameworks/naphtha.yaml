@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: naphtha.v1
+updated_at: 2026-07-11
+commodity_id: naphtha
+title: 石脑油市场知识卡
+aliases: [naphtha, 石脑油, cfr japan]
+market_definition: 连接炼厂轻质馏分与蒸汽裂解、汽油调和需求的区域市场。
+core_benchmarks: [CFR Japan, FOB Singapore, CIF NWE]
+core_prices_spreads: [naphtha crack, east-west spread, spot premium, ethylene margin]
+supply_sources: [Middle East, India, Russia, Mediterranean]
+demand_centers: [Japan crackers, South Korea crackers, China crackers, gasoline blenders]
+trade_flows: [Middle East and India to Northeast Asia, Russia to Asia]
+seasonality: [cracker maintenance, gasoline blending season, winter petrochemical demand]
+substitutions: [LPG feedstock, condensate, light naphtha versus heavy naphtha]
+drivers: [cracker runs, LPG economics, refinery exports, gasoline blending]
+transmission_paths: [cargo supply to spot premium to crack to cracker feed choice]
+validation_metrics: [CFR Japan premium, crack, LPG-naphtha spread, arrivals, cracker utilization]
+common_misreads: [flat price rise treated as demand strength, crack ignored]
+invalidation_conditions: [spot premium weakens, crackers cut runs, LPG substitution increases]
+data_gaps: [private cracker run rates, cargo quality differences]

@@ -33,14 +33,24 @@ yarn-error.log*
 .gstack/
 .claude/
 .venv/
+.venv-intelligence/
+.venv-platts-trials/
 *.csv
 __pycache__/
 *.pyc
+*.bak
+*.bak_*
+tmp_*.py
 
 # ICIJ / external dataset CSVs (large files, not committed)
 database/
 tmp/
 /tmp/
+reports/
+intelligence/wechat_publish.json
+intelligence/market_pipeline_sync_tmp/
+platts_ocr/output/
+web-research-agent/vendor/*.tgz
 
 # One-off deployment/setup scripts (may contain credentials)
 _remote_*.sh

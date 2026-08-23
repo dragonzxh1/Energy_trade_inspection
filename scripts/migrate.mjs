@@ -4,10 +4,13 @@ import pg from 'pg'
 
 const { Client } = pg
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://eti:eti_password@localhost:5432/energy_trade_inspection'
+const connectionString = process.env.DATABASE_URL
 const migrationsDir = path.join(process.cwd(), 'db', 'migrations')
 
 async function run() {
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required; refusing to use an implicit database target')
+  }
   const client = new Client({ connectionString })
   await client.connect()
 

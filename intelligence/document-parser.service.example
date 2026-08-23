@@ -1,0 +1,14 @@
+[Unit]
+Description=ETI SourceDocument parser worker
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python -m intelligence.market_pipeline.document_worker --limit 20
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

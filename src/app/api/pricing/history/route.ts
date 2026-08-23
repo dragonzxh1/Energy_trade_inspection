@@ -20,17 +20,22 @@ interface PricingRow {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const commodity = searchParams.get('commodity') || undefined
-  const days = Math.min(parseInt(searchParams.get('days') || '30', 10), 90)
+  const days = Math.min(parseInt(searchParams.get('days') || '60', 10), 90)
 
   try {
+    // Deduplicate at SQL level: keep latest upload per source_file_name
     const result = await db.query<{ source_document_json: any; source_file_name: string; source_published_at: string }>(
       `SELECT source_document_json, source_file_name, source_published_at
-       FROM seo_content
-       WHERE content_subtype = 'pricing_signal'
-         AND source_document_json IS NOT NULL
-         AND source_published_at >= NOW() - INTERVAL '${days} days'
+       FROM (
+         SELECT DISTINCT ON (source_file_name) *
+         FROM seo_content
+         WHERE content_subtype = 'pricing_signal'
+           AND source_document_json IS NOT NULL
+         ORDER BY source_file_name, created_at DESC
+       ) sub
+       WHERE source_published_at >= NOW() - INTERVAL '${days} days'
        ORDER BY source_published_at DESC
-       LIMIT 60`
+       LIMIT 200`
     )
 
     const rows: PricingRow[] = []
@@ -50,7 +55,7 @@ export async function GET(req: NextRequest) {
 
         for (const detail of (group.details || [])) {
           rows.push({
-                        recorded_at: typeof recordedAt === 'string' ? recordedAt : new Date(recordedAt).toISOString(),
+            recorded_at: typeof recordedAt === 'string' ? recordedAt : new Date(recordedAt).toISOString(),
             commodity: comm,
             product: prod,
             location: detail.location || '',
@@ -65,7 +70,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Deduplicate: keep latest per date+commodity+location
+    // Deduplicate: keep latest per date+commodity+location+unit
     const seen = new Set<string>()
     const deduped: PricingRow[] = []
     for (const row of rows) {
@@ -75,7 +80,7 @@ export async function GET(req: NextRequest) {
       deduped.push(row)
     }
 
-    // Group by commodity → location → unit → [{date, price, change}]
+    // Group by commodity -> location -> unit -> [{date, price, change}]
     const grouped: Record<string, Record<string, Record<string, Array<{ date: string; price: number; change: number | null }>>>> = {}
     for (const row of deduped) {
       if (!grouped[row.commodity]) grouped[row.commodity] = {}
@@ -99,7 +104,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Also return flat list for table view
     return NextResponse.json({
       grouped,
       flat: deduped,

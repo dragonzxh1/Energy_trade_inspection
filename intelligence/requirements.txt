@@ -11,3 +11,33 @@ httpx>=0.25.0
 
 # Environment variable loading
 python-dotenv>=1.0.0
+
+# Telegram personal-account ingestion client
+telethon>=1.36.0
+
+# Optional SOCKS proxy support for Telegram connectivity
+PySocks>=1.7.1
+
+# PDF text extraction for daily report pipeline
+PyMuPDF>=1.23.0
+python-docx>=1.0.0
+
+# Versioned contracts shared with Dify workflow inputs
+pydantic>=2.7,<3
+
+# PostgreSQL persistence for the structured market pipeline workers
+psycopg[binary]>=3.2,<4
+
+# Versioned scoring and commodity knowledge-card configuration
+PyYAML>=6.0,<7
+
+# CommonMark token parsing for publication heading normalization
+markdown-it-py==4.0.0
+
+# IANA time zone database for Windows release-deadline calculations
+tzdata>=2025.2
+
+# Lossless public price-reference image generation
+opencv-python-headless>=4.10,<5
+Pillow>=10,<13
+pytesseract>=0.3.13,<0.4

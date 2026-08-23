@@ -1,0 +1,30 @@
+{
+  "name": "eti-web-research-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bootstrap": "bash scripts/bootstrap-firecrawl-agent.sh",
+    "build": "node scripts/patch-firecrawl-aisdk.mjs && tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@firecrawl/agent-core": "file:vendor/firecrawl-web-agent/agent-core",
+    "@mendable/firecrawl-js": "4.32.0",
+    "@ai-sdk/openai": "3.0.90",
+    "@langchain/openai": "^1.4.4",
+    "express": "^5.1.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.7.0"
+  },
+  "overrides": {
+    "undici": "^6.27.0"
+  }
+}
