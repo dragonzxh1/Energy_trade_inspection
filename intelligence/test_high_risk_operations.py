@@ -66,6 +66,11 @@ class HighRiskOperationsTests(unittest.TestCase):
             "\t/var/www/eti/shared/.env.local\tenv",
             manifest,
         )
+        self.assertIn(
+            "post-build\tfile\t600\tubuntu:ubuntu\t.env.web-research-agent"
+            "\t/var/www/eti/shared/.env.web-research-agent\tenv",
+            manifest,
+        )
         self.assertNotIn("pre-build\tfile\t600\tubuntu:ubuntu\t.env", manifest)
         self.assertIn(
             "post-build\tfile\t600\tubuntu:ubuntu\tintelligence/wechat_publish.json"
@@ -74,6 +79,19 @@ class HighRiskOperationsTests(unittest.TestCase):
         )
         self.assertIn("intelligence/wechat_publish.json", gitignore.splitlines())
         self.assertNotIn("WECHAT_MP_APP_SECRET=", manifest)
+
+    def test_web_agent_uses_minimal_environment_file(self) -> None:
+        unit = (ROOT / "deploy" / "systemd" / "eti-web-research-agent.service").read_text(
+            encoding="utf-8"
+        )
+        installer = (ROOT / "scripts" / "install-web-research-agent.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.web-research-agent", unit)
+        self.assertNotIn("EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local", unit)
+        self.assertIn('ENV_FILE="$REPO_ROOT/.env.web-research-agent"', installer)
+        self.assertNotIn('grep -qE \'^FIRECRAWL_API_KEY=.+$\' "$REPO_ROOT/.env.local"', installer)
 
     def test_runtime_installer_links_without_reading_or_copying_secrets(self) -> None:
         installer = (ROOT / "scripts" / "install-runtime-resources.sh").read_text(encoding="utf-8")

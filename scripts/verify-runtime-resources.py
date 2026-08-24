@@ -191,7 +191,13 @@ def git_tracked_files(release: Path) -> list[Path]:
 
 
 def verify_backup_secret_permissions(root: Path) -> int:
-    names = {".env", ".env.local", ".env.intelligence", "wechat_publish.json"}
+    names = {
+        ".env",
+        ".env.local",
+        ".env.intelligence",
+        ".env.web-research-agent",
+        "wechat_publish.json",
+    }
     files = [path for path in root.rglob("*") if path.is_file() and path.name in names]
     unsafe = [path for path in files if stat.S_IMODE(path.stat().st_mode) & 0o077]
     for path in unsafe:
