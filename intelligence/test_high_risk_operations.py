@@ -89,7 +89,9 @@ class HighRiskOperationsTests(unittest.TestCase):
 
         self.assertIn('"git_tracked": git_tracked_files(release)', verifier)
         self.assertIn('"next_build": [build]', verifier)
+        self.assertIn('scopes["web_agent_build"]', verifier)
         self.assertIn('scopes["historical_next_builds"]', verifier)
+        self.assertIn('scopes["historical_web_agent_builds"]', verifier)
         self.assertIn('scopes["logs"]', verifier)
         self.assertIn('["ps", "-eo", "args="]', verifier)
         self.assertIn("verify_backup_secret_permissions", verifier)

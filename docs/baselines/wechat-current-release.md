@@ -71,8 +71,9 @@ Do not mount production env files, `.venv`, `.venv-intelligence`, or
 `intelligence/wechat_publish.json` before `next build`. They are explicitly
 post-build resources so Turbopack cannot cache production credentials or
 traverse the Python environments. The verifier compares exact credential
-values in memory against Git-tracked files, `.next`, operational logs, and
-process arguments; it reports labels and paths only, never credential values.
+values in memory against Git-tracked files, `.next`, current and historical Web
+Agent build output, operational logs, and process arguments; it reports labels
+and paths only, never credential values.
 
 `build-production-release.sh` refuses to run if any runtime resource is already
 mounted. It clears inherited environment variables with `env -i`, supplies only
