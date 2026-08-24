@@ -85,6 +85,10 @@ mounted. It clears inherited environment variables with `env -i`, supplies only
 non-production build placeholders required for route collection, and removes
 the non-runtime `.next/cache` directory after a successful build.
 
+Credential rotation status and the remaining provider-side queue are recorded
+in `docs/security/credential-rotation-20260824.md`. That ledger contains names
+and verification results only, never values or secret fingerprints.
+
 ## Operational hardening
 
 - OpenSanctions synchronization has both a cron-level nonblocking `flock` and
