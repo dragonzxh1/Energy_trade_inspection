@@ -1,0 +1,10 @@
+# phase	kind	mode	owner	destination	source	secret_scan
+post-build	file	600	ubuntu:ubuntu	.env	/var/www/eti/shared/.env	env
+post-build	file	600	ubuntu:ubuntu	.env.local	/var/www/eti/shared/.env.local	env
+post-build	file	600	ubuntu:ubuntu	.env.intelligence	/var/www/eti/shared/.env.intelligence	env
+post-build	directory	775	ubuntu:ubuntu	.venv	/var/www/eti/shared/.venv	none
+post-build	directory	775	ubuntu:ubuntu	.venv-intelligence	/var/www/eti/shared/.venv-intelligence	none
+post-build	directory	775	ubuntu:ubuntu	reports	/var/www/eti/shared/reports	none
+post-build	directory	775	ubuntu:ubuntu	tmp	/var/www/eti/shared/tmp	none
+post-build	file	644	root:root	qrcode_for_gh_f8b242c5263e_344.jpg	/var/www/eti/shared/qrcode_for_gh_f8b242c5263e_344.jpg	none
+post-build	file	600	ubuntu:ubuntu	intelligence/wechat_publish.json	/var/www/eti/shared/wechat_publish.json	json:appsecret

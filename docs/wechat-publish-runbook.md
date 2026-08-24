@@ -81,8 +81,25 @@ WECHAT_CONTENT_STREAMS=summary,digit
 
 推荐做法：
 
-- 默认把敏感信息放 `.env.local`
-- `intelligence/wechat_publish.json` 只保留结构和默认值
+- 开发环境默认把敏感信息放未跟踪的 `.env.local`
+- 生产凭据保存在 `/var/www/eti/shared/wechat_publish.json`，权限必须为
+  `0600 ubuntu:ubuntu`
+- release 内的生产 env 和 `intelligence/wechat_publish.json` 只能是构建后
+  创建的软链接，禁止复制真实文件，禁止在 `next build` 前挂载
+- `deploy/runtime-resources.tsv` 只记录路径、权限和扫描策略，不记录配置值
+
+生产 release 构建与挂载顺序：
+
+```bash
+npm ci
+bash scripts/build-production-release.sh
+bash scripts/install-runtime-resources.sh --phase post-build
+python3 scripts/verify-runtime-resources.py
+```
+
+最后一条命令发现 AppSecret、数据库连接串、API key、token 或密码出现在
+Git 跟踪文件、`.next`、日志或进程参数时会返回非零状态。输出只包含凭据
+变量名和命中文件路径，不输出凭据值。
 
 ## 每日产物
 

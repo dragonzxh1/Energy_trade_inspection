@@ -57,6 +57,56 @@ class HighRiskOperationsTests(unittest.TestCase):
         self.assertIn("/usr/local/lib/eti-backup/backup-database.sh", installer)
         self.assertIn("-o root -g root -m 0755", installer)
 
+    def test_runtime_manifest_mounts_wechat_config_only_after_build(self) -> None:
+        manifest = (ROOT / "deploy" / "runtime-resources.tsv").read_text(encoding="utf-8")
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+
+        self.assertIn(
+            "post-build\tfile\t600\tubuntu:ubuntu\t.env.local"
+            "\t/var/www/eti/shared/.env.local\tenv",
+            manifest,
+        )
+        self.assertNotIn("pre-build\tfile\t600\tubuntu:ubuntu\t.env", manifest)
+        self.assertIn(
+            "post-build\tfile\t600\tubuntu:ubuntu\tintelligence/wechat_publish.json"
+            "\t/var/www/eti/shared/wechat_publish.json\tjson:appsecret",
+            manifest,
+        )
+        self.assertIn("intelligence/wechat_publish.json", gitignore.splitlines())
+        self.assertNotIn("WECHAT_MP_APP_SECRET=", manifest)
+
+    def test_runtime_installer_links_without_reading_or_copying_secrets(self) -> None:
+        installer = (ROOT / "scripts" / "install-runtime-resources.sh").read_text(encoding="utf-8")
+
+        self.assertIn('ln -s "$SOURCE_REAL" "$DESTINATION_PATH"', installer)
+        self.assertIn("Refusing to overwrite non-symlink", installer)
+        self.assertIn('"$SHARED_REAL"/*', installer)
+        self.assertNotIn('cat "$SOURCE_REAL"', installer)
+        self.assertNotIn('cp "$SOURCE_REAL"', installer)
+
+    def test_runtime_verifier_scans_build_logs_and_process_arguments(self) -> None:
+        verifier = (ROOT / "scripts" / "verify-runtime-resources.py").read_text(encoding="utf-8")
+
+        self.assertIn('"git_tracked": git_tracked_files(release)', verifier)
+        self.assertIn('"next_build": [build]', verifier)
+        self.assertIn('scopes["historical_next_builds"]', verifier)
+        self.assertIn('scopes["logs"]', verifier)
+        self.assertIn('["ps", "-eo", "args="]', verifier)
+        self.assertIn("verify_backup_secret_permissions", verifier)
+        self.assertIn("labels=", verifier)
+        self.assertNotIn("print(value)", verifier)
+
+    def test_production_build_uses_only_isolated_placeholders(self) -> None:
+        build = (ROOT / "scripts" / "build-production-release.sh").read_text(encoding="utf-8")
+
+        self.assertIn("env -i", build)
+        self.assertIn("Refusing credential-isolated build", build)
+        self.assertIn("postgresql://build:build@127.0.0.1:1/build", build)
+        self.assertIn("sk_test_build_only_not_a_real_key_000000", build)
+        self.assertIn('find "$CACHE_PATH" -depth -delete', build)
+        self.assertNotIn("source .env", build)
+        self.assertNotIn("/var/www/eti/shared/.env", build)
+
 
 if __name__ == "__main__":
     unittest.main()
