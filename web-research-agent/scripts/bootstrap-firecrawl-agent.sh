@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENDOR_DIR="$ROOT_DIR/vendor/firecrawl-web-agent"
 REPOSITORY="https://github.com/firecrawl/web-agent.git"
 REVISION="f023adf1cd1f731e27fdc844af62996f6c2a41c4"
+NPM_REGISTRY="https://registry.npmjs.org"
 
 if [[ -d "$VENDOR_DIR/.git" ]]; then
   git -c safe.directory="$VENDOR_DIR" -C "$VENDOR_DIR" fetch --depth 1 origin "$REVISION"
@@ -17,8 +18,8 @@ else
 fi
 
 CORE_DIR="$VENDOR_DIR/agent-core"
-npm install --ignore-scripts --prefix "$CORE_DIR"
-npm install --ignore-scripts --save-dev --prefix "$CORE_DIR" \
+npm install --ignore-scripts --registry="$NPM_REGISTRY" --prefix "$CORE_DIR"
+npm install --ignore-scripts --registry="$NPM_REGISTRY" --save-dev --prefix "$CORE_DIR" \
   @ai-sdk/openai@3.0.90 @ai-sdk/anthropic@3.0.104 @ai-sdk/google@3.0.103
 
 apply_patch_once() {

@@ -93,6 +93,12 @@ class HighRiskOperationsTests(unittest.TestCase):
         self.assertIn('ENV_FILE="$REPO_ROOT/.env.web-research-agent"', installer)
         self.assertNotIn('grep -qE \'^FIRECRAWL_API_KEY=.+$\' "$REPO_ROOT/.env.local"', installer)
 
+        bootstrap = (
+            ROOT / "web-research-agent" / "scripts" / "bootstrap-firecrawl-agent.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('NPM_REGISTRY="https://registry.npmjs.org"', bootstrap)
+        self.assertEqual(bootstrap.count('--registry="$NPM_REGISTRY"'), 2)
+
     def test_runtime_installer_links_without_reading_or_copying_secrets(self) -> None:
         installer = (ROOT / "scripts" / "install-runtime-resources.sh").read_text(encoding="utf-8")
 
