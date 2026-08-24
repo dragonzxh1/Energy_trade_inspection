@@ -248,6 +248,13 @@ def main() -> int:
         ]
     if not args.skip_logs:
         scopes["logs"] = [Path("/var/log/eti"), Path("/home/ubuntu/.pm2/logs")]
+    pm2_state = Path("/home/ubuntu/.pm2/dump.pm2")
+    if pm2_state.is_file():
+        pm2_mode = stat.S_IMODE(pm2_state.stat().st_mode)
+        if pm2_mode & 0o077:
+            raise RuntimeError(f"PM2 state file must be owner-only, actual mode={pm2_mode:o}")
+        scopes["pm2_state"] = [pm2_state]
+        print(f"pm2_state_permissions=ok mode={pm2_mode:o}")
 
     leaked = False
     for scope, paths in scopes.items():

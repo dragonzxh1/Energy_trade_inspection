@@ -117,6 +117,8 @@ class HighRiskOperationsTests(unittest.TestCase):
         self.assertIn('scopes["historical_next_builds"]', verifier)
         self.assertIn('scopes["historical_web_agent_builds"]', verifier)
         self.assertIn('scopes["logs"]', verifier)
+        self.assertIn('scopes["pm2_state"]', verifier)
+        self.assertIn("pm2_state_permissions=ok", verifier)
         self.assertIn('["ps", "-eo", "args="]', verifier)
         self.assertIn("verify_backup_secret_permissions", verifier)
         self.assertIn("BEARER|API_KEY", verifier)
