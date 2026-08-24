@@ -76,7 +76,9 @@ post-build resources so Turbopack cannot cache production credentials or
 traverse the Python environments. The verifier compares exact credential
 values in memory against Git-tracked files, `.next`, current and historical Web
 Agent build output, operational logs, and process arguments; it reports labels
-and paths only, never credential values.
+and paths only, never credential values. The PM2 saved process state is also
+scanned and must remain owner-only (`0600`); production credentials must be
+loaded by Next.js from the runtime env file rather than persisted by PM2.
 
 `build-production-release.sh` refuses to run if any runtime resource is already
 mounted. It clears inherited environment variables with `env -i`, supplies only
