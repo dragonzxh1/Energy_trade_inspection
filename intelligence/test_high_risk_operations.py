@@ -119,6 +119,7 @@ class HighRiskOperationsTests(unittest.TestCase):
         self.assertIn('scopes["logs"]', verifier)
         self.assertIn('["ps", "-eo", "args="]', verifier)
         self.assertIn("verify_backup_secret_permissions", verifier)
+        self.assertIn("BEARER|API_KEY", verifier)
         self.assertIn("labels=", verifier)
         self.assertNotIn("print(value)", verifier)
 
