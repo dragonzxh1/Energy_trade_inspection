@@ -1,0 +1,26 @@
+[Unit]
+Description=ETI verified PostgreSQL backup
+After=network-online.target postgresql.service
+Wants=network-online.target
+OnFailure=eti-database-backup-failure.service
+ConditionPathExists=/var/www/eti/Energy_trade_inspection/.env.local
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/usr/local/lib/eti-backup/backup-database.sh
+UMask=0077
+TimeoutStartSec=2h
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=/var/www/eti/backups/managed
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

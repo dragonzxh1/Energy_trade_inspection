@@ -179,6 +179,11 @@ case "$TASK" in
 
   sync-sanctions)
     cd "$APP_DIR"
+    exec 13>/tmp/eti-sync-sanctions.lock
+    if ! flock -xn 13; then
+      echo "[$TIMESTAMP] sync-sanctions skipped: lock busy" >> "$LOG_FILE"
+      exit 0
+    fi
     node scripts/sync-opensanctions.mjs >> "$LOG_FILE" 2>&1
     echo "[$TIMESTAMP] sync-sanctions done" >> "$LOG_FILE"
     ;;

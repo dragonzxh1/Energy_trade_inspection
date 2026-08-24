@@ -1,0 +1,15 @@
+[Unit]
+Description=Notify ETI database backup failure
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python -m intelligence.telegram_notify "ETI 数据库自动备份失败。请检查 systemctl status eti-database-backup.service 和 journalctl -u eti-database-backup.service。"
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

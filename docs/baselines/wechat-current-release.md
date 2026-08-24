@@ -50,6 +50,24 @@ daily-report entrypoint.
    `bash scripts/setup-crontab.sh`.
 5. Pass Python tests, web-agent tests/build, root type-check/build, and a
    credential scan before deployment.
+6. Install the verified database backup timer with
+   `sudo bash scripts/install-database-backup.sh`, manually start the service
+   once, and inspect `SHA256SUMS` plus `restore.list` before relying on the
+   schedule.
+
+## Operational hardening
+
+- OpenSanctions synchronization has both a cron-level nonblocking `flock` and
+  a PostgreSQL advisory lock. Each run uses unique host/container temporary
+  files and a unique staging table; `psql` no longer receives `DATABASE_URL`
+  in its process arguments.
+- `eti-database-backup.timer` creates a daily PostgreSQL custom-format backup,
+  validates it with `pg_restore --list`, writes SHA-256 checksums, and retains
+  three days by default. `ETI_BACKUP_RETENTION_DAYS` may be set from 1 to 30.
+- Offsite backup is intentionally not claimed as complete. Set
+  `ETI_BACKUP_REMOTE` and install/configure `rclone` before treating the backup
+  as host-loss protection; a configured remote that cannot be copied causes
+  the service to fail and notify operators.
 
 ## Known dependency risk
 
