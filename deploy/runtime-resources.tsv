@@ -2,6 +2,7 @@
 post-build	file	600	ubuntu:ubuntu	.env	/var/www/eti/shared/.env	env
 post-build	file	600	ubuntu:ubuntu	.env.local	/var/www/eti/shared/.env.local	env
 post-build	file	600	ubuntu:ubuntu	.env.intelligence	/var/www/eti/shared/.env.intelligence	env
+post-build	file	600	ubuntu:ubuntu	.env.web-research-agent	/var/www/eti/shared/.env.web-research-agent	env
 post-build	directory	775	ubuntu:ubuntu	.venv	/var/www/eti/shared/.venv	none
 post-build	directory	775	ubuntu:ubuntu	.venv-intelligence	/var/www/eti/shared/.venv-intelligence	none
 post-build	directory	775	ubuntu:ubuntu	reports	/var/www/eti/shared/reports	none

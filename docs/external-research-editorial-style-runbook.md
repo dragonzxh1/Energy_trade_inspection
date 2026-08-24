@@ -10,14 +10,21 @@
 
 ## 必需配置
 
-在生产 `.env.local` 中配置，真实密钥不得进入仓库或 Obsidian：
+Web Agent 使用独立的生产 `.env.web-research-agent`，只允许包含下面四项，
+权限必须为 `0600 ubuntu:ubuntu`。真实密钥不得进入通用 `.env.local` 之外的
+非受控副本、仓库或 Obsidian：
 
 ```text
 FIRECRAWL_API_KEY=
-FIRECRAWL_AGENT_BASE_URL=http://127.0.0.1:4318
 DEEPSEEK_FLASH_AGENT_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 DEEPSEEK_FLASH_MODEL=deepseek-v4-flash
+```
+
+主应用仍在 `.env.local` 中配置调用地址和研究流程开关：
+
+```text
+FIRECRAWL_AGENT_BASE_URL=http://127.0.0.1:4318
 DIFY_FLASH_MODEL_NAME=deepseek-v4-flash
 DIFY_WORKFLOW_API_KEY_REVIEW_REPAIR=
 EXTERNAL_RESEARCH_MODE=shadow
