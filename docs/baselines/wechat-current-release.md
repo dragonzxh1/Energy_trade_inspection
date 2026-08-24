@@ -55,6 +55,30 @@ daily-report entrypoint.
    once, and inspect `SHA256SUMS` plus `restore.list` before relying on the
    schedule.
 
+Runtime resources are declared in `deploy/runtime-resources.tsv`; the manifest
+contains paths and policies only, never values. Build a fresh release in an
+isolated environment, then mount `post-build` resources and run the leakage
+gate:
+
+```bash
+npm ci
+bash scripts/build-production-release.sh
+bash scripts/install-runtime-resources.sh --phase post-build
+python3 scripts/verify-runtime-resources.py
+```
+
+Do not mount production env files, `.venv`, `.venv-intelligence`, or
+`intelligence/wechat_publish.json` before `next build`. They are explicitly
+post-build resources so Turbopack cannot cache production credentials or
+traverse the Python environments. The verifier compares exact credential
+values in memory against Git-tracked files, `.next`, operational logs, and
+process arguments; it reports labels and paths only, never credential values.
+
+`build-production-release.sh` refuses to run if any runtime resource is already
+mounted. It clears inherited environment variables with `env -i`, supplies only
+non-production build placeholders required for route collection, and removes
+the non-runtime `.next/cache` directory after a successful build.
+
 ## Operational hardening
 
 - OpenSanctions synchronization has both a cron-level nonblocking `flock` and
