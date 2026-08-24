@@ -224,12 +224,20 @@ def main() -> int:
         "git_tracked": git_tracked_files(release),
         "next_build": [build],
     }
+    web_agent_build = release / "web-research-agent" / "dist"
+    if web_agent_build.is_dir():
+        scopes["web_agent_build"] = [web_agent_build]
     release_root = Path("/var/www/eti/releases")
     if release_root.is_dir():
         scopes["historical_next_builds"] = [
             candidate
             for candidate in release_root.glob("*/.next")
             if candidate.is_dir() and candidate.resolve() != build.resolve()
+        ]
+        scopes["historical_web_agent_builds"] = [
+            candidate
+            for candidate in release_root.glob("*/web-research-agent/dist")
+            if candidate.is_dir() and candidate.resolve() != web_agent_build.resolve()
         ]
     if not args.skip_logs:
         scopes["logs"] = [Path("/var/log/eti"), Path("/home/ubuntu/.pm2/logs")]
