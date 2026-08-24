@@ -61,11 +61,14 @@ isolated environment, then mount `post-build` resources and run the leakage
 gate:
 
 ```bash
-npm ci
-bash scripts/build-production-release.sh
-bash scripts/install-runtime-resources.sh --phase post-build
-python3 scripts/verify-runtime-resources.py
+bash scripts/deploy.sh
 ```
+
+Run this only from a fresh clone under `/var/www/eti/releases`. The script
+prepares and verifies a candidate but never switches the production symlink.
+It refuses to run against the active release. Internally it installs and builds
+the main application and pinned Web Agent before mounting the runtime resources,
+then runs the leakage gate.
 
 Do not mount production env files, `.venv`, `.venv-intelligence`, or
 `intelligence/wechat_publish.json` before `next build`. They are explicitly
