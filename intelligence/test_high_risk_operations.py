@@ -109,6 +109,17 @@ class HighRiskOperationsTests(unittest.TestCase):
         self.assertNotIn("source .env", build)
         self.assertNotIn("/var/www/eti/shared/.env", build)
 
+    def test_legacy_deploy_entrypoint_cannot_build_active_release(self) -> None:
+        deploy = (ROOT / "scripts" / "deploy.sh").read_text(encoding="utf-8")
+
+        self.assertIn("Refusing in-place deployment of the active production release", deploy)
+        self.assertIn("bash scripts/build-production-release.sh", deploy)
+        self.assertIn("npm test --prefix web-research-agent", deploy)
+        self.assertIn("bash scripts/install-runtime-resources.sh --phase post-build", deploy)
+        self.assertIn("python3 scripts/verify-runtime-resources.py", deploy)
+        self.assertNotIn("git pull", deploy)
+        self.assertNotIn("npm run build\n", deploy)
+
 
 if __name__ == "__main__":
     unittest.main()
