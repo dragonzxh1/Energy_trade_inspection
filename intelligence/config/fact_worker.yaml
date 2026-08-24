@@ -1,0 +1,72 @@
+fact_worker:
+  default_max_sections: 100
+  max_sections_per_document: 10
+  batch_size: 10
+  max_retry_attempts: 3
+  lease_minutes: 20
+  minimum_text_length: 80
+  prioritize_target_date: true
+  fair_scheduling: true
+  retry_initial_delay_seconds: 2
+  retry_backoff_multiplier: 2
+  energy_keywords:
+    - crude
+    - oil
+    - petroleum
+    - gasoline
+    - diesel
+    - gasoil
+    - jet fuel
+    - kerosene
+    - naphtha
+    - fuel oil
+    - lng
+    - natural gas
+    - coal
+    - refinery
+    - refining
+    - petrochemical
+    - barrel
+    - tanker
+    - pipeline
+    - opec
+    - energy
+    - electricity
+    - power market
+    - utility
+    - solar
+    - wind power
+    - battery storage
+    - carbon
+    - emissions
+    - biofuel
+    - sustainable aviation fuel
+    - propane
+    - butane
+    - lpg
+    - ethylene
+    - aromatics
+    - brent
+    - wti
+    - platts
+    - argus
+section_priorities:
+  price_assessment: 100
+  price_table: 100
+  market_summary: 90
+  supply_demand_commentary: 80
+  refinery_outage: 80
+  trade_flow: 75
+  tender: 70
+  freight: 65
+  general_news: 40
+  methodology: 10
+  disclaimer: 0
+  table_of_contents: 0
+  advertisement: 0
+  header_footer: 0
+skip_section_types:
+  - disclaimer
+  - table_of_contents
+  - advertisement
+  - header_footer

@@ -1,7 +1,7 @@
 ﻿import type { MetadataRoute } from 'next'
-import { db } from '@/lib/server/db'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://energytradeinspection.com'
+export const dynamic = 'force-dynamic'
 
 interface EntityRow {
   entity_type: 'company' | 'vessel'
@@ -37,6 +37,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
   ]
+
+  let db: typeof import('@/lib/server/db').db
+  try {
+    ;({ db } = await import('@/lib/server/db'))
+  } catch {
+    return staticPages
+  }
 
   // SEO case study pages
   let casePages: MetadataRoute.Sitemap = []

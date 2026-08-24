@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: lng.v1
+updated_at: 2026-07-11
+commodity_id: lng
+title: LNG 市场知识卡
+aliases: [lng, liquefied natural gas, 液化天然气, jkm]
+market_definition: 液化设施、船运、区域天然气价格和库存连接的全球海运天然气市场。
+core_benchmarks: [JKM, TTF, Henry Hub]
+core_prices_spreads: [JKM-TTF spread, JKM-Henry Hub netback, freight-adjusted arbitrage]
+supply_sources: [United States, Qatar, Australia, Russia, East Africa]
+demand_centers: [China, Japan, South Korea, Europe, India]
+trade_flows: [Atlantic to Europe or Asia, Pacific basin flows]
+seasonality: [winter heating, summer power, storage injection]
+substitutions: [coal, pipeline gas, fuel oil in power]
+drivers: [weather, outages, storage, shipping, terminal constraints]
+transmission_paths: [liquefaction outage to cargo availability to inter-basin spread]
+validation_metrics: [JKM, TTF, European storage, Asian inventories, vessel rates, feedgas]
+common_misreads: [weather forecast treated as realized demand, spread without freight]
+invalidation_conditions: [storage remains high, outage resolves, arbitrage stays closed]
+data_gaps: [Asian inventory transparency, destination flexibility]

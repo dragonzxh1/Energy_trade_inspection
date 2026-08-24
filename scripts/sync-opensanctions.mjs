@@ -14,7 +14,7 @@
  *   7. 写日志，清理
  *
  * 环境变量：
- *   DATABASE_URL       PostgreSQL 连接串（默认 eti:eti_password@127.0.0.1:5432/...）
+ *   DATABASE_URL       PostgreSQL 连接串（必填）
  *   POSTGRES_CONTAINER Docker 容器名（默认 eti-postgres；设为空则用直接 psql）
  *   FORCE_SYNC         设为 "1" 忽略版本检查
  *   PSQL_PATH          psql 可执行路径（默认 psql）
@@ -23,25 +23,29 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { execSync, execFileSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import pg from 'pg'
 import { downloadToFile, fetchJson } from './lib/http-client.mjs'
 
 const { Pool } = pg
 
-const DB_URL    = process.env.DATABASE_URL ?? 'postgresql://eti:eti_password@127.0.0.1:5432/energy_trade_inspection'
+const DB_URL    = process.env.DATABASE_URL
 const INDEX_URL = 'https://data.opensanctions.org/datasets/latest/default/index.json'
 const CSV_URL   = 'https://data.opensanctions.org/datasets/latest/default/targets.simple.csv'
-const TEMP_FILE = path.join(os.tmpdir(), 'opensanctions-targets.csv')
 const CONTAINER = process.env.POSTGRES_CONTAINER ?? 'eti-postgres'
 const PSQL      = process.env.PSQL_PATH ?? 'psql'
 const FORCE     = process.env.FORCE_SYNC === '1'
+const SYNC_LOCK_ID = 402602
 // LOCAL_CSV：指向已下载的 CSV 文件路径，跳过网络下载（e.g. LOCAL_CSV=./targets.simple.csv）
 const LOCAL_CSV = process.env.LOCAL_CSV ?? null
 const HTTP_OPTIONS = {
   headers: { 'User-Agent': 'EnergyTradeInspection/1.0' },
   maxRedirects: 5,
   timeoutMs: 30_000,
+}
+
+if (!DB_URL) {
+  throw new Error('DATABASE_URL is required; refusing to use an embedded database credential')
 }
 
 const pool = new Pool({ connectionString: DB_URL, max: 3 })
@@ -70,31 +74,78 @@ async function downloadFile(url, dest) {
 /**
  * 通过 Docker exec psql 执行 COPY FROM — 适用于本地 Docker 开发环境
  */
+function databaseIdentity(dbUrl) {
+  const parsed = new URL(dbUrl)
+  if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
+    throw new Error(`Unsupported DATABASE_URL protocol: ${parsed.protocol}`)
+  }
+  return {
+    database: decodeURIComponent(parsed.pathname.replace(/^\//, '')),
+    password: decodeURIComponent(parsed.password),
+    user: decodeURIComponent(parsed.username),
+    parsed,
+  }
+}
+
+function postgresProcessEnv(dbUrl) {
+  const { database, password, user, parsed } = databaseIdentity(dbUrl)
+  const env = {
+    ...process.env,
+    PGDATABASE: database,
+    PGHOST: parsed.hostname,
+    PGPASSWORD: password,
+    PGPORT: parsed.port || '5432',
+    PGUSER: user,
+  }
+  delete env.DATABASE_URL
+  const sslVariables = {
+    sslcert: 'PGSSLCERT',
+    sslcrl: 'PGSSLCRL',
+    sslkey: 'PGSSLKEY',
+    sslmode: 'PGSSLMODE',
+    sslrootcert: 'PGSSLROOTCERT',
+  }
+  for (const [queryName, envName] of Object.entries(sslVariables)) {
+    const value = parsed.searchParams.get(queryName)
+    if (value) env[envName] = value
+  }
+  return env
+}
+
 function copyViaDocker(localFile, dbUrl, tableName) {
   // 将文件复制进容器
-  const containerPath = '/tmp/opensanctions.csv'
+  const containerPath = `/tmp/opensanctions-${process.pid}-${Date.now()}.csv`
+  const { database, user } = databaseIdentity(dbUrl)
   console.log(`[sync] 将 CSV 复制到容器 ${CONTAINER}...`)
   execFileSync('docker', ['cp', localFile, `${CONTAINER}:${containerPath}`], { stdio: 'inherit' })
 
-  console.log('[sync] 执行 PostgreSQL COPY...')
-  execFileSync('docker', [
-    'exec', CONTAINER,
-    'psql', '-U', 'eti', '-d', 'energy_trade_inspection',
-    '-c', `\\COPY ${tableName} FROM '${containerPath}' CSV HEADER`,
-  ], { stdio: 'inherit' })
-
-  // 清理容器内文件
-  execFileSync('docker', ['exec', CONTAINER, 'rm', '-f', containerPath]).catch?.(() => {})
+  try {
+    console.log('[sync] 执行 PostgreSQL COPY...')
+    execFileSync('docker', [
+      'exec', CONTAINER,
+      'psql', '-v', 'ON_ERROR_STOP=1', '-U', user, '-d', database,
+      '-c', `\\COPY ${tableName} FROM '${containerPath}' CSV HEADER`,
+    ], { stdio: 'inherit' })
+  } finally {
+    try {
+      execFileSync('docker', ['exec', CONTAINER, 'rm', '-f', containerPath], { stdio: 'ignore' })
+    } catch {
+      console.warn(`[sync] 警告：无法删除容器临时文件 ${containerPath}`)
+    }
+  }
 }
 
 /**
  * 通过宿主机 psql 执行 COPY FROM（生产/非 Docker 环境）
  */
 function copyViaPsql(localFile, dbUrl, tableName) {
-  const absFile = path.resolve(localFile).replace(/\\/g, '/')
+  const absFile = path.resolve(localFile).replace(/\\/g, '/').replaceAll("'", "''")
   const sql = `\\COPY ${tableName} FROM '${absFile}' CSV HEADER`
   console.log('[sync] 执行 psql COPY...')
-  execFileSync(PSQL, [dbUrl, '-c', sql], { stdio: 'inherit' })
+  execFileSync(PSQL, ['-v', 'ON_ERROR_STOP=1', '-c', sql], {
+    env: postgresProcessEnv(dbUrl),
+    stdio: 'inherit',
+  })
 }
 
 /**
@@ -102,8 +153,12 @@ function copyViaPsql(localFile, dbUrl, tableName) {
  */
 function isDockerAvailable() {
   try {
-    const out = execSync(`docker inspect --format="{{.State.Running}}" ${CONTAINER} 2>&1`, { encoding: 'utf8' }).trim()
-    return out.includes('true')
+    const out = execFileSync(
+      'docker',
+      ['inspect', '--format={{.State.Running}}', CONTAINER],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    ).trim()
+    return out === 'true'
   } catch {
     return false
   }
@@ -141,8 +196,22 @@ async function getLastVersion(client) {
 async function run() {
   const startMs = Date.now()
   const client = await pool.connect()
+  const stagingTable = `sanctions_staging_${process.pid}_${Date.now()}`
+  let lockAcquired = false
+  let tempDir = null
+  let tempFile = null
 
   try {
+    const { rows: lockRows } = await client.query(
+      'SELECT pg_try_advisory_lock($1) AS acquired',
+      [SYNC_LOCK_ID],
+    )
+    lockAcquired = lockRows[0]?.acquired === true
+    if (!lockAcquired) {
+      console.log('[sync] 已有 OpenSanctions 同步正在执行，本次安全跳过')
+      return
+    }
+
     // 1. 版本检查
     console.log('[sync] 正在获取 OpenSanctions 版本信息...')
     const index = await fetchJson(INDEX_URL, HTTP_OPTIONS)
@@ -161,13 +230,16 @@ async function run() {
     }
 
     // 2. 下载 CSV（或使用本地文件）
-    let csvFile = TEMP_FILE
+    let csvFile
     if (LOCAL_CSV) {
       const resolved = path.resolve(LOCAL_CSV)
       if (!fs.existsSync(resolved)) throw new Error(`LOCAL_CSV 文件不存在: ${resolved}`)
       csvFile = resolved
       console.log(`[sync] 使用本地 CSV: ${csvFile}`)
     } else {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'eti-opensanctions-'))
+      tempFile = path.join(tempDir, 'targets.simple.csv')
+      csvFile = tempFile
       console.log(`[sync] 下载 CSV: ${CSV_URL}`)
       await downloadFile(CSV_URL, csvFile)
     }
@@ -176,9 +248,8 @@ async function run() {
 
     // 3. 创建 raw staging 表（列名与 CSV header 一一对应，全部 TEXT）
     // 注：不加 PRIMARY KEY，让 COPY 直接写入，之后再建索引供 DELETE 使用
-    await client.query('DROP TABLE IF EXISTS sanctions_staging')
     await client.query(`
-      CREATE TABLE sanctions_staging (
+      CREATE TABLE ${stagingTable} (
         id          TEXT,
         schema      TEXT,
         name        TEXT,
@@ -200,9 +271,9 @@ async function run() {
 
     // 4. 通过 PostgreSQL COPY 导入 CSV（由 PG 原生解析，极快且内存友好）
     if (isDockerAvailable()) {
-      copyViaDocker(csvFile, DB_URL, 'sanctions_staging')
+      copyViaDocker(csvFile, DB_URL, stagingTable)
     } else if (isPsqlAvailable()) {
-      copyViaPsql(csvFile, DB_URL, 'sanctions_staging')
+      copyViaPsql(csvFile, DB_URL, stagingTable)
     } else {
       throw new Error(
         '无法导入 CSV：Docker 容器未运行且未找到 psql 客户端。\n' +
@@ -211,7 +282,7 @@ async function run() {
     }
 
     // 验证数据量
-    const { rows: stgCount } = await client.query(`SELECT COUNT(*)::text AS n FROM sanctions_staging WHERE id IS NOT NULL AND id <> ''`)
+    const { rows: stgCount } = await client.query(`SELECT COUNT(*)::text AS n FROM ${stagingTable} WHERE id IS NOT NULL AND id <> ''`)
     const totalRows = parseInt(stgCount[0].n, 10)
     console.log(`[sync] Staging 表已载入 ${totalRows.toLocaleString()} 条记录`)
 
@@ -219,7 +290,7 @@ async function run() {
 
     // 建立 staging.id 索引（供 NOT EXISTS 删除查询使用，O(log n) 而非 O(n²)）
     console.log('[sync] 建立 staging 索引...')
-    await client.query(`CREATE INDEX idx_staging_id ON sanctions_staging (id)`)
+    await client.query(`CREATE INDEX ${stagingTable}_id_idx ON ${stagingTable} (id)`)
 
     // 5. 合并到 sanctions_entries
     console.log('[sync] 合并到 sanctions_entries...')
@@ -245,7 +316,7 @@ async function run() {
         NULLIF(dataset, ''),
         CASE WHEN last_change <> '' THEN last_change::TIMESTAMPTZ ELSE NULL END,
         NOW()
-      FROM sanctions_staging
+      FROM ${stagingTable}
       WHERE id IS NOT NULL AND id <> '' AND name IS NOT NULL AND name <> ''
       ON CONFLICT (id) DO UPDATE SET
         schema      = EXCLUDED.schema,
@@ -268,7 +339,7 @@ async function run() {
       const { rowCount } = await client.query(`
         DELETE FROM sanctions_entries e
         WHERE NOT EXISTS (
-          SELECT 1 FROM sanctions_staging s WHERE s.id = e.id
+          SELECT 1 FROM ${stagingTable} s WHERE s.id = e.id
         )
       `)
       deleted = rowCount ?? 0
@@ -298,11 +369,19 @@ async function run() {
     console.error('[sync] 同步失败:', err.message)
     process.exitCode = 1
   } finally {
-    await client.query('DROP TABLE IF EXISTS sanctions_staging').catch(() => {})
+    await client.query(`DROP TABLE IF EXISTS ${stagingTable}`).catch(() => {})
+    if (lockAcquired) {
+      await client.query('SELECT pg_advisory_unlock($1)', [SYNC_LOCK_ID]).catch(() => {})
+    }
     client.release()
     await pool.end()
     // 仅删除我们自己下载的临时文件，保留 LOCAL_CSV 用户指定的文件
-    if (!LOCAL_CSV) fs.unlink(TEMP_FILE, () => {})
+    if (tempFile) {
+      try { fs.rmSync(tempFile, { force: true }) } catch {}
+    }
+    if (tempDir) {
+      try { fs.rmdirSync(tempDir) } catch {}
+    }
   }
 }
 

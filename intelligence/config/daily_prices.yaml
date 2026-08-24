@@ -1,0 +1,148 @@
+schema_version: daily-prices-config.v1
+price_root_env: DAILY_PRICE_ROOT
+timezone: Asia/Singapore
+poll_slots:
+  morning: "10:30"
+  afternoon: "14:30"
+  evening: "18:30"
+wait_deadline:
+  trading_days_after_market_date: 1
+  local_time: "18:00"
+market_holidays: []
+public_benchmarks:
+  - name: FOB Med Naphtha
+    region: Europe
+    location: FOB Med
+    product: Naphtha
+    currency: USD
+    unit: USD/MT
+  - name: FOB Med Premium Gasoline
+    region: Europe
+    location: FOB Med
+    product: Premium Gasoline
+    currency: USD
+    unit: USD/MT
+  - name: FOB Med ULSD 10ppm
+    region: Europe
+    location: FOB Med
+    product: ULSD 10ppm
+    currency: USD
+    unit: USD/MT
+  - name: FOB Med Jet
+    region: Europe
+    location: FOB Med
+    product: Jet
+    currency: USD
+    unit: USD/MT
+  - name: FOB Med Gasoil 0.1%
+    region: Europe
+    location: FOB Med
+    product: Gasoil 0.1
+    currency: USD
+    unit: USD/MT
+  - name: FOB Med Fuel Oil 1%
+    region: Europe
+    location: FOB Med
+    product: FO 1%
+    currency: USD
+    unit: USD/MT
+  - name: CIF NWE ULSD 10ppm
+    region: Europe
+    location: CIF NWE ARA
+    product: ULSD 10ppm
+    currency: USD
+    unit: USD/MT
+  - name: CIF NWE Jet
+    region: Europe
+    location: CIF NWE ARA
+    product: Jet
+    currency: USD
+    unit: USD/MT
+  - name: Rotterdam Diesel 10ppm
+    region: Europe
+    location: Barges Rotterdam
+    product: Diesel 10ppm
+    currency: USD
+    unit: USD/MT
+  - name: Singapore Naphtha
+    region: Singapore
+    location: Singapore FOB
+    product: Naphtha
+    currency: USD
+    unit: USD/MT
+  - name: Singapore Gasoline 95
+    region: Singapore
+    location: Singapore FOB
+    product: Gasoline 95
+    currency: USD
+    unit: USD/MT
+  - name: Singapore Gasoline 92
+    region: Singapore
+    location: Singapore FOB
+    product: Gasoline 92
+    currency: USD
+    unit: USD/MT
+  - name: Singapore Jet
+    region: Singapore
+    location: Singapore FOB
+    product: Jet
+    currency: USD
+    unit: USD/MT
+  - name: Singapore ULSD 10ppm
+    region: Singapore
+    location: Singapore FOB
+    product: ULSD 10ppm
+    currency: USD
+    unit: USD/MT
+  - name: Singapore HSFO 380
+    region: Singapore
+    location: Singapore FOB
+    product: HSFO 380
+    currency: USD
+    unit: USD/MT
+  - name: Arab Gulf Jet
+    region: Arab Gulf
+    location: Arab Gulf
+    product: Jet
+    currency: USD
+    unit: USD/MT
+  - name: Arab Gulf Gasoil 10ppm
+    region: Arab Gulf
+    location: Arab Gulf
+    product: Gasoil 10ppm
+    currency: USD
+    unit: USD/MT
+  - name: MOPJ Naphtha
+    region: MOPJ
+    location: MOPJ
+    product: Naphtha
+    currency: USD
+    unit: USD/MT
+fuelsight:
+  bot_username: "@fuelsightbot"
+  timeout_seconds: 30
+  max_attempts: 2
+public_reference_image:
+  template_version: platts-summary-adaptive-promo.v3
+  expected_width: 1280
+  minimum_width: 1100
+  maximum_width: 1600
+  minimum_height: 480
+  maximum_height: 700
+  minimum_aspect_ratio: 2.0
+  maximum_aspect_ratio: 2.7
+  promo_roi: [932, 344, 1280, 524]
+  expand_promo_to_image_bottom: true
+  normalized_promo_roi: [0.728125, 0.656489, 1.0, 1.0]
+  qr_card: [944, 354, 1112, 514]
+  qr_origin: [950, 356]
+  qr_size: 156
+  qr_path: qrcode_for_gh_f8b242c5263e_344.jpg
+  brand_title: 能见社
+  brand_subtitle: 每日能源价格
+  brand_action: 扫码关注
+  label: 市场价格整理，仅供参考
+  font_candidates:
+    - /usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc
+    - /usr/share/fonts/truetype/wqy/wqy-microhei.ttc
+    - C:/Windows/Fonts/msyh.ttc

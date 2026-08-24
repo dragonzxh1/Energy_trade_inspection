@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: diesel.v1
+updated_at: 2026-07-11
+commodity_id: diesel
+title: 柴油与柴油馏分知识卡
+aliases: [diesel, gasoil, 柴油, ulSD]
+market_definition: 工业、道路运输和发电需求主导的中间馏分市场。
+core_benchmarks: [ICE low sulfur gasoil, ULSD, Singapore gasoil 10 ppm]
+core_prices_spreads: [diesel crack, east-west spread, grade spreads]
+supply_sources: [US Gulf Coast, Middle East, India, China, Russia]
+demand_centers: [Europe, Latin America, Africa, Asia]
+trade_flows: [Middle East and India to Europe, USGC to Atlantic Basin]
+seasonality: [harvest, winter heating overlap, refinery maintenance]
+substitutions: [jet fuel swing, high sulfur gasoil, biodiesel]
+drivers: [refinery runs, sanctions, freight, inventories, industrial demand]
+transmission_paths: [supply loss to regional stocks to crack and import arbitrage]
+validation_metrics: [ARA stocks, US distillate stocks, cracks, tanker arrivals]
+common_misreads: [flat price strength without crack confirmation]
+invalidation_conditions: [stocks rise, refinery runs recover, cracks weaken]
+data_gaps: [Russian origin rerouting, off-grid power demand]

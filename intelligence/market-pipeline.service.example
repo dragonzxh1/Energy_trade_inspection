@@ -1,0 +1,15 @@
+[Unit]
+Description=ETI structured market daily pipeline
+After=network-online.target eti-telegram-ingest.service
+
+[Service]
+Type=oneshot
+TimeoutStartSec=3h
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python -m intelligence.market_pipeline.daily_scheduler
+User=ubuntu
+Group=ubuntu
+
+[Install]
+WantedBy=multi-user.target

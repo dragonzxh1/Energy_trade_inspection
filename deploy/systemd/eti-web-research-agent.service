@@ -1,0 +1,25 @@
+[Unit]
+Description=ETI Firecrawl Web Research Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/eti/Energy_trade_inspection/web-research-agent
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4318
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/eti/Energy_trade_inspection/web-research-agent
+
+[Install]
+WantedBy=multi-user.target

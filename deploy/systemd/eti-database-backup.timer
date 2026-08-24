@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ETI verified PostgreSQL backup daily
+
+[Timer]
+OnCalendar=*-*-* 00:15:00 Asia/Singapore
+RandomizedDelaySec=10m
+Persistent=true
+Unit=eti-database-backup.service
+
+[Install]
+WantedBy=timers.target

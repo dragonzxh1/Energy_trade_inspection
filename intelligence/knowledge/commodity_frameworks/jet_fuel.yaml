@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: jet-fuel.v1
+updated_at: 2026-07-11
+commodity_id: jet_fuel
+title: 航煤市场知识卡
+aliases: [jet fuel, kerosene, 航煤, jet a1]
+market_definition: 航空需求与中间馏分产率联动的运输燃料市场。
+core_benchmarks: [Singapore jet, FOB ARA jet, USGC jet]
+core_prices_spreads: [jet crack, jet-gasoil regrade, regional arbitrage]
+supply_sources: [Middle East, India, Northeast Asia, Europe]
+demand_centers: [international aviation hubs, China, United States, Europe]
+trade_flows: [Middle East to Europe, Asia regional cargoes]
+seasonality: [summer travel, holiday travel, refinery maintenance]
+substitutions: [diesel yield switching, sustainable aviation fuel blending]
+drivers: [flight activity, refinery yield, regrade, inventories]
+transmission_paths: [flight demand to stocks to regrade to refinery yield choice]
+validation_metrics: [flight departures, jet stocks, regrade, refinery yields]
+common_misreads: [passenger growth without fuel uplift confirmation]
+invalidation_conditions: [regrade weakens, stocks build, flight activity falls]
+data_gaps: [airport-level uplift, military demand]

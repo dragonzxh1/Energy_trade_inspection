@@ -1,0 +1,12 @@
+[Unit]
+Description=Run ETI structured market pipeline daily
+
+[Timer]
+OnCalendar=*-*-* 08:20:00 Asia/Singapore
+OnCalendar=*-*-* 20:20:00 Asia/Singapore
+Persistent=true
+RandomizedDelaySec=120
+Unit=eti-market-pipeline.service
+
+[Install]
+WantedBy=timers.target

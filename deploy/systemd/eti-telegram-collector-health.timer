@@ -1,0 +1,10 @@
+[Unit]
+Description=Check ETI Telegram collectors every 15 minutes
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=15min
+Unit=eti-telegram-collector-health.service
+
+[Install]
+WantedBy=timers.target

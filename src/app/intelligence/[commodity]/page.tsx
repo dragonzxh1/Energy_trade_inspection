@@ -2,12 +2,14 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Header from '@/components/layout/Header'
 import IntelligenceCard from '@/components/intelligence/IntelligenceCard'
-import { getCommodityMeta, INTELLIGENCE_COMMODITIES } from '@/lib/intelligence'
+import { getCommodityMeta } from '@/lib/intelligence'
 import { getPublishedIntelligenceByCommodity } from '@/lib/server/seo-repository'
 
 interface PageProps {
   params: Promise<{ commodity: string }>
 }
+
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { commodity } = await params
@@ -17,10 +19,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: `${meta.label} Intelligence`,
     description: `Latest ${meta.label.toLowerCase()} market intelligence, shipment updates, and trader-focused risk analysis.`,
   }
-}
-
-export async function generateStaticParams() {
-  return INTELLIGENCE_COMMODITIES.map((commodity) => ({ commodity: commodity.slug }))
 }
 
 export default async function CommodityIntelligencePage({ params }: PageProps) {

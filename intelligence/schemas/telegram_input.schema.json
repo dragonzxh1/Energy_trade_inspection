@@ -1,0 +1,234 @@
+{
+  "$defs": {
+    "AttachmentMessageType": {
+      "enum": [
+        "text",
+        "document",
+        "image",
+        "link",
+        "forward"
+      ],
+      "title": "AttachmentMessageType",
+      "type": "string"
+    },
+    "MarketPipelineMode": {
+      "enum": [
+        "legacy",
+        "shadow",
+        "review",
+        "active"
+      ],
+      "title": "MarketPipelineMode",
+      "type": "string"
+    },
+    "TelegramAttachment": {
+      "additionalProperties": false,
+      "properties": {
+        "telegram_file_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Telegram File Id"
+        },
+        "attachment_name": {
+          "minLength": 1,
+          "title": "Attachment Name",
+          "type": "string"
+        },
+        "attachment_path": {
+          "minLength": 1,
+          "title": "Attachment Path",
+          "type": "string"
+        },
+        "attachment_mime_type": {
+          "minLength": 1,
+          "title": "Attachment Mime Type",
+          "type": "string"
+        },
+        "attachment_hash": {
+          "pattern": "^[a-fA-F0-9]{64}$",
+          "title": "Attachment Hash",
+          "type": "string"
+        },
+        "attachment_size_bytes": {
+          "minimum": 0,
+          "title": "Attachment Size Bytes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "attachment_name",
+        "attachment_path",
+        "attachment_mime_type",
+        "attachment_hash",
+        "attachment_size_bytes"
+      ],
+      "title": "TelegramAttachment",
+      "type": "object"
+    },
+    "TelegramMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "telegram_chat_id": {
+          "minLength": 1,
+          "title": "Telegram Chat Id",
+          "type": "string"
+        },
+        "telegram_message_id": {
+          "minLength": 1,
+          "title": "Telegram Message Id",
+          "type": "string"
+        },
+        "telegram_message_date": {
+          "format": "date-time",
+          "title": "Telegram Message Date",
+          "type": "string"
+        },
+        "sender_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sender Name"
+        },
+        "forwarded_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Forwarded From"
+        },
+        "message_text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message Text"
+        },
+        "message_type": {
+          "$ref": "#/$defs/AttachmentMessageType"
+        },
+        "reply_to_message_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reply To Message Id"
+        },
+        "telegram_message_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Telegram Message Url"
+        },
+        "raw_payload_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Payload Path"
+        },
+        "raw_payload": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Raw Payload"
+        },
+        "ingested_at": {
+          "format": "date-time",
+          "title": "Ingested At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "telegram_chat_id",
+        "telegram_message_id",
+        "telegram_message_date",
+        "message_type",
+        "ingested_at"
+      ],
+      "title": "TelegramMessage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": "telegram-input.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "pipeline_version": {
+      "default": "telegram-input.v1",
+      "minLength": 1,
+      "title": "Pipeline Version",
+      "type": "string"
+    },
+    "pipeline_mode": {
+      "$ref": "#/$defs/MarketPipelineMode",
+      "default": "shadow"
+    },
+    "source_channel": {
+      "minLength": 1,
+      "title": "Source Channel",
+      "type": "string"
+    },
+    "message": {
+      "$ref": "#/$defs/TelegramMessage"
+    },
+    "attachment": {
+      "$ref": "#/$defs/TelegramAttachment"
+    }
+  },
+  "required": [
+    "source_channel",
+    "message",
+    "attachment"
+  ],
+  "title": "TelegramInput",
+  "type": "object"
+}

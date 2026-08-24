@@ -1,0 +1,14 @@
+[Unit]
+Description=ETI Telegram Summary image collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python /var/www/eti/Energy_trade_inspection/intelligence/telegram_ingest.py --once --chat @quotes_summary --content-type images --session-file tmp/telegram/eti_telegram_summary --state-file tmp/telegram/state_quotes-summary.json
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=eti-telegram-summary

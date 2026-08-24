@@ -1,0 +1,14 @@
+[Unit]
+Description=ETI Telegram Digital document collector
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/var/www/eti/Energy_trade_inspection
+EnvironmentFile=/var/www/eti/Energy_trade_inspection/.env.local
+ExecStart=/var/www/eti/Energy_trade_inspection/.venv-intelligence/bin/python /var/www/eti/Energy_trade_inspection/intelligence/telegram_ingest.py --once --chat @platts_digits --content-type documents --session-file tmp/telegram/eti_telegram_digital --state-file tmp/telegram/state_platts-digits.json
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=eti-telegram-digital

@@ -1,0 +1,20 @@
+schema_version: commodity-knowledge.v1
+version: shipping.v1
+updated_at: 2026-07-11
+commodity_id: shipping
+title: 能源航运知识卡
+aliases: [shipping, freight, tanker, vlcc, vlGC, 航运, 运费]
+market_definition: 船舶供给、航程、港口约束和货物流向共同决定的运输市场。
+core_benchmarks: [Worldscale, VLCC TD3C, LNG carrier spot rate, VLGC rate]
+core_prices_spreads: [time charter equivalent, route spreads, freight-adjusted arbitrage]
+supply_sources: [available fleet, newbuild deliveries, vessel repositioning]
+demand_centers: [crude, products, LNG and LPG cargo programs]
+trade_flows: [Middle East-Asia, Atlantic-Asia, transatlantic products]
+seasonality: [winter delays, monsoon, hurricane disruptions]
+substitutions: [ship size, route, pipeline alternatives]
+drivers: [ton-mile demand, congestion, sanctions, canal restrictions]
+transmission_paths: [route disruption to ton-miles to rates to arbitrage]
+validation_metrics: [fixture count, ballast list, congestion, ton-miles, TCE]
+common_misreads: [headline rate rise without vessel class and route match]
+invalidation_conditions: [congestion clears, ballast supply rises, cargo program shrinks]
+data_gaps: [private fixtures, deceptive AIS behavior]
